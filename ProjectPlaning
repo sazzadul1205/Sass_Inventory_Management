@@ -1,0 +1,195 @@
+Sure! I can help you design a **full Inventory Management System (IMS) database** in SQL. I’ll include tables, fields, relationships, access info, and some constraints. I’ll assume a **MySQL** environment.
+
+Here’s a comprehensive design:
+
+---
+
+### **1. Users Table**
+
+Stores information about the users who access the system (admins, staff).
+
+```sql
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100),
+    role ENUM('admin', 'staff') DEFAULT 'staff',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+* **Access**: Only admin can add/edit users.
+* **Notes**: Passwords should be hashed.
+
+---
+
+### **2. Suppliers Table**
+
+Stores supplier info.
+
+```sql
+CREATE TABLE suppliers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    contact_person VARCHAR(100),
+    phone VARCHAR(20),
+    email VARCHAR(100),
+    address TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+* **Access**: Admin/staff can add/update.
+* **Notes**: Used to track product sources.
+
+---
+
+### **3. Categories Table**
+
+To categorize products.
+
+```sql
+CREATE TABLE categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+### **4. Products Table**
+
+Main table for items in inventory.
+
+```sql
+CREATE TABLE products (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    category_id INT,
+    supplier_id INT,
+    price DECIMAL(10,2) NOT NULL,
+    quantity_in_stock INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL
+);
+```
+
+* **Notes**: Keep track of stock.
+
+---
+
+### **5. Purchases Table**
+
+Track when stock is added.
+
+```sql
+CREATE TABLE purchases (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    supplier_id INT,
+    quantity INT NOT NULL,
+    purchase_price DECIMAL(10,2),
+    purchase_date DATE DEFAULT CURRENT_DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(id),
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+);
+```
+
+---
+
+### **6. Sales Table**
+
+Track when stock is sold.
+
+```sql
+CREATE TABLE sales (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL,
+    sale_price DECIMAL(10,2),
+    sale_date DATE DEFAULT CURRENT_DATE,
+    created_by INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(id),
+    FOREIGN KEY (created_by) REFERENCES users(id)
+);
+```
+
+---
+
+### **7. Inventory Adjustments Table**
+
+Track stock adjustments (damaged/lost items).
+
+```sql
+CREATE TABLE inventory_adjustments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    adjusted_quantity INT NOT NULL,
+    reason VARCHAR(255),
+    adjusted_by INT,
+    adjusted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(id),
+    FOREIGN KEY (adjusted_by) REFERENCES users(id)
+);
+```
+
+---
+
+### **8. Roles and Permissions (Optional for Advanced Access Control)**
+
+```sql
+CREATE TABLE roles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    role_name VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE permissions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    permission_name VARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE role_permissions (
+    role_id INT,
+    permission_id INT,
+    PRIMARY KEY(role_id, permission_id),
+    FOREIGN KEY (role_id) REFERENCES roles(id),
+    FOREIGN KEY (permission_id) REFERENCES permissions(id)
+);
+```
+
+* **Use**: Restrict actions (add/delete/update products) based on role.
+
+---
+
+### **Relationships Overview**
+
+* **products.category_id → categories.id**
+* **products.supplier_id → suppliers.id**
+* **purchases.product_id → products.id**
+* **purchases.supplier_id → suppliers.id**
+* **sales.product_id → products.id**
+* **sales.created_by → users.id**
+* **inventory_adjustments.product_id → products.id**
+* **inventory_adjustments.adjusted_by → users.id**
+
+---
+
+### **Best Practices**
+
+1. Use **foreign keys** for data integrity.
+2. Store **passwords hashed** (e.g., `bcrypt`).
+3. Track **timestamps** for auditing.
+4. Separate **categories**, **suppliers**, and **users** for better reporting.
+5. Use **triggers** or stored procedures to automatically update `products.quantity_in_stock` on sales/purchases.
+
+---
+
+If you want, I can also **write all the SQL insert statements for sample data** and even **add stored procedures to automatically update stock** whenever a sale or purchase occurs.
+
+Do you want me to do that next?

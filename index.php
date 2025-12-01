@@ -1,4 +1,14 @@
-<?php include_once './config/db_config.php'; ?>
+<?php
+include_once './config/db_config.php';
+session_start(); // Start session if not already started
+
+// Check if user is logged in
+if (!isset($_SESSION['loggedIn']) || $_SESSION['loggedIn'] !== true) {
+  // Redirect to login page
+  header("Location: ./auth/login.php");
+  exit(); // Stop execution
+}
+?>
 <!doctype html>
 <html lang="en">
 <!--begin::Head-->

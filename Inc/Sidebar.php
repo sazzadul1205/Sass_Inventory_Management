@@ -1,7 +1,9 @@
+<?php include_once 'link.php' ?>
+
 <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
     <!-- Sidebar Brand -->
     <div class="sidebar-brand">
-        <a href="./index.php" class="brand-link">
+        <a href="<?= $Project_URL; ?>index.php" class="brand-link">
             <img src="<?= $Project_URL; ?>assets/Dashboard/Website_logo.png" alt="Logo">
         </a>
     </div>

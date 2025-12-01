@@ -1,4 +1,4 @@
-<?php include_once './config/db_config.php'; ?>
+<?php include_once 'link.php' ?>
 
 <nav class="app-header navbar navbar-expand bg-body shadow-sm">
     <div class="container-fluid">

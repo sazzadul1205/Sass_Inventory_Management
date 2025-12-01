@@ -6,8 +6,8 @@
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <title>Admin Home | Sass Inventory Management System</title>
-  <link rel="icon" href="<?= $project_url ?>assets/inventory.png" type="image/x-icon" />
+  <title>Users | Sass Inventory Management System</title>
+  <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon" />
 
   <!--begin::Accessibility Meta Tags-->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />

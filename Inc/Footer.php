@@ -1,12 +1,23 @@
-    <footer class="app-footer">
-        <!--begin::To the end-->
-        <div class="float-end d-none d-sm-inline">Anything you want</div>
-        <!--end::To the end-->
-        <!--begin::Copyright-->
+<footer class="app-footer py-2 px-3 d-flex justify-content-between align-items-center border-top">
+
+    <div class="footer-left">
         <strong>
-            Copyright &copy; 2014-2025&nbsp;
-            <a href="https://adminlte.io" class="text-decoration-none">AdminLTE.io</a>.
+            &copy; 2014–<span id="currentYear"></span>
+            <a
+                href="https://sazzadul-islam-website.vercel.app/"
+                class="text-decoration-none">
+                Sazzadul Islam Portfolio
+            </a>
         </strong>
-        All rights reserved.
-        <!--end::Copyright-->
-    </footer>
+        <span class="ms-1">All rights reserved.</span>
+    </div>
+
+    <div class="footer-right text-muted d-none d-sm-inline">
+        Created by <strong>Sazzadul Islam Molla</strong>
+    </div>
+
+</footer>
+
+<script>
+    document.getElementById("currentYear").textContent = new Date().getFullYear();
+</script>

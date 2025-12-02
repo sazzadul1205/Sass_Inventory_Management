@@ -62,9 +62,8 @@
 </head>
 <!--end::Head-->
 <!--begin::Body-->
-<?php
 
-echo $Project_URL;
+<?php
 // Initialize error message
 $loginError = '';
 

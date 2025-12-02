@@ -1,263 +1,272 @@
 <?php
 include_once 'link.php';
 
-// Returns 'active' if the current page matches the URL and is not in root
-function isActive($page)
+// Returns the current project root folder (e.g., /Sass_Inventory_Management)
+function getProjectRoot()
 {
-    $currentPath = $_SERVER['PHP_SELF'];        // e.g. /Sass_Inventory_Management/index.php
-    $pagePath = '/' . ltrim($page, './');      // e.g. /logs/index.php
-
-    // Adjust if project is in a subfolder
-    $projectRoot = '/Sass_Inventory_Management';
-    $pageFullPath = $projectRoot . $pagePath;
-
-    return $currentPath === $pageFullPath ? 'active' : '';
+  $parts = explode('/', trim($_SERVER['PHP_SELF'], '/'));
+  return '/' . $parts[0] . '/';
 }
 
+$projectRoot = getProjectRoot();
+$Project_URL = $projectRoot; // use this as the base URL
 
-// Returns 'menu-open' if one of the subpages matches and not in root
-function isMenuOpen($pages = [])
+// Sidebar menu structure
+$sidebarMenu = [
+  ['title' => 'Dashboard', 'icon' => 'bi bi-speedometer2', 'url' => 'index.php'],
+  [
+    'title' => 'Authentication',
+    'icon' => 'bi bi-person-badge',
+    'submenu' => [
+      ['title' => 'Users', 'url' => 'auth/users.php', 'icon' => 'bi bi-people'],
+      ['title' => 'Add User', 'url' => 'auth/add_user.php', 'icon' => 'bi bi-person-plus'],
+      ['title' => 'Edit User', 'url' => 'auth/edit_user.php', 'hidden' => true, 'icon' => 'bi bi-pencil-square'],
+
+
+      ['title' => 'Roles', 'url' => 'auth/roles.php', 'icon' => 'bi bi-shield-lock'],
+      ['title' => 'Edit Role', 'url' => 'auth/edit_role.php', 'hidden' => true, 'icon' => 'bi bi-pencil-square'],
+      ['title' => 'Add Role', 'url' => 'auth/add_role.php', 'hidden' => true, 'icon' => 'bi bi-plus-square'],
+
+
+      ['title' => 'Permissions', 'url' => 'auth/permissions.php', 'icon' => 'bi bi-key'],
+    ]
+  ],
+
+  [
+    'title' => 'Categories',
+    'icon' => 'bi bi-tags',
+    'submenu' => [
+      ['title' => 'All Categories', 'url' => 'category/index.php'],
+      ['title' => 'Add Category', 'url' => 'category/add.php']
+    ]
+  ],
+  [
+    'title' => 'Suppliers',
+    'icon' => 'bi bi-truck',
+    'submenu' => [
+      ['title' => 'All Suppliers', 'url' => 'supplier/index.php'],
+      ['title' => 'Add Supplier', 'url' => 'supplier/add.php']
+    ]
+  ],
+  [
+    'title' => 'Products',
+    'icon' => 'bi bi-box-seam',
+    'submenu' => [
+      ['title' => 'All Products', 'url' => 'product/index.php'],
+      ['title' => 'Add Product', 'url' => 'product/add.php'],
+      ['title' => 'Stock Overview', 'url' => 'product/stock.php']
+    ]
+  ],
+  [
+    'title' => 'Product Requests',
+    'icon' => 'bi bi-envelope-exclamation',
+    'submenu' => [
+      ['title' => 'Request List', 'url' => 'requests/index.php']
+    ]
+  ],
+  [
+    'title' => 'Purchases',
+    'icon' => 'bi bi-cart-check',
+    'submenu' => [
+      ['title' => 'All Purchases', 'url' => 'purchase/index.php'],
+      ['title' => 'Add Purchase', 'url' => 'purchase/add.php']
+    ]
+  ],
+  [
+    'title' => 'Sales',
+    'icon' => 'bi bi-cash-stack',
+    'submenu' => [
+      ['title' => 'All Sales', 'url' => 'sales/index.php'],
+      ['title' => 'Add Sale', 'url' => 'sales/add.php']
+    ]
+  ],
+  [
+    'title' => 'Inventory Adjustments',
+    'icon' => 'bi bi-pencil-square',
+    'submenu' => [
+      ['title' => 'Adjustment History', 'url' => 'adjustments/index.php'],
+      ['title' => 'Add Adjustment', 'url' => 'adjustments/add.php']
+    ]
+  ],
+  [
+    'title' => 'Reports',
+    'icon' => 'bi bi-graph-up-arrow',
+    'submenu' => [
+      ['title' => 'Stock Report', 'url' => 'reports/stock.php'],
+      ['title' => 'Low Stock', 'url' => 'reports/low_stock.php'],
+      ['title' => 'Sales Report', 'url' => 'reports/sales.php'],
+      ['title' => 'Purchase Report', 'url' => 'reports/purchases.php'],
+      ['title' => 'Product Movement', 'url' => 'reports/movement.php']
+    ]
+  ],
+  [
+    'title' => 'System Settings',
+    'icon' => 'bi bi-gear',
+    'submenu' => [
+      ['title' => 'Company Info', 'url' => 'settings/company.php'],
+      ['title' => 'Theme Settings', 'url' => 'settings/theme.php'],
+      ['title' => 'Email Settings', 'url' => 'settings/email.php'],
+      ['title' => 'Backup & Restore', 'url' => 'settings/backup.php']
+    ]
+  ],
+  ['title' => 'Activity Logs', 'icon' => 'bi bi-journal-text', 'url' => 'logs/index.php'],
+  [
+    'title' => 'Logout',
+    'icon' => 'bi bi-box-arrow-right',
+    'url' => 'auth/logout.php'
+  ]
+];
+
+// Render sidebar without active/open classes
+?>
+
+<?php
+// Returns the current relative path from project root
+function getCurrentRelativePath()
 {
-    $currentFile = basename($_SERVER['PHP_SELF']);
-    $currentDir = dirname($_SERVER['PHP_SELF']);
+  $current = $_SERVER['PHP_SELF']; // e.g. /Sass_Inventory_Management/category/index.php
+  $parts = explode('/', trim($current, '/'));
+  $projectRoot = '/' . $parts[0] . '/';
+  return str_replace($projectRoot, '', $current);
+}
 
-    // Check if current page is in project root folder
-    $projectRoot = '/Sass_Inventory_Management'; // adjust if your folder name changes
-    if ($currentDir === $projectRoot || $currentDir === '/' || $currentDir === '' || $currentDir === '\\') {
-        return '';
-    }
-
-    foreach ($pages as $page) {
-        if ($currentFile === basename($page)) {
-            return 'menu-open';
-        }
-    }
-    return '';
+// Check if a link matches current page
+function isActivePage($url)
+{
+  return getCurrentRelativePath() === $url;
 }
 ?>
 
+<style>
+  .rotate-180 {
+    transform: rotate(180deg);
+    transition: transform 0.25s ease;
+  }
+
+  .rotate-0 {
+    transform: rotate(0deg);
+    transition: transform 0.25s ease;
+  }
+
+  .active-page {
+    font-weight: 600;
+    background-color: #4a90e2;
+    /* medium blue, eye-catching but not harsh */
+    border-radius: 4px;
+  }
+
+  .active-page>p {
+    color: #ffffff;
+    /* white text for strong contrast */
+  }
+</style>
 
 <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
-    <!-- Sidebar Brand -->
-    <div class="sidebar-brand">
-        <a href="<?= $Project_URL; ?>index.php" class="brand-link">
-            <img src="<?= $Project_URL; ?>assets/Dashboard/Website_logo.png" alt="Logo">
-        </a>
-    </div>
+  <div class="sidebar-brand">
+    <a href="<?= $Project_URL; ?>index.php" class="brand-link">
+      <img src="<?= $Project_URL; ?>assets/Dashboard/Website_logo.png" alt="Logo">
+    </a>
+  </div>
 
-    <!-- Sidebar Menu -->
-    <div class="sidebar-wrapper">
-        <nav>
-            <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview">
+  <div class="sidebar-wrapper">
+    <nav>
+      <ul class="nav sidebar-menu flex-column" id="sidebarAccordion">
 
-                <!-- Dashboard -->
-                <li class="nav-item <?= isActive('index.php') ?>">
-                    <a href="./index.php" class="nav-link <?= isActive('index.php') ?>">
-                        <i class="nav-icon bi bi-speedometer2"></i>
-                        <p>Dashboard</p>
-                    </a>
-                </li>
+        <?php foreach ($sidebarMenu as $index => $menu): ?>
+          <?php if (isset($menu['submenu'])): ?>
+            <?php
+            $collapseId = "collapseMenu$index";
+            $anyActive = false;
+            foreach ($menu['submenu'] as $sub) {
+              if (isActivePage($sub['url'])) $anyActive = true;
+            }
+            ?>
+            <li class="nav-item">
+              <a class="nav-link d-flex justify-content-between align-items-center"
+                data-bs-toggle="collapse"
+                href="#<?= $collapseId ?>"
+                role="button"
+                aria-expanded="<?= $anyActive ? 'true' : 'false' ?>"
+                aria-controls="<?= $collapseId ?>">
 
-                <!-- Authentication -->
-                <?php $authPages = ['./auth/users.php', './auth/add_user.php', './auth/roles.php', './auth/permissions.php']; ?>
-                <li class="nav-item <?= isMenuOpen($authPages) ?>">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon bi bi-person-badge"></i>
-                        <p>Authentication <i class="nav-arrow bi bi-chevron-right"></i></p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item"><a href="<?= $Project_URL ?>auth/users.php" class="nav-link <?= isActive('./auth/users.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Users</p>
-                            </a></li>
-                        <li class="nav-item"><a href="<?= $Project_URL ?>auth/add_user.php" class="nav-link <?= isActive('./auth/add_user.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Add User</p>
-                            </a></li>
-                        <li class="nav-item"><a href="<?= $Project_URL ?>auth/roles.php" class="nav-link <?= isActive('./auth/roles.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Roles</p>
-                            </a></li>
-                        <li class="nav-item"><a href="<?= $Project_URL ?>auth/permissions.php" class="nav-link <?= isActive('./auth/permissions.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Permissions</p>
-                            </a></li>
-                    </ul>
-                </li>
+                <span class="d-inline-flex align-items-center gap-2">
+                  <i class="nav-icon <?= $menu['icon'] ?>"></i>
+                  <?= $menu['title'] ?>
+                </span>
+                <i class="bi bi-chevron-down collapse-arrow rotate-0"></i>
+              </a>
 
-                <!-- Category -->
-                <?php $categoryPages = ['category/index.php', 'category/add.php']; ?>
-                <li class="nav-item <?= isMenuOpen($categoryPages) ?>">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon bi bi-tags"></i>
-                        <p>Categories<i class="nav-arrow bi bi-chevron-right"></i></p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item"><a href="<?= $Project_URL ?>category/index.php" class="nav-link <?= isActive('./category/index.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>All Categories</p>
-                            </a></li>
-                        <li class="nav-item"><a href="<?= $Project_URL ?>category/add.php" class="nav-link <?= isActive('./category/add.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Add Category</p>
-                            </a></li>
-                    </ul>
-                </li>
+              <div class="collapse <?= $anyActive ? 'show' : '' ?>" id="<?= $collapseId ?>" data-bs-parent="#sidebarAccordion">
+                <ul class="nav flex-column ms-3">
+                  <?php foreach ($menu['submenu'] as $sub): ?>
+                    <?php
+                    $isActive = isActivePage($sub['url']);
+                    if (!empty($sub['hidden']) && !$isActive) continue; // skip hidden unless active
+                    $iconClass = !empty($sub['icon']) ? $sub['icon'] : 'bi bi-circle';
+                    ?>
+                    <li class="nav-item">
+                      <a href="<?= $Project_URL . $sub['url'] ?>"
+                        class="nav-link <?= $isActive ? 'active-page' : '' ?>">
+                        <i class="nav-icon <?= $iconClass ?>"></i>
+                        <p><?= $sub['title'] ?></p>
+                      </a>
+                    </li>
+                  <?php endforeach; ?>
+                </ul>
+              </div>
+            </li>
 
-                <!-- Suppliers -->
-                <?php $supplierPages = ['supplier/index.php', 'supplier/add.php']; ?>
-                <li class="nav-item <?= isMenuOpen($supplierPages) ?>">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon bi bi-truck"></i>
-                        <p>Suppliers<i class="nav-arrow bi bi-chevron-right"></i></p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item"><a href="<?= $Project_URL ?>supplier/index.php" class="nav-link <?= isActive('./supplier/index.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>All Suppliers</p>
-                            </a></li>
-                        <li class="nav-item"><a href="<?= $Project_URL ?>supplier/add.php" class="nav-link <?= isActive('./supplier/add.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Add Supplier</p>
-                            </a></li>
-                    </ul>
-                </li>
+          <?php else: ?>
+            <li class="nav-item">
+              <a href="<?= $Project_URL . $menu['url'] ?>" class="nav-link <?= isActivePage($menu['url']) ? 'active-page' : '' ?>">
+                <i class="nav-icon <?= $menu['icon'] ?>"></i>
+                <p><?= $menu['title'] ?></p>
+              </a>
+            </li>
+          <?php endif; ?>
+        <?php endforeach; ?>
 
-                <!-- Products -->
-                <?php $productPages = ['product/index.php', 'product/add.php', 'product/stock.php']; ?>
-                <li class="nav-item <?= isMenuOpen($productPages) ?>">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon bi bi-box-seam"></i>
-                        <p>Products<i class="nav-arrow bi bi-chevron-right"></i></p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item"><a href="<?= $Project_URL ?>product/index.php" class="nav-link <?= isActive('./product/index.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>All Products</p>
-                            </a></li>
-                        <li class="nav-item"><a href="<?= $Project_URL ?>product/add.php" class="nav-link <?= isActive('./product/add.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Add Product</p>
-                            </a></li>
-                        <li class="nav-item"><a href="<?= $Project_URL ?>product/stock.php" class="nav-link <?= isActive('./product/stock.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Stock Overview</p>
-                            </a></li>
-                    </ul>
-                </li>
-
-                <!-- Product Requests -->
-                <?php $requestPages = ['./requests/index.php']; ?>
-                <li class="nav-item <?= isMenuOpen($requestPages) ?>">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon bi bi-envelope-exclamation"></i>
-                        <p>Product Requests<i class="nav-arrow bi bi-chevron-right"></i></p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item"><a href="./requests/index.php" class="nav-link <?= isActive('./requests/index.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Request List</p>
-                            </a></li>
-                    </ul>
-                </li>
-
-                <!-- Purchases -->
-                <?php $purchasePages = ['./purchase/index.php', './purchase/add.php']; ?>
-                <li class="nav-item <?= isMenuOpen($purchasePages) ?>">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon bi bi-cart-check"></i>
-                        <p>Purchases<i class="nav-arrow bi bi-chevron-right"></i></p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item"><a href="./purchase/index.php" class="nav-link <?= isActive('./purchase/index.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>All Purchases</p>
-                            </a></li>
-                        <li class="nav-item"><a href="./purchase/add.php" class="nav-link <?= isActive('./purchase/add.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Add Purchase</p>
-                            </a></li>
-                    </ul>
-                </li>
-
-                <!-- Sales -->
-                <?php $salesPages = ['./sales/index.php', './sales/add.php']; ?>
-                <li class="nav-item <?= isMenuOpen($salesPages) ?>">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon bi bi-cash-stack"></i>
-                        <p>Sales<i class="nav-arrow bi bi-chevron-right"></i></p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item"><a href="./sales/index.php" class="nav-link <?= isActive('./sales/index.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>All Sales</p>
-                            </a></li>
-                        <li class="nav-item"><a href="./sales/add.php" class="nav-link <?= isActive('./sales/add.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Add Sale</p>
-                            </a></li>
-                    </ul>
-                </li>
-
-                <!-- Inventory Adjustments -->
-                <?php $adjustPages = ['./adjustments/index.php', './adjustments/add.php']; ?>
-                <li class="nav-item <?= isMenuOpen($adjustPages) ?>">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon bi bi-pencil-square"></i>
-                        <p>Inventory Adjustments<i class="nav-arrow bi bi-chevron-right"></i></p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item"><a href="./adjustments/index.php" class="nav-link <?= isActive('./adjustments/index.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Adjustment History</p>
-                            </a></li>
-                        <li class="nav-item"><a href="./adjustments/add.php" class="nav-link <?= isActive('./adjustments/add.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Add Adjustment</p>
-                            </a></li>
-                    </ul>
-                </li>
-
-                <!-- Reports -->
-                <?php $reportPages = ['./reports/stock.php', './reports/low_stock.php', './reports/sales.php', './reports/purchases.php', './reports/movement.php']; ?>
-                <li class="nav-item <?= isMenuOpen($reportPages) ?>">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon bi bi-graph-up-arrow"></i>
-                        <p>Reports<i class="nav-arrow bi bi-chevron-right"></i></p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item"><a href="./reports/stock.php" class="nav-link <?= isActive('./reports/stock.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Stock Report</p>
-                            </a></li>
-                        <li class="nav-item"><a href="./reports/low_stock.php" class="nav-link <?= isActive('./reports/low_stock.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Low Stock</p>
-                            </a></li>
-                        <li class="nav-item"><a href="./reports/sales.php" class="nav-link <?= isActive('./reports/sales.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Sales Report</p>
-                            </a></li>
-                        <li class="nav-item"><a href="./reports/purchases.php" class="nav-link <?= isActive('./reports/purchases.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Purchase Report</p>
-                            </a></li>
-                        <li class="nav-item"><a href="./reports/movement.php" class="nav-link <?= isActive('./reports/movement.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Product Movement</p>
-                            </a></li>
-                    </ul>
-                </li>
-
-                <!-- Settings -->
-                <?php $settingsPages = ['./settings/company.php', './settings/theme.php', './settings/email.php', './settings/backup.php']; ?>
-                <li class="nav-item <?= isMenuOpen($settingsPages) ?>">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon bi bi-gear"></i>
-                        <p>System Settings<i class="nav-arrow bi bi-chevron-right"></i></p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item"><a href="./settings/company.php" class="nav-link <?= isActive('./settings/company.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Company Info</p>
-                            </a></li>
-                        <li class="nav-item"><a href="./settings/theme.php" class="nav-link <?= isActive('./settings/theme.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Theme Settings</p>
-                            </a></li>
-                        <li class="nav-item"><a href="./settings/email.php" class="nav-link <?= isActive('./settings/email.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Email Settings</p>
-                            </a></li>
-                        <li class="nav-item"><a href="./settings/backup.php" class="nav-link <?= isActive('./settings/backup.php') ?>"><i class="nav-icon bi bi-circle"></i>
-                                <p>Backup & Restore</p>
-                            </a></li>
-                    </ul>
-                </li>
-
-                <!-- Logs -->
-                <li class="nav-item <?= isActive('./logs/index.php') ?>">
-                    <a href="./logs/index.php" class="nav-link <?= isActive('./logs/index.php') ?>">
-                        <i class="nav-icon bi bi-journal-text"></i>
-                        <p>Activity Logs</p>
-                    </a>
-                </li>
-
-            </ul>
-        </nav>
-    </div>
+      </ul>
+    </nav>
+  </div>
 </aside>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const triggers = document.querySelectorAll('[data-bs-toggle="collapse"]');
+
+    triggers.forEach(trigger => {
+      const target = document.querySelector(trigger.getAttribute('href'));
+      const arrow = trigger.querySelector('.collapse-arrow');
+      if (!target || !arrow) return;
+
+      target.addEventListener('show.bs.collapse', () => {
+        arrow.classList.remove('rotate-0');
+        arrow.classList.add('rotate-180');
+      });
+
+      target.addEventListener('hide.bs.collapse', () => {
+        arrow.classList.remove('rotate-180');
+        arrow.classList.add('rotate-0');
+      });
+    });
+
+    // Auto-expand the parent of the active page
+    const activeItem = document.querySelector('.active-page');
+    if (activeItem) {
+      const collapseDiv = activeItem.closest('.collapse');
+      if (collapseDiv) {
+        const collapse = new bootstrap.Collapse(collapseDiv, {
+          toggle: false
+        });
+        collapse.show();
+
+        const arrow = document.querySelector('[href="#' + collapseDiv.id + '"] .collapse-arrow');
+        if (arrow) {
+          arrow.classList.remove('rotate-0');
+          arrow.classList.add('rotate-180');
+        }
+      }
+    }
+  });
+</script>

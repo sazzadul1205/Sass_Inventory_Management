@@ -142,12 +142,11 @@ include_once __DIR__ . '/../config/db_config.php';
         </div>
       </div>
 
-      <!-- Success/Failure Message -->
       <?php
       if (!empty($_SESSION['success_message'])) {
         echo "
         <div id='successMsg' class='alert alert-success' style='position:relative; z-index:9999;'>
-          {$_SESSION['success_message']}
+            {$_SESSION['success_message']}
         </div>";
         unset($_SESSION['success_message']);
       }
@@ -155,11 +154,12 @@ include_once __DIR__ . '/../config/db_config.php';
       if (!empty($_SESSION['fail_message'])) {
         echo "
         <div id='failMsg' class='alert alert-danger' style='position:relative; z-index:9999;'>
-          {$_SESSION['fail_message']}
+            {$_SESSION['fail_message']}
         </div>";
         unset($_SESSION['fail_message']);
       }
       ?>
+
 
 
       <!-- App Content Body -->
@@ -196,7 +196,12 @@ include_once __DIR__ . '/../config/db_config.php';
             </table>
           </div>
 
-          <button id="updatePermissionsBtn" class="btn btn-primary mt-3" disabled>Update Permissions</button>
+          <button
+            id="updatePermissionsBtn"
+            class="btn btn-primary mt-3"
+            disabled>
+            Update Permissions
+          </button>
         </div>
       </div>
 
@@ -248,15 +253,15 @@ include_once __DIR__ . '/../config/db_config.php';
           data: {
             changes: changes
           },
-          success: function() {
-            // Reload page after successful update to show PHP session messages
+          success: function(result) {
+            // After PHP sets the session message, reload the page normally
             location.reload();
           },
-          error: function(xhr, status, error) {
-            // On error, also reload page (optional: set a fail session message in PHP)
+          error: function() {
             location.reload();
           }
         });
+
 
         // Disable update button immediately
         $('#updatePermissionsBtn').prop('disabled', true);

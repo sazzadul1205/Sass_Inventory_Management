@@ -61,6 +61,8 @@ include_once __DIR__ . '/../config/db_config.php';
   <!-- jsvectormap -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/css/jsvectormap.min.css"
     integrity="sha256-+uGLJmmTKOqBr+2E6KDYs/NRsHxSkONXFHUL0fy2O/4=" crossorigin="anonymous" />
+
+    
 </head>
 <!--end::Head-->
 <!--begin::Body-->

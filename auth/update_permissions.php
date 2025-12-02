@@ -2,6 +2,8 @@
 session_start();
 include_once __DIR__ . '/../config/db_config.php';
 
+$response = ["status" => "fail"];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['changes'])) {
     $changes = $_POST['changes'];
     $conn = connectDB();
@@ -9,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['changes'])) {
 
     foreach ($changes as $key => $value) {
         list($role_id, $perm_id) = explode('-', $key);
-        if ($role_id == 1) continue; // skip admin
+        if ($role_id == 1) continue;
 
         if ($value == 1) {
             $stmt = $conn->prepare("INSERT IGNORE INTO role_permission (role_id, permission_id) VALUES (?, ?)");
@@ -28,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['changes'])) {
 
     if ($success) {
         $_SESSION['success_message'] = "Permissions updated successfully!";
+        $response["status"] = "success";
     } else {
         $_SESSION['fail_message'] = "Failed to update permissions!";
     }
@@ -35,6 +38,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['changes'])) {
     $_SESSION['fail_message'] = "No changes detected!";
 }
 
-// Redirect back to permissions page
-header("Location: permissions.php");
+echo json_encode($response);
 exit;

@@ -112,8 +112,6 @@ $result = $conn->query($sql);
 
       <!-- Success Message -->
       <?php
-
-
       if (!empty($_SESSION['success_message'])) {
         echo "
         <div id='successMsg' class='alert alert-success' style='position:relative; z-index:9999;'>
@@ -121,6 +119,15 @@ $result = $conn->query($sql);
         </div>";
 
         unset($_SESSION['success_message']); // Remove so it shows only once
+      }
+
+      if (!empty($_SESSION['fail_message'])) {
+        echo "
+        <div id='failMsg' class='alert alert-danger' style='position:relative; z-index:9999;'>
+          {$_SESSION['fail_message']}
+        </div>";
+
+        unset($_SESSION['fail_message']); // Remove so it shows only once
       }
       ?>
 

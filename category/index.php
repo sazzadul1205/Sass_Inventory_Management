@@ -123,10 +123,10 @@ $result = $conn->query($sql);
                     </td>
                     <td>
                       <div class="d-flex gap-1">
-                        <a href="edit_category.php?id=<?= urlencode($row['id']) ?>" class="btn btn-warning btn-sm flex-fill">
+                        <a href="edit.php?id=<?= urlencode($row['id']) ?>" class="btn btn-warning btn-sm flex-fill">
                           <i class="bi bi-pencil-square"></i> Edit
                         </a>
-                        <a href="delete_category.php?id=<?= urlencode($row['id']) ?>" class="btn btn-danger btn-sm flex-fill"
+                        <a href="delete.php?id=<?= urlencode($row['id']) ?>" class="btn btn-danger btn-sm flex-fill"
                           onclick="return confirm('Are you sure you want to delete this category?');">
                           <i class="bi bi-trash"></i> Delete
                         </a>

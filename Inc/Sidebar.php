@@ -34,12 +34,27 @@ $sidebarMenu = [
 
   [
     'title' => 'Categories',
-    'icon' => 'bi bi-tags',
+    'icon'  => 'bi bi-tags',
     'submenu' => [
-      ['title' => 'All Categories', 'url' => 'category/index.php'],
-      ['title' => 'Add Category', 'url' => 'category/add.php']
+      [
+        'title' => 'All Categories',
+        'url'   => 'category/index.php',
+        'icon'  => 'bi bi-card-list'
+      ],
+      [
+        'title' => 'Add Category',
+        'url'   => 'category/add.php',
+        'icon'  => 'bi bi-plus-circle'
+      ],
+      [
+        'title' => 'Edit Category',
+        'url'   => 'category/edit.php',
+        'icon'  => 'bi bi-pencil-square',
+        'hidden' => true,
+      ]
     ]
   ],
+
   [
     'title' => 'Suppliers',
     'icon' => 'bi bi-truck',

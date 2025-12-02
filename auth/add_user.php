@@ -1,7 +1,9 @@
+<?php include_once __DIR__ . '/../config/db_config.php'; ?>
 <?php
 session_start();
-include_once __DIR__ . '/../config/db_config.php';
+$formError = "";
 ?>
+
 
 <!doctype html>
 <html lang="en">
@@ -66,16 +68,40 @@ include_once __DIR__ . '/../config/db_config.php';
 <!--begin::Body-->
 
 <?php
-// Join users with roles to get role_name
-$sql = "SELECT u.*, r.role_name 
-        FROM user u 
-        LEFT JOIN role r ON u.role_id = r.id
-        ORDER BY u.id ASC";
-
+// Fetch roles
 $conn = connectDB();
-$result = $conn->query($sql);
+$roleQuery = "SELECT * FROM role ORDER BY role_name ASC";
+$rolesResult = $conn->query($roleQuery);
 ?>
 
+<!-- Form Submit Handler -->
+<?php
+if (isset($_POST['submit'])) {
+  $username   = $_POST['username'];
+  $email      = $_POST['email'];
+  $password   = $_POST['password'];
+  $role_id    = $_POST['role_id'];
+  $created_at = $_POST['created_at'];
+  $updated_at = $_POST['updated_at'];
+
+  $hashed_password = md5($password);
+
+  $conn = connectDB();
+
+  $sql = "INSERT INTO user (username, email, password, role_id, created_at, updated_at)
+        VALUES ('$username', '$email', '$hashed_password', '$role_id', '$created_at', '$updated_at')";
+
+  if ($conn->query($sql) === TRUE) {
+
+    $_SESSION['success_message'] = "User added successfully!";
+
+    header("Location: users.php");
+    exit;
+  } else {
+    $formError = "Failed to add user: " . $conn->error;
+  }
+}
+?>
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <!--begin::App Wrapper-->
@@ -94,88 +120,79 @@ $result = $conn->query($sql);
           <div class="d-flex justify-content-between align-items-center flex-wrap">
 
             <!-- Page Title -->
-            <h3 class="mb-0">All Users</h3>
-
-            <!-- Breadcrumb + Action -->
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-              <!-- Add New User Button -->
-              <a
-                href="add_user.php"
-                class="btn btn-sm btn-primary d-flex align-items-center px-3 py-2">
-                <i class=" bi bi-plus me-1"></i> Add New User
-              </a>
-            </div>
+            <h3 class="mb-0">Add New User</h3>
 
           </div>
         </div>
       </div>
 
-      <!-- Success Message -->
-      <?php
+      <!-- Form Error -->
+      <?php if (!empty($formError)): ?>
+        <div id="errorBox" class="alert alert-danger text-center">
+          <?= htmlspecialchars($formError) ?>
+        </div>
+      <?php endif; ?>
 
-
-      if (!empty($_SESSION['success_message'])) {
-        echo "
-        <div id='successMsg' class='alert alert-success' style='position:relative; z-index:9999;'>
-          {$_SESSION['success_message']}
-        </div>";
-
-        unset($_SESSION['success_message']); // Remove so it shows only once
-      }
-      ?>
 
       <!-- App Content Table -->
       <div class="app-content-body mt-3">
-        <div class="table-responsive container-fluid">
-          <table id="usersTable" class="table table-bordered table-hover table-striped align-middle">
-            <thead class="table-primary">
-              <tr>
-                <th>ID</th>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Created At</th>
-                <th>Updated At</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php if ($result->num_rows > 0): ?>
-                <?php while ($row = $result->fetch_assoc()): ?>
-                  <tr>
-                    <td><?= htmlspecialchars($row['id']) ?></td>
-                    <td><?= htmlspecialchars($row['username']) ?></td>
-                    <td><?= htmlspecialchars($row['email']) ?></td>
-                    <td><?= htmlspecialchars($row['role_name'] ?? 'Unknown') ?></td>
-                    <td>
-                      <?= !empty($row['created_at']) ? date('d M Y h:i A', strtotime($row['created_at'])) : '' ?>
-                    </td>
-                    <td>
-                      <?= !empty($row['updated_at']) ? date('d M Y h:i A', strtotime($row['updated_at'])) : '' ?>
-                    </td>
-                    <td>
-                      <div class="d-flex gap-1">
-                        <a href="edit_user.php?id=<?= urlencode($row['id']) ?>" class="btn btn-warning btn-sm flex-fill">
-                          <i class="bi bi-pencil-square"></i> Edit
-                        </a>
-                        <a href="delete_user.php?id=<?= urlencode($row['id']) ?>" class="btn btn-danger btn-sm flex-fill"
-                          onclick="return confirm('Are you sure you want to delete this user?');">
-                          <i class="bi bi-trash"></i> Delete
-                        </a>
-                      </div>
-                    </td>
+        <div class="container-fluid">
+          <div class="card shadow-sm rounded-3">
+            <div class="card-body">
+              <h4 class="mb-4">Fill Information to Add New User</h4>
+              <form method="post" autocomplete="on">
 
-                  </tr>
-                <?php endwhile; ?>
-              <?php else: ?>
-                <tr>
-                  <td colspan="6" class="text-center">No users found</td>
-                </tr>
-              <?php endif; ?>
-            </tbody>
-          </table>
+                <div class="row">
+                  <!-- Username -->
+                  <div class="col-md-6 mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" name="username" id="username" class="form-control" required>
+                  </div>
+
+                  <!-- Email -->
+                  <div class="col-md-6 mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" name="email" id="email" class="form-control" required>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <!-- Password -->
+                  <div class="col-md-6 mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" name="password" id="password" class="form-control" required>
+                  </div>
+
+                  <!-- Role -->
+                  <div class="col-md-6 mb-3">
+                    <label for="role_id" class="form-label">Role</label>
+                    <select name="role_id" id="role_id" class="form-select" required>
+                      <option value="">Select Role</option>
+                      <?php if ($rolesResult->num_rows > 0): ?>
+                        <?php while ($role = $rolesResult->fetch_assoc()): ?>
+                          <option value="<?= htmlspecialchars($role['id']) ?>">
+                            <?= htmlspecialchars($role['role_name']) ?>
+                          </option>
+                        <?php endwhile; ?>
+                      <?php endif; ?>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Hidden timestamps -->
+                <input type="hidden" name="created_at" value="<?= date('Y-m-d H:i:s') ?>">
+                <input type="hidden" name="updated_at" value="<?= date('Y-m-d H:i:s') ?>">
+
+                <button type="submit" name="submit" class="btn btn-primary mt-2">Add User</button>
+
+              </form>
+
+            </div>
+          </div>
         </div>
       </div>
+
+
 
     </main>
 
@@ -420,13 +437,13 @@ $result = $conn->query($sql);
 
   <script>
     setTimeout(() => {
-      const msg = document.getElementById('successMsg');
-      if (msg) {
-        msg.style.transition = "opacity 0.5s";
-        msg.style.opacity = "0";
-        setTimeout(() => msg.remove(), 500);
+      const errorBox = document.getElementById("errorBox");
+      if (errorBox) {
+        errorBox.style.transition = "opacity 0.5s";
+        errorBox.style.opacity = "0";
+        setTimeout(() => errorBox.remove(), 500);
       }
-    }, 3000); // 3 seconds
+    }, 3000); // hide after 3 seconds
   </script>
 
   <!--end::Script-->

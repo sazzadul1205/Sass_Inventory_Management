@@ -66,70 +66,70 @@ function isMenuOpen($pages = [])
                         <p>Authentication <i class="nav-arrow bi bi-chevron-right"></i></p>
                     </a>
                     <ul class="nav nav-treeview">
-                        <li class="nav-item"><a href="./auth/users.php" class="nav-link <?= isActive('./auth/users.php') ?>"><i class="nav-icon bi bi-circle"></i>
+                        <li class="nav-item"><a href="<?= $Project_URL ?>auth/users.php" class="nav-link <?= isActive('./auth/users.php') ?>"><i class="nav-icon bi bi-circle"></i>
                                 <p>Users</p>
                             </a></li>
-                        <li class="nav-item"><a href="./auth/add_user.php" class="nav-link <?= isActive('./auth/add_user.php') ?>"><i class="nav-icon bi bi-circle"></i>
+                        <li class="nav-item"><a href="<?= $Project_URL ?>auth/add_user.php" class="nav-link <?= isActive('./auth/add_user.php') ?>"><i class="nav-icon bi bi-circle"></i>
                                 <p>Add User</p>
                             </a></li>
-                        <li class="nav-item"><a href="./auth/roles.php" class="nav-link <?= isActive('./auth/roles.php') ?>"><i class="nav-icon bi bi-circle"></i>
+                        <li class="nav-item"><a href="<?= $Project_URL ?>auth/roles.php" class="nav-link <?= isActive('./auth/roles.php') ?>"><i class="nav-icon bi bi-circle"></i>
                                 <p>Roles</p>
                             </a></li>
-                        <li class="nav-item"><a href="./auth/permissions.php" class="nav-link <?= isActive('./auth/permissions.php') ?>"><i class="nav-icon bi bi-circle"></i>
+                        <li class="nav-item"><a href="<?= $Project_URL ?>auth/permissions.php" class="nav-link <?= isActive('./auth/permissions.php') ?>"><i class="nav-icon bi bi-circle"></i>
                                 <p>Permissions</p>
                             </a></li>
                     </ul>
                 </li>
 
                 <!-- Category -->
-                <?php $categoryPages = ['./category/index.php', './category/add.php']; ?>
+                <?php $categoryPages = ['category/index.php', 'category/add.php']; ?>
                 <li class="nav-item <?= isMenuOpen($categoryPages) ?>">
                     <a href="#" class="nav-link">
                         <i class="nav-icon bi bi-tags"></i>
                         <p>Categories<i class="nav-arrow bi bi-chevron-right"></i></p>
                     </a>
                     <ul class="nav nav-treeview">
-                        <li class="nav-item"><a href="./category/index.php" class="nav-link <?= isActive('./category/index.php') ?>"><i class="nav-icon bi bi-circle"></i>
+                        <li class="nav-item"><a href="<?= $Project_URL ?>category/index.php" class="nav-link <?= isActive('./category/index.php') ?>"><i class="nav-icon bi bi-circle"></i>
                                 <p>All Categories</p>
                             </a></li>
-                        <li class="nav-item"><a href="./category/add.php" class="nav-link <?= isActive('./category/add.php') ?>"><i class="nav-icon bi bi-circle"></i>
+                        <li class="nav-item"><a href="<?= $Project_URL ?>category/add.php" class="nav-link <?= isActive('./category/add.php') ?>"><i class="nav-icon bi bi-circle"></i>
                                 <p>Add Category</p>
                             </a></li>
                     </ul>
                 </li>
 
                 <!-- Suppliers -->
-                <?php $supplierPages = ['./supplier/index.php', './supplier/add.php']; ?>
+                <?php $supplierPages = ['supplier/index.php', 'supplier/add.php']; ?>
                 <li class="nav-item <?= isMenuOpen($supplierPages) ?>">
                     <a href="#" class="nav-link">
                         <i class="nav-icon bi bi-truck"></i>
                         <p>Suppliers<i class="nav-arrow bi bi-chevron-right"></i></p>
                     </a>
                     <ul class="nav nav-treeview">
-                        <li class="nav-item"><a href="./supplier/index.php" class="nav-link <?= isActive('./supplier/index.php') ?>"><i class="nav-icon bi bi-circle"></i>
+                        <li class="nav-item"><a href="<?= $Project_URL ?>supplier/index.php" class="nav-link <?= isActive('./supplier/index.php') ?>"><i class="nav-icon bi bi-circle"></i>
                                 <p>All Suppliers</p>
                             </a></li>
-                        <li class="nav-item"><a href="./supplier/add.php" class="nav-link <?= isActive('./supplier/add.php') ?>"><i class="nav-icon bi bi-circle"></i>
+                        <li class="nav-item"><a href="<?= $Project_URL ?>supplier/add.php" class="nav-link <?= isActive('./supplier/add.php') ?>"><i class="nav-icon bi bi-circle"></i>
                                 <p>Add Supplier</p>
                             </a></li>
                     </ul>
                 </li>
 
                 <!-- Products -->
-                <?php $productPages = ['./product/index.php', './product/add.php', './product/stock.php']; ?>
+                <?php $productPages = ['product/index.php', 'product/add.php', 'product/stock.php']; ?>
                 <li class="nav-item <?= isMenuOpen($productPages) ?>">
                     <a href="#" class="nav-link">
                         <i class="nav-icon bi bi-box-seam"></i>
                         <p>Products<i class="nav-arrow bi bi-chevron-right"></i></p>
                     </a>
                     <ul class="nav nav-treeview">
-                        <li class="nav-item"><a href="./product/index.php" class="nav-link <?= isActive('./product/index.php') ?>"><i class="nav-icon bi bi-circle"></i>
+                        <li class="nav-item"><a href="<?= $Project_URL ?>product/index.php" class="nav-link <?= isActive('./product/index.php') ?>"><i class="nav-icon bi bi-circle"></i>
                                 <p>All Products</p>
                             </a></li>
-                        <li class="nav-item"><a href="./product/add.php" class="nav-link <?= isActive('./product/add.php') ?>"><i class="nav-icon bi bi-circle"></i>
+                        <li class="nav-item"><a href="<?= $Project_URL ?>product/add.php" class="nav-link <?= isActive('./product/add.php') ?>"><i class="nav-icon bi bi-circle"></i>
                                 <p>Add Product</p>
                             </a></li>
-                        <li class="nav-item"><a href="./product/stock.php" class="nav-link <?= isActive('./product/stock.php') ?>"><i class="nav-icon bi bi-circle"></i>
+                        <li class="nav-item"><a href="<?= $Project_URL ?>product/stock.php" class="nav-link <?= isActive('./product/stock.php') ?>"><i class="nav-icon bi bi-circle"></i>
                                 <p>Stock Overview</p>
                             </a></li>
                     </ul>

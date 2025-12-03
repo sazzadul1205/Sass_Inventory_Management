@@ -9,7 +9,7 @@ include_once __DIR__ . '/../config/db_config.php';
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Suppliers | Sass Inventory Management System</title>
+  <title>Products | Sass Inventory Management System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
 
   <!-- Fonts -->
@@ -30,27 +30,44 @@ include_once __DIR__ . '/../config/db_config.php';
 
 <?php
 $conn = connectDB();
-$result = $conn->query("SELECT * FROM supplier ORDER BY id ASC");
+
+// Fetch products with category and supplier names
+$sql = "
+  SELECT 
+    p.id,
+    p.name,
+    p.category_id,
+    p.supplier_id,
+    p.price,
+    p.quantity_in_stock,
+    p.created_at,
+    p.updated_at,
+    c.name AS category_name,
+    s.name AS supplier_name
+  FROM product p
+  LEFT JOIN category c ON p.category_id = c.id
+  LEFT JOIN supplier s ON p.supplier_id = s.id
+  ORDER BY p.id ASC
+";
+$result = $conn->query($sql);
 ?>
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
 
-    <!-- Navbar -->
+    <!-- Header -->
     <?php include_once '../Inc/Navbar.php'; ?>
-
     <!-- Sidebar -->
     <?php include_once '../Inc/Sidebar.php'; ?>
 
-    <!-- Main -->
     <main class="app-main">
 
       <!-- Header -->
       <div class="app-content-header py-3 border-bottom">
-        <div class="container-fluid d-flex justify-content-between align-items-center">
-          <h3 class="mb-0">All Suppliers</h3>
+        <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
+          <h3 class="mb-0">All Products</h3>
           <a href="add.php" class="btn btn-sm btn-primary px-3 py-2">
-            <i class="bi bi-plus me-1"></i> Add New Supplier
+            <i class="bi bi-plus me-1"></i> Add New Product
           </a>
         </div>
       </div>
@@ -65,52 +82,58 @@ $result = $conn->query("SELECT * FROM supplier ORDER BY id ASC");
         <?php unset($_SESSION['fail_message']); ?>
       <?php endif; ?>
 
-      <!-- Table -->
       <div class="app-content-body mt-3">
-        <div class="table-responsive container-fluid">
-          <?php if ($result->num_rows > 0): ?>
-            <table id="suppliersTable" class="table table-bordered table-striped table-hover align-middle">
-              <thead class="table-primary">
-                <tr>
-                  <th>ID</th>
-                  <th>Supplier Name</th>
-                  <th>Phone</th>
-                  <th>Email</th>
-                  <th>Created At</th>
-                  <th>Updated At</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <?php while ($row = $result->fetch_assoc()): ?>
-                  <tr>
-                    <td><?= $row['id']; ?></td>
-                    <td><?= htmlspecialchars($row['name']); ?></td>
-                    <td><?= htmlspecialchars($row['phone']); ?></td>
-                    <td><?= htmlspecialchars($row['email']); ?></td>
-                    <td><?= !empty($row['created_at']) ? date('d M Y h:i A', strtotime($row['created_at'])) : '' ?></td>
-                    <td><?= !empty($row['updated_at']) ? date('d M Y h:i A', strtotime($row['updated_at'])) : '' ?></td>
-                    <td>
-                      <div class="d-flex gap-1">
-                        <a href="edit.php?id=<?= urlencode($row['id']) ?>" class="btn btn-warning btn-sm flex-fill">
-                          <i class="bi bi-pencil-square"></i> Edit
-                        </a>
-                        <a href="delete.php?id=<?= urlencode($row['id']) ?>" class="btn btn-danger btn-sm flex-fill"
-                          onclick="return confirm('Are you sure you want to delete this supplier?');">
-                          <i class="bi bi-trash"></i> Delete
-                        </a>
-                      </div>
-                    </td>
-                  </tr>
-                <?php endwhile; ?>
-              </tbody>
-            </table>
-          <?php else: ?>
+        <div class="container-fluid">
+
+          <?php if ($result->num_rows == 0): ?>
             <div class="text-center text-muted py-5">
               <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-              <h5>No suppliers found</h5>
+              <h5>No products found</h5>
+            </div>
+          <?php else: ?>
+            <div class="table-responsive">
+              <table id="productsTable" class="table table-bordered table-striped table-hover align-middle">
+                <thead class="table-primary">
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Supplier</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Created</th>
+                    <th>Updated</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php while ($row = $result->fetch_assoc()): ?>
+                    <tr>
+                      <td><?= $row['id'] ?></td>
+                      <td><?= htmlspecialchars($row['name']) ?></td>
+                      <td><?= $row['category_name'] ?: "—" ?></td>
+                      <td><?= $row['supplier_name'] ?: "—" ?></td>
+                      <td><?= number_format($row['price'], 2) ?></td>
+                      <td><?= $row['quantity_in_stock'] ?></td>
+                      <td><?= !empty($row['created_at']) ? date('d M Y h:i A', strtotime($row['created_at'])) : '' ?></td>
+                      <td><?= !empty($row['updated_at']) ? date('d M Y h:i A', strtotime($row['updated_at'])) : '' ?></td>
+                      <td>
+                        <div class="d-flex gap-1">
+                          <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-warning btn-sm flex-fill">
+                            <i class="bi bi-pencil-square"></i> Edit
+                          </a>
+                          <a href="delete.php?id=<?= $row['id'] ?>" class="btn btn-danger btn-sm flex-fill" onclick="return confirm('Delete this product?');">
+                            <i class="bi bi-trash"></i> Delete
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                  <?php endwhile; ?>
+                </tbody>
+              </table>
             </div>
           <?php endif; ?>
+
         </div>
       </div>
 
@@ -130,7 +153,7 @@ $result = $conn->query("SELECT * FROM supplier ORDER BY id ASC");
 
   <script>
     $(document).ready(function() {
-      $('#suppliersTable').DataTable({
+      $('#productsTable').DataTable({
         paging: true,
         pageLength: 10,
         lengthChange: true,
@@ -140,8 +163,8 @@ $result = $conn->query("SELECT * FROM supplier ORDER BY id ASC");
         autoWidth: false,
         columnDefs: [{
           orderable: false,
-          targets: 6
-        }] // Actions column not sortable
+          targets: 8
+        }] // Disable sorting on Actions
       });
 
       // Auto hide messages

@@ -161,26 +161,18 @@ $result = $conn->query($sql);
         order: [],
         info: true,
         autoWidth: false,
-        columnDefs: [{
-          orderable: false,
-          targets: 8
-        }] // Disable sorting on Actions
+        columnDefs: [{ orderable: false, targets: 8 }] // Disable sorting on Actions
       });
 
       // Auto hide messages
       setTimeout(() => {
         ['successMsg', 'failMsg'].forEach(id => {
           const el = document.getElementById(id);
-          if (el) {
-            el.style.transition = "opacity 0.5s";
-            el.style.opacity = "0";
-            setTimeout(() => el.remove(), 500);
-          }
+          if (el) { el.style.transition = "opacity 0.5s"; el.style.opacity = "0"; setTimeout(() => el.remove(), 500); }
         });
       }, 3000);
     });
   </script>
 
 </body>
-
 </html>

@@ -83,8 +83,10 @@ if (isset($_POST['submit'])) {
     // Set session variables
     $_SESSION['loggedIn'] = true;
     $_SESSION['email'] = $email;
-    $_SESSION['role_id '] = $recode['role_id '];
-    $_SESSION['username '] = $recode['username '];
+    $_SESSION['user_id'] = $recode['id'];
+    $_SESSION['role_id'] = $recode['role_id'];
+    $_SESSION['username'] = $recode['username'];
+
 
     header("Location: " . $Project_URL . "/index.php");
     exit();

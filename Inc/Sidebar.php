@@ -14,6 +14,8 @@ $Project_URL = $projectRoot; // use this as the base URL
 // Sidebar menu structure
 $sidebarMenu = [
   ['title' => 'Dashboard', 'icon' => 'bi bi-speedometer2', 'url' => 'index.php'],
+
+  // Authentication Section
   [
     'title' => 'Authentication',
     'icon' => 'bi bi-person-badge',
@@ -63,6 +65,7 @@ $sidebarMenu = [
     ]
   ],
 
+  // Category Section
   [
     'title' => 'Categories',
     'icon'  => 'bi bi-tags',
@@ -86,23 +89,39 @@ $sidebarMenu = [
     ]
   ],
 
+  // Supplier Section
   [
     'title' => 'Suppliers',
     'icon' => 'bi bi-truck',
     'submenu' => [
-      ['title' => 'All Suppliers', 'url' => 'supplier/index.php'],
-      ['title' => 'Add Supplier', 'url' => 'supplier/add.php']
+      ['title' => 'All Suppliers', 'url' => 'supplier/index.php', 'icon' => 'bi bi-list'],
+      ['title' => 'Add Supplier', 'url' => 'supplier/add.php', 'icon' => 'bi bi-plus-circle'],
+      [
+        'title' => 'Edit Supplier', 
+        'url'   => 'supplier/edit.php',
+        'icon'  => 'bi bi-pencil-square',
+        'hidden' => true,
+      ]
     ]
   ],
+
+  // Product Section
   [
     'title' => 'Products',
     'icon' => 'bi bi-box-seam',
     'submenu' => [
-      ['title' => 'All Products', 'url' => 'product/index.php'],
-      ['title' => 'Add Product', 'url' => 'product/add.php'],
-      ['title' => 'Stock Overview', 'url' => 'product/stock.php']
+      ['title' => 'All Products', 'url' => 'product/index.php', 'icon' => 'bi bi-list'],
+      ['title' => 'Add Product', 'url' => 'product/add.php', 'icon' => 'bi bi-plus-circle'],
+      [
+        'title' => 'Edit Product',  
+        'url'   => 'product/edit.php',
+        'icon'  => 'bi bi-pencil-square',
+        'hidden' => true,
+      ],
+      ['title' => 'Stock Overview', 'url' => 'product/stock.php', 'icon' => 'bi bi-bar-chart-line-fill']
     ]
   ],
+
   [
     'title' => 'Product Requests',
     'icon' => 'bi bi-envelope-exclamation',

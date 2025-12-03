@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 02, 2025 at 02:42 AM
+-- Generation Time: Dec 03, 2025 at 02:37 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -34,6 +34,32 @@ CREATE TABLE `category` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Auto-update on record change'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `category`
+--
+
+INSERT INTO `category` (`id`, `name`, `description`, `created_at`, `updated_at`) VALUES
+(1, 'Mobile', 'Mobile Phones, Smart Phones, handheld phones', '2025-12-02 06:16:04', '2025-12-02 12:09:41'),
+(2, 'Electronics', 'Devices, gadgets, and accessories', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(3, 'Stationery', 'Office and school supplies', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(4, 'Furniture', 'Home and office furniture', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(5, 'Clothing', 'Apparel for men, women, and kids', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(6, 'Footwear', 'Shoes, sandals, and boots', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(7, 'Toys', 'Toys and games for children', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(8, 'Groceries', 'Daily food and household items', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(9, 'Beauty & Personal Care', 'Cosmetics, skincare, and hygiene', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(10, 'Books', 'Educational and recreational books', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(11, 'Sports', 'Sporting goods and equipment', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(12, 'Automotive', 'Car accessories and tools', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(13, 'Hardware', 'Tools and construction materials', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(14, 'Garden & Outdoors', 'Gardening and outdoor items', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(15, 'Pet Supplies', 'Food and accessories for pets', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(16, 'Music & Instruments', 'Musical instruments and accessories', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(17, 'Jewelry & Watches', 'Accessories and watches', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(19, 'Home Appliances', 'Appliances for home use', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(20, 'Art & Craft', 'Art supplies and DIY kits', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(21, 'Office Electronics', 'Printers, scanners, and office gadgets', '2025-12-02 11:47:57', '2025-12-02 11:47:57');
 
 -- --------------------------------------------------------
 
@@ -156,7 +182,8 @@ CREATE TABLE `role` (
 
 INSERT INTO `role` (`id`, `role_name`) VALUES
 (1, 'Admin'),
-(2, 'Employee');
+(2, 'Employee'),
+(3, 'Manager');
 
 -- --------------------------------------------------------
 
@@ -221,7 +248,16 @@ INSERT INTO `role_permission` (`role_id`, `permission_id`) VALUES
 (2, 26),
 (2, 28),
 (2, 33),
-(2, 34);
+(2, 34),
+(3, 4),
+(3, 8),
+(3, 12),
+(3, 16),
+(3, 20),
+(3, 24),
+(3, 28),
+(3, 32),
+(3, 33);
 
 -- --------------------------------------------------------
 
@@ -279,12 +315,10 @@ INSERT INTO `user` (`id`, `username`, `password`, `email`, `role_id`, `created_a
 (1, 'sazzadul admin', '13a84f75e1d009808e94f1910115089c', 'admin@gmail.com', 1, '2025-12-01 06:01:46', '2025-12-01 06:01:46'),
 (2, 'Sazzadul Employee', '4405078d2226307785c00984bb847b6d', 'employee@gmail.com', 2, '2025-12-01 06:01:46', '2025-12-01 06:01:46'),
 (3, 'Test', '478c7ba90ee096df1026eab052313474', 'Test@gmail.com', 2, '2025-12-01 20:20:25', '2025-12-01 20:20:25'),
-(4, 'Sazzadul', '1a07f26cb9fb8f07e100096a36668cf8', '', 1, '2025-12-01 20:24:59', '2025-12-01 20:24:59'),
 (5, 'Test2', 'c454552d52d55d3ef56408742887362b', 'Test2@gmail.com', 2, '2025-12-01 20:25:37', '2025-12-01 20:25:37'),
 (7, 'Teest3', '17e310318a1e207509c0f0cd8042063b', 'Test3@gmail.com', 2, '2025-12-01 20:30:41', '2025-12-01 20:30:41'),
 (9, 'sedafs', '8cca08722e4108babcb9218e5bb14a2d', 'asfswf@gmail.com', 2, '2025-12-01 20:32:52', '2025-12-01 20:32:52'),
-(10, 'fasfsfsdfvasd', '9dedbcec383f739207577016d7c387b3', 'faswefssdfvsa@gmail.com', 2, '2025-12-01 20:34:41', '2025-12-01 20:34:41'),
-(11, 'S', 'cca6dc2286568d04a8b5e667bac96aef', 'FAFSAF@gmail.com', 2, '2025-12-01 20:38:00', '2025-12-01 20:38:00');
+(10, 'fasfsfsdfvasd', '9dedbcec383f739207577016d7c387b3', 'faswefssdfvsa@gmail.com', 2, '2025-12-01 20:34:41', '2025-12-01 20:34:41');
 
 --
 -- Indexes for dumped tables
@@ -374,7 +408,7 @@ ALTER TABLE `user`
 -- AUTO_INCREMENT for table `category`
 --
 ALTER TABLE `category`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT for table `permission`
@@ -404,7 +438,7 @@ ALTER TABLE `purchase`
 -- AUTO_INCREMENT for table `role`
 --
 ALTER TABLE `role`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `sale`

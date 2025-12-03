@@ -18,17 +18,48 @@ $sidebarMenu = [
     'title' => 'Authentication',
     'icon' => 'bi bi-person-badge',
     'submenu' => [
-      ['title' => 'Users', 'url' => 'auth/users.php', 'icon' => 'bi bi-people'],
-      ['title' => 'Add User', 'url' => 'auth/add_user.php', 'icon' => 'bi bi-person-plus'],
-      ['title' => 'Edit User', 'url' => 'auth/edit_user.php', 'hidden' => true, 'icon' => 'bi bi-pencil-square'],
+      [
+        'title' => 'Users',
+        'url' => 'auth/users.php',
+        'icon' => 'bi bi-people'
+      ],
+      [
+        'title' => 'Add User',
+        'url' => 'auth/add_user.php',
+        'icon' => 'bi bi-person-plus'
+      ],
+      [
+        'title' => 'Edit User',
+        'url' => 'auth/edit_user.php',
+        'hidden' => true,
+        'icon' => 'bi bi-pencil-square'
+      ],
 
 
-      ['title' => 'Roles', 'url' => 'auth/roles.php', 'icon' => 'bi bi-shield-lock'],
-      ['title' => 'Edit Role', 'url' => 'auth/edit_role.php', 'hidden' => true, 'icon' => 'bi bi-pencil-square'],
-      ['title' => 'Add Role', 'url' => 'auth/add_role.php', 'hidden' => true, 'icon' => 'bi bi-plus-square'],
+      [
+        'title' => 'Roles',
+        'url' => 'auth/roles.php',
+        'icon' => 'bi bi-shield-lock'
+      ],
+      [
+        'title' => 'Edit Role',
+        'url' => 'auth/edit_role.php',
+        'hidden' => true,
+        'icon' => 'bi bi-pencil-square'
+      ],
+      [
+        'title' => 'Add Role',
+        'url' => 'auth/add_role.php',
+        'hidden' => true,
+        'icon' => 'bi bi-plus-square'
+      ],
 
 
-      ['title' => 'Permissions', 'url' => 'auth/permissions.php', 'icon' => 'bi bi-key'],
+      [
+        'title' => 'Permissions',
+        'url' => 'auth/permissions.php',
+        'icon' => 'bi bi-key'
+      ],
     ]
   ],
 

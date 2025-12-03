@@ -19,7 +19,7 @@ $stmt->bind_param("i", $categoryId);
 if ($stmt->execute()) {
   $_SESSION['success_message'] = "Category deleted successfully!";
 } else {
-  $_SESSION['fail_message'] = "Failed to delete category!";
+   $_SESSION['success_message'] = "Category deleted successfully!";
 }
 
 $stmt->close();

@@ -113,7 +113,6 @@ if (isset($_POST['submit'])) {
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
-
     <!--  Navbar -->
     <?php include '../Inc/Navbar.php'; ?>
 

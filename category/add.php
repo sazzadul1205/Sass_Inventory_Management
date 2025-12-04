@@ -1,32 +1,75 @@
 <?php
 session_start();
 include_once __DIR__ . '/../config/db_config.php';
-$formError = "";
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+  header("Location: ../auth/login.php");
+  exit;
+}
+
 ?>
 
 <!doctype html>
 <html lang="en">
 
 <head>
-  <meta charset="utf-8">
-  <title>Add Category | Sass Inventory Management</title>
-  <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <title>Add Category | Sass Inventory System</title>
+  <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" />
+
+  <!-- Mobile + Theme -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
 
   <!-- Fonts -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" media="print" onload="this.media='all'" />
-
-  <!-- Overlay Scrollbars -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css" />
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
+    media="print" onload="this.media='all'" />
 
   <!-- Bootstrap Icons -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
 
-  <!-- AdminLTE -->
+  <!-- AdminLTE (Core Theme) -->
   <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
+
+  <!-- Custom CSS -->
+  <style>
+    .card-custom {
+      border-radius: 12px;
+      border: 1px solid #e9ecef;
+      transition: 0.2s ease;
+    }
+
+    .card-custom:hover {
+      border-color: #cbd3da;
+    }
+
+    .form-label {
+      font-weight: 600;
+    }
+
+    .form-control,
+    .form-select {
+      padding: 10px 14px;
+      border-radius: 8px;
+    }
+
+    .btn-primary {
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .btn-secondary {
+      border-radius: 8px;
+    }
+  </style>
 </head>
 
 <?php
+$formError = "";
+
+// Connect to database
 $conn = connectDB();
 
 // Fetch roles (currently unused, can remove if not needed)
@@ -62,6 +105,8 @@ if (isset($_POST['submit'])) {
 }
 ?>
 
+<!-- Body -->
+
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
     <!-- Navbar -->
@@ -77,7 +122,7 @@ if (isset($_POST['submit'])) {
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
           <!-- Page Title -->
-          <h3 class="mb-0 " style="font-weight: 800;">Add Category</h3>
+          <h3 class="mb-0 " style="font-weight: 800;">Add New Category</h3>
         </div>
       </div>
 
@@ -88,12 +133,19 @@ if (isset($_POST['submit'])) {
         </div>
       <?php endif; ?>
 
-      <div class="app-content-body mt-3">
+      <!-- Body -->
+      <div class="app-content-body mt-4">
         <div class="container-fluid">
-          <div class="card shadow-sm rounded-3">
-            <div class="card-body">
-              <h4 class="mb-4">Fill Information to Add New Category</h4>
+          <div class="card card-custom shadow-sm">
+            <div class="card-body p-4">
+
+              <!-- Header -->
+              <h4 class="mb-4">Add Category Information</h4>
+
+              <!-- Form -->
               <form method="post" autocomplete="on">
+
+                <!-- Category Name & Description  -->
                 <div class="row">
                   <!-- Category Name -->
                   <div class="col-md-6 mb-3">
@@ -143,23 +195,21 @@ if (isset($_POST['submit'])) {
     <?php include_once '../Inc/Footer.php'; ?>
   </div>
 
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlayscrollbars.browser.es6.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlaysscrollbars.browser.es6.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"></script>
-  <script src="./js/adminlte.js"></script>
 
-  <!-- Auto remove error messages -->
+  <!-- Auto-hide error -->
   <script>
     setTimeout(() => {
-      const errorBox = document.getElementById("errorBox");
-      if (errorBox) {
-        errorBox.style.transition = "opacity 0.5s";
-        errorBox.style.opacity = "0";
-        setTimeout(() => errorBox.remove(), 500);
+      const box = document.getElementById("errorBox");
+      if (box) {
+        box.style.opacity = "0";
+        setTimeout(() => box.remove(), 500);
       }
     }, 3000);
   </script>
+
 </body>
 
 </html>

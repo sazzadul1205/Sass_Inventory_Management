@@ -5,442 +5,162 @@ include_once __DIR__ . '/../config/db_config.php';
 
 <!doctype html>
 <html lang="en">
-<!--begin::Head-->
 
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Users | Sass Inventory Management System</title>
-    <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>Roles | Sass Inventory Management System</title>
+  <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon" />
 
-    <!--begin::Accessibility Meta Tags-->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-    <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#007bff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" />
-    <!--end::Accessibility Meta Tags-->
+  <!-- Mobile + Theme -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
 
-    <!--begin::Primary Meta Tags-->
-    <meta name="title" content="Admin Home | Sass Inventory Management System" />
-    <meta name="author" content="ColorlibHQ" />
-    <meta name="description"
-        content="AdminLTE is a Free Bootstrap 5 Admin Dashboard, 30 example pages using Vanilla JS. Fully accessible with WCAG 2.1 AA compliance." />
-    <meta name="keywords"
-        content="bootstrap 5, bootstrap, bootstrap 5 admin dashboard, bootstrap 5 dashboard, bootstrap 5 charts, bootstrap 5 calendar, bootstrap 5 datepicker, bootstrap 5 tables, bootstrap 5 datatable, vanilla js datatable, colorlibhq, colorlibhq dashboard, colorlibhq admin dashboard, accessible admin panel, WCAG compliant" />
-    <!--end::Primary Meta Tags-->
+  <!-- Fonts -->
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
+    media="print" onload="this.media='all'" />
 
-    <!--begin::Accessibility Features-->
-    <!-- Skip links will be dynamically added by accessibility.js -->
-    <meta name="supported-color-schemes" content="light dark" />
-    <link rel="preload" href="./css/adminlte.css" as="style" />
-    <!--end::Accessibility Features-->
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
 
-    <!--begin::Fonts-->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
-        integrity="sha256-tXJfXfp6Ewt1ilPzLDtQnJV4hclT9XuaZUKyUvmyr+Q=" crossorigin="anonymous" media="print"
-        onload="this.media='all'" />
-    <!--end::Fonts-->
+  <!-- AdminLTE (Core Theme) -->
+  <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
 
-    <!--begin::Third Party Plugin(OverlayScrollbars)-->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css"
-        crossorigin="anonymous" />
-    <!--end::Third Party Plugin(OverlayScrollbars)-->
+  <style>
+    .role-card {
+      background-color: #e9f5ff;
+      border-radius: 0.75rem;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
 
-    <!--begin::Third Party Plugin(Bootstrap Icons)-->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
-        crossorigin="anonymous" />
-    <!--end::Third Party Plugin(Bootstrap Icons)-->
+    .role-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 1rem 1rem rgba(0, 0, 0, 0.15);
+      cursor: pointer;
+    }
+  </style>
 
-    <!--begin::Required Plugin(AdminLTE)-->
-    <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
-    <!--end::Required Plugin(AdminLTE)-->
+  <!-- Custom CSS -->
+  <style>
+    .btn-warning:hover {
+      background-color: #d39e00 !important;
+      border-color: #c99700 !important;
+    }
 
-    <!-- apexcharts -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.css"
-        integrity="sha256-4MX+61mt9NVvvuPjUWdUdyfZfxSB1/Rf9WtqRHgG5S0=" crossorigin="anonymous" />
-
-    <!-- jsvectormap -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/css/jsvectormap.min.css"
-        integrity="sha256-+uGLJmmTKOqBr+2E6KDYs/NRsHxSkONXFHUL0fy2O/4=" crossorigin="anonymous" />
-
-    <style>
-        .role-card {
-            background-color: #e9f5ff;
-            /* soft light blue */
-            border-radius: 0.75rem;
-            /* slightly rounded corners */
-            transition: transform 0.25s ease, box-shadow 0.25s ease;
-        }
-
-        .role-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 1rem 1rem rgba(0, 0, 0, 0.15);
-            cursor: pointer;
-        }
-    </style>
+    .btn-danger:hover {
+      background-color: #bb2d3b !important;
+      border-color: #b02a37 !important;
+    }
+  </style>
 </head>
-<!--end::Head-->
-<!--begin::Body-->
 
 <?php
-// Join users with roles to get role_name
-$sql = "SELECT *  FROM role";
-
 $conn = connectDB();
+$sql = "SELECT * FROM role ORDER BY id ASC";
 $result = $conn->query($sql);
 ?>
 
-
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
-    <!--begin::App Wrapper-->
-    <div class="app-wrapper">
-        <!--Header-->
-        <?php include_once '../Inc/Navbar.php'; ?>
 
-        <!--Sidebar-->
-        <?php include_once '../Inc/Sidebar.php'; ?>
+  <div class="app-wrapper">
 
-        <!--App Main-->
-        <main class="app-main">
-            <!-- App Content Header -->
-            <div class="app-content-header py-3 border-bottom shadow-sm bg-light">
-                <div class="container-fluid">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+    <!-- Navbar -->
+    <?php include_once '../Inc/Navbar.php'; ?>
 
-                        <!-- Page Title -->
-                        <h3 class="mb-0">All Roles</h3>
+    <!-- Sidebar -->
+    <?php include_once '../Inc/Sidebar.php'; ?>
 
-                        <!-- Action Buttons -->
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <!-- Add New Role Button -->
-                            <a href="add_role.php" class="btn btn-primary btn-sm d-flex align-items-center px-3 py-2">
-                                <i class="bi bi-plus me-1"></i> Add New Role
-                            </a>
-                        </div>
+    <!-- App Main -->
+    <main class="app-main">
 
-                    </div>
-                </div>
+      <!-- Page Header -->
+      <div class="app-content-header py-3 border-bottom">
+        <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
+          <h3 class="mb-0" style="font-weight: 800;">All Roles</h3>
+
+          <a href="add_role.php" class="btn btn-sm btn-primary px-3 py-2" style="font-size: medium;">
+            <i class="bi bi-plus me-1"></i> Add New Role
+          </a>
+        </div>
+      </div>
+
+      <!-- Success/Fail Messages -->
+      <?php if (!empty($_SESSION['success_message'])): ?>
+        <div id="successMsg" class="alert alert-success mt-3"><?= $_SESSION['success_message'] ?></div>
+        <?php unset($_SESSION['success_message']); ?>
+      <?php endif; ?>
+
+      <?php if (!empty($_SESSION['fail_message'])): ?>
+        <div id="failMsg" class="alert alert-danger mt-3"><?= $_SESSION['fail_message'] ?></div>
+        <?php unset($_SESSION['fail_message']); ?>
+      <?php endif; ?>
+
+      <!-- Page Content -->
+      <div class="app-content-body mt-3">
+        <div class="container-fluid">
+
+          <?php if ($result->num_rows == 0): ?>
+            <div class="text-center text-muted py-5">
+              <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+              <h5>No roles found</h5>
             </div>
 
-
-            <!-- Message -->
-            <?php
-            // Display success message if set
-            if (!empty($_SESSION['success_message'])) {
-                echo "
-                <div id='successMsg' class='alert alert-success' style='position:relative; z-index:9999;'>
-                  {$_SESSION['success_message']}
-                </div>";
-
-                unset($_SESSION['success_message']); // Remove so it shows only once
-            }
-
-            // Display fail message if set
-            if (!empty($_SESSION['fail_message'])) {
-                echo "
-                <div id='failMsg' class='alert alert-danger' style='position:relative; z-index:9999;'>
-                  {$_SESSION['fail_message']}
-                </div>";
-
-                unset($_SESSION['fail_message']); // Remove so it shows only once
-            }
-            ?>
-
-            <!-- App Content Body -->
-            <div class="app-content-body mt-3">
-                <div class="container-fluid">
-                    <div class="row g-3">
-                        <?php if ($result->num_rows > 0): ?>
-                            <?php while ($row = $result->fetch_assoc()): ?>
-                                <div class="col-md-3 col-sm-6 mb-4">
-                                    <div class="card h-100 shadow-sm border-0 role-card">
-                                        <div class="card-body">
-                                            <h5 class="card-title mb-2">
-                                                <i class="bi bi-shield-check text-primary"></i>
-                                                <?= htmlspecialchars($row['role_name']) ?>
-                                            </h5>
-                                        </div>
-
-                                        <div class="card-footer bg-white border-0 d-flex gap-2">
-                                            <a href="edit_role.php?id=<?= urlencode($row['id']) ?>"
-                                                class="btn btn-warning btn-sm w-50">
-                                                <i class="bi bi-pencil"></i> Edit
-                                            </a>
-
-                                            <a href="delete_role.php?id=<?= urlencode($row['id']) ?>"
-                                                onclick="return confirm('Delete this role?')"
-                                                class="btn btn-danger btn-sm w-50">
-                                                <i class="bi bi-trash"></i> Delete
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            <?php endwhile; ?>
-
-                        <?php else: ?>
-                            <div class="col-12">
-                                <div class="alert alert-info text-center">
-                                    No roles found
-                                </div>
-                            </div>
-                        <?php endif; ?>
+          <?php else: ?>
+            <div class="row g-3">
+              <?php while ($row = $result->fetch_assoc()): ?>
+                <div class="col-md-3 col-sm-6 mb-3">
+                  <div class="card h-100 shadow-sm border-0 role-card">
+                    <div class="card-body">
+                      <h5 class="card-title mb-2">
+                        <i class="bi bi-shield-check text-primary"></i>
+                        <?= htmlspecialchars($row['role_name']) ?>
+                      </h5>
                     </div>
+
+                    <div class="card-footer bg-white border-0 d-flex gap-2">
+                      <a href="edit_role.php?id=<?= urlencode($row['id']) ?>"
+                        class="btn btn-warning btn-sm w-50">
+                        <i class="bi bi-pencil"></i> Edit
+                      </a>
+
+                      <a href="delete_role.php?id=<?= urlencode($row['id']) ?>"
+                        onclick="return confirm('Delete this role?')"
+                        class="btn btn-danger btn-sm w-50">
+                        <i class="bi bi-trash"></i> Delete
+                      </a>
+                    </div>
+                  </div>
                 </div>
+              <?php endwhile; ?>
             </div>
 
-        </main>
+          <?php endif; ?>
 
-        <!--Footer-->
-        <?php include_once '../Inc/Footer.php'; ?>
+        </div>
+      </div>
 
+    </main>
 
-    </div>
+    <!-- Footer -->
+    <?php include_once '../Inc/Footer.php'; ?>
 
-    <!--end::App Wrapper-->
-    <!--begin::Script-->
-    <!--begin::Third Party Plugin(OverlayScrollbars)-->
-    <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlayscrollbars.browser.es6.min.js"
-        crossorigin="anonymous"></script>
-    <!--end::Third Party Plugin(OverlayScrollbars)--><!--begin::Required Plugin(popperjs for Bootstrap 5)-->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
-        crossorigin="anonymous"></script>
-    <!--end::Required Plugin(popperjs for Bootstrap 5)--><!--begin::Required Plugin(Bootstrap 5)-->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
-    <!--end::Required Plugin(Bootstrap 5)--><!--begin::Required Plugin(AdminLTE)-->
-    <script src="./js/adminlte.js"></script>
-    <!--end::Required Plugin(AdminLTE)--><!--begin::OverlayScrollbars Configure-->
-    <script>
-        const SELECTOR_SIDEBAR_WRAPPER = '.sidebar-wrapper';
-        const Default = {
-            scrollbarTheme: 'os-theme-light',
-            scrollbarAutoHide: 'leave',
-            scrollbarClickScroll: true,
-        };
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebarWrapper = document.querySelector(SELECTOR_SIDEBAR_WRAPPER);
+  </div>
 
-            // Disable OverlayScrollbars on mobile devices to prevent touch interference
-            const isMobile = window.innerWidth <= 992;
+  <!-- JS Dependencies -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"></script>
+  <script src="<?= $Project_URL ?>/js/adminlte.js"></script>
 
-            if (
-                sidebarWrapper &&
-                OverlayScrollbarsGlobal?.OverlayScrollbars !== undefined &&
-                !isMobile
-            ) {
-                OverlayScrollbarsGlobal.OverlayScrollbars(sidebarWrapper, {
-                    scrollbars: {
-                        theme: Default.scrollbarTheme,
-                        autoHide: Default.scrollbarAutoHide,
-                        clickScroll: Default.scrollbarClickScroll,
-                    },
-                });
-            }
-        });
-    </script>
-    <!--end::OverlayScrollbars Configure-->
+  <!-- Auto-hide messages -->
+  <script>
+    setTimeout(() => {
+      const msg = document.getElementById('successMsg') || document.getElementById('failMsg');
+      if (msg) msg.remove();
+    }, 3000);
+  </script>
 
-    <!-- OPTIONAL SCRIPTS -->
-
-    <!-- sortablejs -->
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js" crossorigin="anonymous"></script>
-
-    <!-- sortablejs -->
-    <script>
-        new Sortable(document.querySelector('.connectedSortable'), {
-            group: 'shared',
-            handle: '.card-header',
-        });
-
-        const cardHeaders = document.querySelectorAll('.connectedSortable .card-header');
-        cardHeaders.forEach((cardHeader) => {
-            cardHeader.style.cursor = 'move';
-        });
-    </script>
-
-    <!-- apex charts -->
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.min.js"
-        integrity="sha256-+vh8GkaU7C9/wbSLIcwq82tQ2wTf44aOHA8HlBMwRI8=" crossorigin="anonymous"></script>
-
-    <!-- ChartJS -->
-    <script>
-        // NOTICE!! DO NOT USE ANY OF THIS JAVASCRIPT
-        // IT'S ALL JUST JUNK FOR DEMO
-        // ++++++++++++++++++++++++++++++++++++++++++
-
-        const sales_chart_options = {
-            series: [{
-                    name: 'Digital Goods',
-                    data: [28, 48, 40, 19, 86, 27, 90],
-                },
-                {
-                    name: 'Electronics',
-                    data: [65, 59, 80, 81, 56, 55, 40],
-                },
-            ],
-            chart: {
-                height: 300,
-                type: 'area',
-                toolbar: {
-                    show: false,
-                },
-            },
-            legend: {
-                show: false,
-            },
-            colors: ['#0d6efd', '#20c997'],
-            dataLabels: {
-                enabled: false,
-            },
-            stroke: {
-                curve: 'smooth',
-            },
-            xaxis: {
-                type: 'datetime',
-                categories: [
-                    '2023-01-01',
-                    '2023-02-01',
-                    '2023-03-01',
-                    '2023-04-01',
-                    '2023-05-01',
-                    '2023-06-01',
-                    '2023-07-01',
-                ],
-            },
-            tooltip: {
-                x: {
-                    format: 'MMMM yyyy',
-                },
-            },
-        };
-
-        const sales_chart = new ApexCharts(
-            document.querySelector('#revenue-chart'),
-            sales_chart_options,
-        );
-        sales_chart.render();
-    </script>
-
-    <!-- jsvectormap -->
-    <script src="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/js/jsvectormap.min.js"
-        integrity="sha256-/t1nN2956BT869E6H4V1dnt0X5pAQHPytli+1nTZm2Y=" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/maps/world.js"
-        integrity="sha256-XPpPaZlU8S/HWf7FZLAncLg2SAkP8ScUTII89x9D3lY=" crossorigin="anonymous"></script>
-
-    <!-- jsvectormap -->
-    <script>
-        // World map by jsVectorMap
-        new jsVectorMap({
-            selector: '#world-map',
-            map: 'world',
-        });
-
-        // Sparkline charts
-        const option_sparkline1 = {
-            series: [{
-                data: [1000, 1200, 920, 927, 931, 1027, 819, 930, 1021],
-            }, ],
-            chart: {
-                type: 'area',
-                height: 50,
-                sparkline: {
-                    enabled: true,
-                },
-            },
-            stroke: {
-                curve: 'straight',
-            },
-            fill: {
-                opacity: 0.3,
-            },
-            yaxis: {
-                min: 0,
-            },
-            colors: ['#DCE6EC'],
-        };
-
-        const sparkline1 = new ApexCharts(document.querySelector('#sparkline-1'), option_sparkline1);
-        sparkline1.render();
-
-        const option_sparkline2 = {
-            series: [{
-                data: [515, 519, 520, 522, 652, 810, 370, 627, 319, 630, 921],
-            }, ],
-            chart: {
-                type: 'area',
-                height: 50,
-                sparkline: {
-                    enabled: true,
-                },
-            },
-            stroke: {
-                curve: 'straight',
-            },
-            fill: {
-                opacity: 0.3,
-            },
-            yaxis: {
-                min: 0,
-            },
-            colors: ['#DCE6EC'],
-        };
-
-        const sparkline2 = new ApexCharts(document.querySelector('#sparkline-2'), option_sparkline2);
-        sparkline2.render();
-
-        const option_sparkline3 = {
-            series: [{
-                data: [15, 19, 20, 22, 33, 27, 31, 27, 19, 30, 21],
-            }, ],
-            chart: {
-                type: 'area',
-                height: 50,
-                sparkline: {
-                    enabled: true,
-                },
-            },
-            stroke: {
-                curve: 'straight',
-            },
-            fill: {
-                opacity: 0.3,
-            },
-            yaxis: {
-                min: 0,
-            },
-            colors: ['#DCE6EC'],
-        };
-
-        const sparkline3 = new ApexCharts(document.querySelector('#sparkline-3'), option_sparkline3);
-        sparkline3.render();
-    </script>
-
-    <script>
-        $(document).ready(function() {
-            $('#usersTable').DataTable({
-                "pageLength": 10,
-                "lengthChange": false,
-                "ordering": true,
-                "info": true,
-                "autoWidth": false,
-                "language": {
-                    "emptyTable": "No users found"
-                }
-            });
-        });
-    </script>
-
-    <script>
-        setTimeout(() => {
-            const msg = document.getElementById('successMsg');
-            if (msg) {
-                msg.style.transition = "opacity 0.5s";
-                msg.style.opacity = "0";
-                setTimeout(() => msg.remove(), 500);
-            }
-        }, 3000); // 3 seconds
-    </script>
-
-    <!--end::Script-->
 </body>
-<!--end::Body-->
 
 </html>

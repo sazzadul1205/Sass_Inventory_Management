@@ -31,6 +31,7 @@ include_once __DIR__ . '/../config/db_config.php';
   <link rel="stylesheet"
     href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
 
+  <!-- Custom CSS -->
   <style>
     .btn-warning:hover {
       background-color: #d39e00 !important;

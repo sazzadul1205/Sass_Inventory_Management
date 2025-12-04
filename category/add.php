@@ -6,7 +6,6 @@ if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
   exit;
 }
-
 ?>
 
 <!doctype html>
@@ -14,7 +13,8 @@ if (!isset($_SESSION['user_id'])) {
 
 <head>
   <meta charset="utf-8" />
-  <title>Add Category | Sass Inventory System</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title> Add Category | Sass Inventory System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" />
 
   <!-- Mobile + Theme -->

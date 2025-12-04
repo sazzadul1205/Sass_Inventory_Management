@@ -1,6 +1,11 @@
 <?php
 session_start();
 include_once __DIR__ . '/../config/db_config.php';
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+  header("Location: ../auth/login.php");
+  exit;
+}
 ?>
 
 <!doctype html>
@@ -8,30 +13,52 @@ include_once __DIR__ . '/../config/db_config.php';
 
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Suppliers | Sass Inventory Management System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
 
-  <!-- Fonts -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" media="print" onload="this.media='all'">
+  <!-- Mobile + Theme -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
 
-  <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Fonts -->
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
+    media="print" onload="this.media='all'" />
 
   <!-- Bootstrap Icons -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
 
-  <!-- AdminLTE -->
-  <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css">
+  <!-- AdminLTE (Core Theme) -->
+  <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
 
-  <!-- DataTables CSS -->
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+  <!-- DataTables (Needed for user list table) -->
+  <link rel="stylesheet"
+    href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+
+  <!-- Custom CSS -->
+  <style>
+    .btn-warning:hover {
+      background-color: #d39e00 !important;
+      border-color: #c99700 !important;
+    }
+
+    .btn-danger:hover {
+      background-color: #bb2d3b !important;
+      border-color: #b02a37 !important;
+    }
+  </style>
 </head>
 
 <?php
 $conn = connectDB();
-$result = $conn->query("SELECT * FROM supplier ORDER BY id ASC");
+
+// Fetch all suppliers
+$sql = "SELECT * FROM supplier ORDER BY id ASC";
+$result = $conn->query($sql);
 ?>
+
+<!-- Body -->
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
@@ -45,11 +72,14 @@ $result = $conn->query("SELECT * FROM supplier ORDER BY id ASC");
     <!-- Main -->
     <main class="app-main">
 
-      <!-- Header -->
+      <!-- Page Header -->
       <div class="app-content-header py-3 border-bottom">
-        <div class="container-fluid d-flex justify-content-between align-items-center">
-          <h3 class="mb-0">All Suppliers</h3>
-          <a href="add.php" class="btn btn-sm btn-primary px-3 py-2">
+        <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
+          <!-- Page Title -->
+          <h3 class="mb-0 " style="font-weight: 800;">All Suppliers</h3>
+
+          <!-- Add User Button -->
+          <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
             <i class="bi bi-plus me-1"></i> Add New Supplier
           </a>
         </div>
@@ -120,14 +150,17 @@ $result = $conn->query("SELECT * FROM supplier ORDER BY id ASC");
     <?php include_once '../Inc/Footer.php'; ?>
   </div>
 
-  <!-- Scripts -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- JS Dependencies -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"></script>
-  <script src="./js/adminlte.js"></script>
+  <script src="<?= $Project_URL ?>/js/adminlte.js"></script>
+
+  <!-- DataTables -->
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
+  <!-- Custom JS -->
   <script>
     $(document).ready(function() {
       $('#suppliersTable').DataTable({
@@ -137,25 +170,14 @@ $result = $conn->query("SELECT * FROM supplier ORDER BY id ASC");
         ordering: true,
         order: [],
         info: true,
-        autoWidth: false,
-        columnDefs: [{
-          orderable: false,
-          targets: 6
-        }] // Actions column not sortable
+        autoWidth: false
       });
-
-      // Auto hide messages
-      setTimeout(() => {
-        ['successMsg', 'failMsg'].forEach(id => {
-          const el = document.getElementById(id);
-          if (el) {
-            el.style.transition = "opacity 0.5s";
-            el.style.opacity = "0";
-            setTimeout(() => el.remove(), 500);
-          }
-        });
-      }, 3000);
     });
+
+    setTimeout(() => {
+      const msg = document.getElementById('successMsg') || document.getElementById('failMsg');
+      if (msg) msg.remove();
+    }, 3000);
   </script>
 
 </body>

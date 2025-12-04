@@ -13,22 +13,57 @@ if (!isset($_SESSION['user_id'])) {
 
 <head>
   <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <title>Edit Category | Sass Inventory Management System</title>
-  <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon" />
+  <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" />
 
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Mobile + Theme -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
 
   <!-- Fonts -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" media="print" onload="this.media='all'" />
-
-  <!-- Overlay Scrollbars -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css" />
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
+    media="print" onload="this.media='all'" />
 
   <!-- Bootstrap Icons -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
 
-  <!-- AdminLTE -->
+  <!-- AdminLTE (Core Theme) -->
   <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
+
+  <!-- Custom CSS -->
+  <style>
+    .card-custom {
+      border-radius: 12px;
+      border: 1px solid #e9ecef;
+      transition: 0.2s ease;
+    }
+
+    .card-custom:hover {
+      border-color: #cbd3da;
+    }
+
+    .form-label {
+      font-weight: 600;
+    }
+
+    .form-control,
+    .form-select {
+      padding: 10px 14px;
+      border-radius: 8px;
+    }
+
+    .btn-primary {
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .btn-secondary {
+      border-radius: 8px;
+    }
+  </style>
 </head>
 
 <?php
@@ -42,14 +77,15 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
   exit;
 }
 
-$categoryId = intval($_GET['id']);
+$category_Id = intval($_GET['id']);
 
 // Fetch category info
 $stmt = $conn->prepare("SELECT * FROM category WHERE id = ?");
-$stmt->bind_param("i", $categoryId);
+$stmt->bind_param("i", $category_Id);
 $stmt->execute();
 $result = $stmt->get_result();
 
+// Check if category exists
 if ($result->num_rows === 0) {
   $_SESSION['fail_message'] = "Category not found!";
   header("Location: index.php");
@@ -65,6 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $description = trim($_POST['description']);
   $updated_at  = date('Y-m-d H:i:s');
 
+  // Update category
   if (!empty($name)) {
     $stmt = $conn->prepare("UPDATE category SET name = ?, description = ?, updated_at = ? WHERE id = ?");
     $stmt->bind_param("sssi", $name, $description, $updated_at, $categoryId);
@@ -86,6 +123,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $conn->close();
 ?>
 
+<!-- body -->
+
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
     <!-- Navbar -->
@@ -103,13 +142,11 @@ $conn->close();
         </div>
       </div>
 
-      <!-- Messages -->
-      <?php if (!empty($_SESSION['success_message'])): ?>
-        <div id="successMsg" class="alert alert-success"><?= $_SESSION['success_message']; ?></div>
-        <?php unset($_SESSION['success_message']); ?>
-      <?php endif; ?>
+      <!-- Form Error -->
       <?php if (!empty($formError)): ?>
-        <div id="failMsg" class="alert alert-danger"><?= htmlspecialchars($formError); ?></div>
+        <div id="errorBox" class="alert alert-danger text-center">
+          <?= htmlspecialchars($formError) ?>
+        </div>
       <?php endif; ?>
 
       <!-- App Content Body -->
@@ -158,21 +195,19 @@ $conn->close();
     <?php include_once '../Inc/Footer.php'; ?>
   </div>
 
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlayscrollbars.browser.es6.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlaysscrollbars.browser.es6.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"></script>
-  <script src="<?= $Project_URL ?>/js/adminlte.js"></script>
 
-  <!-- Auto Remove Messages -->
+  <!-- Auto-hide error -->
   <script>
     setTimeout(() => {
-      document.querySelectorAll("#successMsg, #failMsg").forEach(el => {
-        el.style.transition = "0.5s";
-        el.style.opacity = "0";
-        setTimeout(() => el.remove(), 500);
-      });
-    }, 2500);
+      const box = document.getElementById("errorBox");
+      if (box) {
+        box.style.opacity = "0";
+        setTimeout(() => box.remove(), 500);
+      }
+    }, 3000);
   </script>
 </body>
 

@@ -1,8 +1,14 @@
 <?php
-include_once __DIR__ . '/../config/db_config.php';
 session_start();
+include_once __DIR__ . '/../config/db_config.php';
 
-// Check for supplier ID
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+  header("Location: ../auth/login.php");
+  exit;
+}
+
+// Validate supplier ID
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
   $_SESSION['fail_message'] = "Invalid supplier ID!";
   header("Location: index.php");
@@ -10,21 +16,40 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 }
 
 $supplierId = intval($_GET['id']);
+
 $conn = connectDB();
 
-// Prepare and execute delete
-$stmt = $conn->prepare("DELETE FROM supplier WHERE id = ?");
-$stmt->bind_param("i", $supplierId);
+// Check if supplier is linked to any product
+$checkStmt = $conn->prepare("SELECT COUNT(*) FROM product WHERE supplier_id = ?");
+$checkStmt->bind_param('i', $supplierId);
+$checkStmt->execute();
+$checkStmt->bind_result($productCount);
+$checkStmt->fetch();
+$checkStmt->close();
 
-if ($stmt->execute()) {
-  $_SESSION['success_message'] = "Supplier deleted successfully!";
-} else {
-  $_SESSION['fail_message'] = "Failed to delete supplier!";
+if ($productCount > 0) {
+  $_SESSION['fail_message'] = "Cannot delete this supplier. It is connected to $productCount product(s).";
+  header("Location: index.php");
+  exit;
 }
 
-$stmt->close();
+// Step 2: Delete supplier
+$deleteStmt = $conn->prepare("DELETE FROM supplier WHERE id = ?");
+if ($deleteStmt) {
+  $deleteStmt->bind_param('i', $supplierId);
+
+  if ($deleteStmt->execute()) {
+    $_SESSION['success_message'] = "Supplier deleted successfully!";
+  } else {
+    $_SESSION['fail_message'] = "Failed to delete supplier!";
+  }
+
+  $deleteStmt->close();
+} else {
+  $_SESSION['fail_message'] = "Failed to prepare delete statement!";
+}
+
 $conn->close();
 
-// Redirect back to supplier listing
 header("Location: index.php");
 exit;

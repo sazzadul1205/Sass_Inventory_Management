@@ -1,66 +1,114 @@
-<?php include_once __DIR__ . '/../config/db_config.php'; ?>
 <?php
 session_start();
-$formError = "";
+include_once __DIR__ . '/../config/db_config.php';
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+  header("Location: ../auth/login.php");
+  exit;
+}
 ?>
-
 <!doctype html>
 <html lang="en">
 
 <head>
+  <meta charset="utf-8" />
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <title>Add Supplier | Sass Inventory Management System</title>
+  <title>Edit Supplier | Sass Inventory Management System</title>
+  <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" />
 
-  <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <!-- Mobile + Theme -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
 
-  <!-- Bootstrap & Icons -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css">
+  <!-- Fonts -->
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
+    media="print" onload="this.media='all'" />
+
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+
+  <!-- AdminLTE (Core Theme) -->
+  <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
+
+  <!-- Custom CSS -->
+  <style>
+    .card-custom {
+      border-radius: 12px;
+      border: 1px solid #e9ecef;
+      transition: 0.2s ease;
+    }
+
+    .card-custom:hover {
+      border-color: #cbd3da;
+    }
+
+    .form-label {
+      font-weight: 600;
+    }
+
+    .form-control,
+    .form-select {
+      padding: 10px 14px;
+      border-radius: 8px;
+    }
+
+    .btn-primary {
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .btn-secondary {
+      border-radius: 8px;
+    }
+  </style>
 </head>
 
 
 <?php
-$supplier = null;
+$conn = connectDB();
+$formError = "";
 
-if (!isset($_GET['id']) || empty($_GET['id'])) {
-  die("Invalid supplier ID.");
+// Check for supplier ID
+if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+  $_SESSION['fail_message'] = "Invalid supplier ID!";
+  header("Location: index.php");
+  exit;
 }
 
-$id = intval($_GET['id']);
+$supplier_id = intval($_GET['id']);
 
-// Fetch supplier
-$conn = connectDB();
-$query = "SELECT * FROM supplier WHERE id = ?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("i", $id);
+// Fetch supplier info
+$stmt = $conn->prepare("SELECT * FROM supplier WHERE id = ?");
+$stmt->bind_param("i", $supplier_id);
 $stmt->execute();
 $result = $stmt->get_result();
-$supplier = $result->fetch_assoc();
 
-if (!$supplier) {
-  die("Supplier not found.");
+// Check if supplier exists
+if ($result->num_rows === 0) {
+  $_SESSION['fail_message'] = "Supplier not found!";
+  header("Location: index.php");
+  exit;
 }
+
+$supplier = $result->fetch_assoc();
 $stmt->close();
 
-// Handle Update
-if (isset($_POST['submit'])) {
-
-  $name   = trim($_POST['name']);
-  $phone  = trim($_POST['phone']);
-  $email  = trim($_POST['email']);
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  $name       = trim($_POST['name']);
+  $phone      = trim($_POST['phone']);
+  $email      = trim($_POST['email']);
   $updated_at = date('Y-m-d H:i:s');
 
-  if (empty($name)) {
-    $formError = "Supplier name is required.";
-  } else {
-
-    $query = "UPDATE supplier SET name = ?, phone = ?, email = ?, updated_at = ? WHERE id = ?";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("ssssi", $name, $phone, $email, $updated_at, $id);
+  // Update supplier
+  if (!empty($name)) {
+    $stmt = $conn->prepare("UPDATE supplier SET name = ?, phone = ?, email = ?, updated_at = ? WHERE id = ?");
+    $stmt->bind_param("ssssi", $name, $phone, $email, $updated_at, $supplier_id);
 
     if ($stmt->execute()) {
-      $_SESSION['success_message'] = "Supplier updated successfully!";
+      $_SESSION['success_message'] = "Supplier '$name' updated successfully!";
       header("Location: index.php");
       exit;
     } else {
@@ -68,58 +116,51 @@ if (isset($_POST['submit'])) {
     }
 
     $stmt->close();
+  } else {
+    $formError = "Supplier name is required.";
   }
 }
 
 $conn->close();
 ?>
 
-<!doctype html>
-<html lang="en">
 
-<head>
-  <meta charset="utf-8" />
-  <title>Edit Supplier | Sass Inventory Management System</title>
-
-  <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Bootstrap & Icons -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css">
-</head>
+<!-- body -->
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
-
   <div class="app-wrapper">
-
+    <!-- Navbar -->
     <?php include_once '../Inc/Navbar.php'; ?>
+
+    <!--Sidebar-->
     <?php include_once '../Inc/Sidebar.php'; ?>
 
+    <!--App Main-->
     <main class="app-main">
-
+      <!-- Page Header -->
       <div class="app-content-header py-3 border-bottom">
-        <div class="container-fluid">
-          <h3 class="mb-0">Edit Supplier</h3>
+        <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
+          <h3 class="mb-0" style="font-weight: 800;">Edit Supplier</h3>
         </div>
       </div>
 
+      <!-- Form Error -->
       <?php if (!empty($formError)): ?>
         <div id="errorBox" class="alert alert-danger text-center">
           <?= htmlspecialchars($formError) ?>
         </div>
       <?php endif; ?>
 
+      <!-- App Content Body -->
       <div class="app-content-body mt-3">
         <div class="container-fluid">
           <div class="card shadow-sm rounded-3">
             <div class="card-body">
               <h4 class="mb-4">Update Supplier Information</h4>
 
-              <form method="post">
-
+              <!-- Form -->
+              <form method="POST" action="">
                 <div class="row">
-
                   <!-- Supplier Name -->
                   <div class="col-md-4 mb-3">
                     <label for="name" class="form-label">Supplier Name *</label>
@@ -143,12 +184,16 @@ $conn->close();
 
                 </div>
 
-                <button type="submit" name="submit" class="btn btn-primary mt-2">
-                  Update Supplier
-                </button>
-
+                <!-- Buttons -->
+                <div class="mt-4 d-flex gap-2">
+                  <button type="submit" name="submit" class="btn btn-primary px-4 py-2">
+                    <i class="bi bi-check2-circle"></i> Update Category
+                  </button>
+                  <a href="index.php" class="btn btn-secondary px-4 py-2">
+                    <i class="bi bi-x-circle"></i> Cancel
+                  </a>
+                </div>
               </form>
-
             </div>
           </div>
         </div>
@@ -156,17 +201,21 @@ $conn->close();
 
     </main>
 
+    <!--Footer-->
     <?php include_once '../Inc/Footer.php'; ?>
-
   </div>
 
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlaysscrollbars.browser.es6.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"></script>
+
+  <!-- Auto-hide error -->
   <script>
     setTimeout(() => {
-      const errorBox = document.getElementById("errorBox");
-      if (errorBox) {
-        errorBox.style.transition = "opacity 0.5s";
-        errorBox.style.opacity = "0";
-        setTimeout(() => errorBox.remove(), 500);
+      const box = document.getElementById("errorBox");
+      if (box) {
+        box.style.opacity = "0";
+        setTimeout(() => box.remove(), 500);
       }
     }, 3000);
   </script>

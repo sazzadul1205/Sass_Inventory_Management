@@ -100,19 +100,19 @@ $result = $conn->query($sql);
       <!-- Table -->
       <div class="app-content-body mt-3">
         <div class="table-responsive container-fluid">
-          <table id="categoriesTable" class="table table-bordered table-hover table-striped align-middle">
-            <thead class="table-primary">
-              <tr>
-                <th>ID</th>
-                <th>Category Name</th>
-                <th>Description</th>
-                <th>Created At</th>
-                <th>Updated At</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php if ($result->num_rows > 0): ?>
+          <?php if ($result->num_rows > 0): ?>
+            <table id="categoriesTable" class="table table-bordered table-hover table-striped align-middle">
+              <thead class="table-primary">
+                <tr>
+                  <th>ID</th>
+                  <th>Category Name</th>
+                  <th>Description</th>
+                  <th>Created At</th>
+                  <th>Updated At</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
                 <?php while ($row = $result->fetch_assoc()): ?>
                   <tr>
                     <td><?= htmlspecialchars($row['id']) ?></td>
@@ -133,13 +133,14 @@ $result = $conn->query($sql);
                     </td>
                   </tr>
                 <?php endwhile; ?>
-              <?php else: ?>
-                <tr>
-                  <td colspan="6" class="text-center">No categories found</td>
-                </tr>
-              <?php endif; ?>
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          <?php else: ?>
+            <div class="text-center text-muted py-5">
+              <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+              <h5>No suppliers found</h5>
+            </div>
+          <?php endif; ?>
         </div>
       </div>
 

@@ -117,38 +117,29 @@ $result = $conn->query($sql);
 
   </div>
 
-  <!-- Scripts -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- JS Dependencies -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"></script>
+  <script src="<?= $Project_URL ?>/js/adminlte.js"></script>
+
+  <!-- DataTables -->
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
   <script>
     $(document).ready(function() {
-      $('#purchaseTable').DataTable({
-        paging: true,
+      $('#usersTable').DataTable({
         pageLength: 10,
-        lengthChange: true,
-        ordering: true,
-        order: [],
-        info: true,
-        autoWidth: false
+        lengthChange: false
       });
-
-      // Auto hide messages
-      setTimeout(() => {
-        ['successMsg', 'failMsg'].forEach(id => {
-          const el = document.getElementById(id);
-          if (el) {
-            el.style.transition = "opacity 0.5s";
-            el.style.opacity = "0";
-            setTimeout(() => el.remove(), 500);
-          }
-        });
-      }, 3000);
     });
-  </script>
 
+    setTimeout(() => {
+      const msg = document.getElementById('successMsg') || document.getElementById('failMsg');
+      if (msg) msg.remove();
+    }, 3000);
+  </script>
 </body>
 
 </html>

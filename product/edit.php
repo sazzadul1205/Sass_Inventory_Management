@@ -1,44 +1,80 @@
 <?php
-include_once __DIR__ . '/../config/db_config.php';
 session_start();
-$formError = "";
+include_once __DIR__ . '/../config/db_config.php';
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+  header("Location: ../auth/login.php");
+  exit;
+}
 ?>
-
 <!doctype html>
 <html lang="en">
 
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?= $productId ? "Edit Product" : "Add Product" ?> | Sass Inventory Management System</title>
-  <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>Edit Product | Sass Inventory Management System</title>
+  <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" />
 
-  <!-- Bootstrap & Icons -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css">
+  <!-- Mobile + Theme -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
 
+  <!-- Fonts -->
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
+    media="print" onload="this.media='all'" />
+
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+
+  <!-- AdminLTE (Core Theme) -->
+  <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
+
+  <!-- Custom CSS -->
   <style>
-    .form-section-title {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 12px;
-      color: #2c3e50;
-      border-left: 4px solid #0d6efd;
-      padding-left: 10px;
+    .card-custom {
+      border-radius: 12px;
+      border: 1px solid #e9ecef;
+      transition: 0.2s ease;
     }
 
-    .card {
-      border-radius: 12px !important;
+    .card-custom:hover {
+      border-color: #cbd3da;
     }
 
     .form-label {
       font-weight: 600;
+    }
+
+    .form-control,
+    .form-select {
+      padding: 10px 14px;
+      border-radius: 8px;
+    }
+
+    .btn-primary {
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .btn-secondary {
+      border-radius: 8px;
     }
   </style>
 </head>
 
 <?php
 $conn = connectDB();
+$formError = "";
+
+// Check if product ID is provided
+if (!isset($_GET['id']) || empty($_GET['id'])) {
+  $_SESSION['error_message'] = "Invalid Product ID.";
+  header("Location: index.php");
+  exit;
+}
 
 // Fetch suppliers & categories
 $categories = $conn->query("SELECT id, name FROM category ORDER BY name ASC");
@@ -97,120 +133,122 @@ if (isset($_POST['submit'])) {
 }
 ?>
 
-<!-- Body -->
+
+<!-- body -->
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
-
     <!-- Navbar -->
     <?php include_once '../Inc/Navbar.php'; ?>
 
-    <!-- Sidebar -->
+    <!--Sidebar-->
     <?php include_once '../Inc/Sidebar.php'; ?>
 
-    <!-- App Main -->
+    <!--App Main-->
     <main class="app-main">
 
-      <!-- App Content Header -->
+      <!-- Page Header -->
       <div class="app-content-header py-3 border-bottom">
-        <div class="container-fluid d-flex justify-content-between">
-          <h3 class="mb-0"><?= $productId ? "Edit Product" : "Add New Product" ?></h3>
+        <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
+          <h3 class="mb-0" style="font-weight: 800;">Edit Product</h3>
         </div>
       </div>
 
       <!-- Form Error -->
-      <?php if ($formError): ?>
-        <div id="errorBox" class="alert alert-danger text-center mt-3"><?= $formError ?></div>
+      <?php if (!empty($formError)): ?>
+        <div id="errorBox" class="alert alert-danger text-center">
+          <?= htmlspecialchars($formError) ?>
+        </div>
       <?php endif; ?>
+
 
       <!-- App Content Body -->
       <div class="app-content-body mt-3">
         <div class="container-fluid">
-          <div class="card shadow-sm p-4">
+          <div class="card shadow-sm rounded-3">
+            <div class="card-body">
 
-            <!-- Form -->
-            <form method="post">
-              <!-- Product Name & Price - Title -->
-              <div class="form-section-title">Basic Information</div>
+              <!-- Header -->
+              <h4 class="mb-4">Update Category Information</h4>
 
-              <!-- Product Name & Price - Content -->
-              <div class="row mb-4">
-                <!-- Product Name -->
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Product Name *</label>
-                  <input type="text" name="name" class="form-control" placeholder="e.g., Samsung Monitor" required
-                    value="<?= $product ? htmlspecialchars($product['name']) : '' ?>">
+              <!-- Form -->
+              <form method="post">
+
+                <!-- Product Name & Price - Content -->
+                <div class="row mb-4">
+                  <!-- Product Name -->
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Product Name *</label>
+                    <input type="text" name="name" class="form-control" placeholder="e.g., Samsung Monitor" required
+                      value="<?= $product ? htmlspecialchars($product['name']) : '' ?>">
+                  </div>
+
+                  <!-- Price -->
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Price</label>
+                    <input type="number" step="0.01" name="price" class="form-control" placeholder="e.g., 15000"
+                      value="<?= $product ? $product['price'] : '' ?>">
+                  </div>
                 </div>
 
-                <!-- Price -->
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Price</label>
-                  <input type="number" step="0.01" name="price" class="form-control" placeholder="e.g., 15000"
-                    value="<?= $product ? $product['price'] : '' ?>">
-                </div>
-              </div>
+                <!-- Category & Supplier - Title -->
+                <div class="form-section-title">Associations</div>
 
-              <!-- Category & Supplier - Title -->
-              <div class="form-section-title">Associations</div>
+                <!-- Category & Supplier - Content -->
+                <div class="row mb-4">
+                  <!-- Category -->
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Category</label>
+                    <select name="category_id" class="form-select">
+                      <option value="">-- Select Category --</option>
+                      <?php while ($cat = $categories->fetch_assoc()): ?>
+                        <option value="<?= $cat['id'] ?>" <?= ($product && $product['category_id'] == $cat['id']) ? 'selected' : '' ?>>
+                          <?= htmlspecialchars($cat['name']) ?>
+                        </option>
+                      <?php endwhile; ?>
+                    </select>
+                  </div>
 
-              <!-- Category & Supplier - Content -->
-              <div class="row mb-4">
-                <!-- Category -->
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Category</label>
-                  <select name="category_id" class="form-select">
-                    <option value="">-- Select Category --</option>
-                    <?php while ($cat = $categories->fetch_assoc()): ?>
-                      <option value="<?= $cat['id'] ?>" <?= ($product && $product['category_id'] == $cat['id']) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($cat['name']) ?>
-                      </option>
-                    <?php endwhile; ?>
-                  </select>
-                </div>
+                  <!-- Supplier -->
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Supplier</label>
+                    <select name="supplier_id" class="form-select">
+                      <option value="">-- Select Supplier --</option>
+                      <?php while ($sup = $suppliers->fetch_assoc()): ?>
+                        <option value="<?= $sup['id'] ?>" <?= ($product && $product['supplier_id'] == $sup['id']) ? 'selected' : '' ?>>
+                          <?= htmlspecialchars($sup['name']) ?>
+                        </option>
+                      <?php endwhile; ?>
+                    </select>
+                  </div>
 
-                <!-- Supplier -->
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Supplier</label>
-                  <select name="supplier_id" class="form-select">
-                    <option value="">-- Select Supplier --</option>
-                    <?php while ($sup = $suppliers->fetch_assoc()): ?>
-                      <option value="<?= $sup['id'] ?>" <?= ($product && $product['supplier_id'] == $sup['id']) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($sup['name']) ?>
-                      </option>
-                    <?php endwhile; ?>
-                  </select>
                 </div>
 
-              </div>
+                <!-- Stock Section -->
+                <div class="form-section-title">Stock</div>
 
-              <!-- Stock Section -->
-              <div class="form-section-title">Stock</div>
-
-              <!-- Stock (Disabled)  -->
-              <div class="row mb-4">
-                <div class="col-md-6">
-                  <label class="form-label">Quantity in Stock</label>
-                  <input type="text" class="form-control" value="0" disabled>
-                  <small class="text-muted">Stock updates automatically through Purchase entries.</small>
+                <!-- Stock (Disabled)  -->
+                <div class="row mb-4">
+                  <div class="col-md-6">
+                    <label class="form-label">Quantity in Stock</label>
+                    <input type="text" class="form-control" value="0" disabled>
+                    <small class="text-muted">Stock updates automatically through Purchase entries.</small>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Save & Cancel Button -->
-              <div class="d-flex gap-2">
-                <!-- Save Product -->
-                <button type="submit" name="submit" class="btn btn-primary px-4 py-2">
-                  <i class="bi bi-check2-circle"></i> <?= $productId ? "Update Product" : "Save Product" ?>
-                </button>
-
-                <!-- Cancel -->
-                <a href="index.php" class="btn btn-secondary px-4 py-2">
-                  <i class="bi bi-x-circle"></i> Cancel
-                </a>
-              </div>
-            </form>
+                <!-- Buttons -->
+                <div class="mt-4 d-flex gap-2">
+                  <button type="submit" name="submit" class="btn btn-primary px-4 py-2">
+                    <i class="bi bi-check2-circle"></i> Save Product
+                  </button>
+                  <a href="index.php" class="btn btn-secondary px-4 py-2">
+                    <i class="bi bi-x-circle"></i> Cancel
+                  </a>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
-      </div>
     </main>
 
     <!-- Footer -->
@@ -218,22 +256,20 @@ if (isset($_POST['submit'])) {
 
   </div>
 
-  <!-- Scripts -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlaysscrollbars.browser.es6.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"></script>
-  <script src="./js/adminlte.js"></script>
 
+  <!-- Auto-hide error -->
   <script>
     setTimeout(() => {
-      let box = document.getElementById("errorBox");
+      const box = document.getElementById("errorBox");
       if (box) {
         box.style.opacity = "0";
-        setTimeout(() => box.remove(), 400);
+        setTimeout(() => box.remove(), 500);
       }
-    }, 2500);
+    }, 3000);
   </script>
-
 </body>
 
 </html>

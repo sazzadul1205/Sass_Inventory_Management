@@ -1,43 +1,75 @@
 <?php
-include_once __DIR__ . '/../config/db_config.php';
 session_start();
-$formError = "";
+include_once __DIR__ . '/../config/db_config.php';
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+  header("Location: ../auth/login.php");
+  exit;
+}
 ?>
 
 <!doctype html>
 <html lang="en">
 
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <title>Add Product | Sass Inventory Management System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-  <!-- Bootstrap & Icons -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css">
+  <!-- Mobile + Theme -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
 
+  <!-- Fonts -->
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
+    media="print" onload="this.media='all'" />
+
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+
+  <!-- AdminLTE (Core Theme) -->
+  <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
+
+  <!-- Custom CSS -->
   <style>
-    .form-section-title {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 12px;
-      color: #2c3e50;
-      border-left: 4px solid #0d6efd;
-      padding-left: 10px;
+    .card-custom {
+      border-radius: 12px;
+      border: 1px solid #e9ecef;
+      transition: 0.2s ease;
     }
 
-    .card {
-      border-radius: 12px !important;
+    .card-custom:hover {
+      border-color: #cbd3da;
     }
 
     .form-label {
       font-weight: 600;
     }
+
+    .form-control,
+    .form-select {
+      padding: 10px 14px;
+      border-radius: 8px;
+    }
+
+    .btn-primary {
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .btn-secondary {
+      border-radius: 8px;
+    }
   </style>
 </head>
 
 <?php
+$formError = "";
+
+// Connect to DB
 $conn = connectDB();
 
 // Fetch suppliers & categories
@@ -83,7 +115,7 @@ if (isset($_POST['submit'])) {
       header("Location: index.php");
       exit;
     } else {
-      $formError = "Error: " . $stmt->error;
+      $formError = "Failed to add product: " . $stmt->error;
     }
 
     $stmt->close();
@@ -92,6 +124,7 @@ if (isset($_POST['submit'])) {
 ?>
 
 <!-- Body -->
+
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
 
@@ -104,99 +137,102 @@ if (isset($_POST['submit'])) {
     <!-- App Main -->
     <main class="app-main">
 
-      <!-- Header -->
+      <!-- Page Header -->
       <div class="app-content-header py-3 border-bottom">
-        <div class="container-fluid d-flex justify-content-between">
-          <h3 class="mb-0">Add New Product</h3>
+        <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
+          <!-- Page Title -->
+          <h3 class="mb-0 " style="font-weight: 800;">Add New Product</h3>
         </div>
       </div>
 
       <!-- Form Error -->
-      <?php if ($formError): ?>
-        <div id="errorBox" class="alert alert-danger text-center mt-3"><?= $formError ?></div>
+      <?php if (!empty($formError)): ?>
+        <div id="errorBox" class="alert alert-danger text-center">
+          <?= htmlspecialchars($formError) ?>
+        </div>
       <?php endif; ?>
 
-      <!-- App Content Body -->
-      <div class="app-content-body mt-3">
+
+      <!-- Body -->
+      <div class="app-content-body mt-4">
         <div class="container-fluid">
-          <div class="card shadow-sm p-4">
+          <div class="card card-custom shadow-sm">
+            <div class="card-body p-4">
 
-            <!-- Form -->
-            <form method="post">
-              <!-- Product Name & Price - Title -->
-              <div class="form-section-title">Basic Information</div>
+              <!-- Header -->
+              <h4 class="mb-4">Add Product Information</h4>
 
-              <!-- Product Name & Price - Content -->
-              <div class="row mb-4">
-                <!-- Product Name -->
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Product Name *</label>
-                  <input type="text" name="name" class="form-control" placeholder="e.g., Samsung Monitor" required>
+              <!-- Form -->
+              <form method="post">
+
+                <!-- Product Name & Price - Content -->
+                <div class="row mb-4">
+                  <!-- Product Name -->
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Product Name *</label>
+                    <input type="text" name="name" class="form-control" placeholder="e.g., Samsung Monitor" required>
+                  </div>
+
+                  <!-- Price -->
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Price</label>
+                    <input type="number" step="0.01" name="price" class="form-control" placeholder="e.g., 15000">
+                  </div>
                 </div>
 
-                <!-- Price -->
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Price</label>
-                  <input type="number" step="0.01" name="price" class="form-control" placeholder="e.g., 15000">
+                <!-- Category & Supplier - Title -->
+                <div class="form-section-title">Associations</div>
+
+                <!-- Category & Supplier - Content -->
+                <div class="row mb-4">
+                  <!-- Category -->
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Category</label>
+                    <select name="category_id" class="form-select">
+                      <option value="">-- Select Category --</option>
+                      <?php while ($cat = $categories->fetch_assoc()): ?>
+                        <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
+                      <?php endwhile; ?>
+                    </select>
+                  </div>
+
+                  <!-- Supplier -->
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Supplier</label>
+                    <select name="supplier_id" class="form-select">
+                      <option value="">-- Select Supplier --</option>
+                      <?php while ($sup = $suppliers->fetch_assoc()): ?>
+                        <option value="<?= $sup['id'] ?>"><?= htmlspecialchars($sup['name']) ?></option>
+                      <?php endwhile; ?>
+                    </select>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Category & Supplier - Title -->
-              <div class="form-section-title">Associations</div>
+                <!-- Stock Section -->
+                <div class="form-section-title">Stock</div>
 
-              <!-- Category & Supplier - Content -->
-              <div class="row mb-4">
-                <!-- Category -->
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Category</label>
-                  <select name="category_id" class="form-select">
-                    <option value="">-- Select Category --</option>
-                    <?php while ($cat = $categories->fetch_assoc()): ?>
-                      <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
-                    <?php endwhile; ?>
-                  </select>
+                <!-- Stock (Disabled)  -->
+                <div class="row mb-4">
+                  <div class="col-md-6">
+                    <label class="form-label">Quantity in Stock</label>
+                    <input type="text" class="form-control" value="0" disabled>
+                    <small class="text-muted">Stock updates automatically through Purchase entries.</small>
+                  </div>
                 </div>
 
-                <!-- Supplier -->
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Supplier</label>
-                  <select name="supplier_id" class="form-select">
-                    <option value="">-- Select Supplier --</option>
-                    <?php while ($sup = $suppliers->fetch_assoc()): ?>
-                      <option value="<?= $sup['id'] ?>"><?= htmlspecialchars($sup['name']) ?></option>
-                    <?php endwhile; ?>
-                  </select>
+                <!-- Buttons -->
+                <div class="mt-4 d-flex gap-2">
+                  <button type="submit" name="submit" class="btn btn-primary px-4 py-2">
+                    <i class="bi bi-check2-circle"></i> Save Product
+                  </button>
+                  <a href="index.php" class="btn btn-secondary px-4 py-2">
+                    <i class="bi bi-x-circle"></i> Cancel
+                  </a>
                 </div>
-              </div>
-
-              <!-- Stock Section -->
-              <div class="form-section-title">Stock</div>
-
-              <!-- Stock (Disabled)  -->
-              <div class="row mb-4">
-                <div class="col-md-6">
-                  <label class="form-label">Quantity in Stock</label>
-                  <input type="text" class="form-control" value="0" disabled>
-                  <small class="text-muted">Stock updates automatically through Purchase entries.</small>
-                </div>
-              </div>
-
-              <!-- Save & Cancel Button -->
-              <div class="d-flex gap-2">
-                <!-- Save Product -->
-                <button type="submit" name="submit" class="btn btn-primary px-4 py-2">
-                  <i class="bi bi-check2-circle"></i> Save Product
-                </button>
-
-                <!-- Cancel -->
-                <a href="index.php" class="btn btn-secondary px-4 py-2">
-                  <i class="bi bi-x-circle"></i> Cancel
-                </a>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
-      </div>
     </main>
 
     <!-- Footer -->
@@ -204,54 +240,19 @@ if (isset($_POST['submit'])) {
 
   </div>
 
-  <!-- jQuery -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
   <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlaysscrollbars.browser.es6.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"></script>
 
-  <!-- AdminLTE JS -->
-  <script src="./js/adminlte.js"></script>
-
-  <!-- DataTables JS -->
-  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
-  <!-- Table Initialization -->
+  <!-- Auto-hide error -->
   <script>
-    $(document).ready(function() {
-      $('#categoriesTable').DataTable({
-        "paging": true,
-        "pageLength": 10,
-        "lengthChange": true,
-        "ordering": true,
-        "order": [],
-        "info": true,
-        "autoWidth": false,
-        "columnDefs": [{
-            "orderable": false,
-            "targets": 5
-          } // Disable sorting for Actions column
-        ]
-      });
-
-      // Auto hide success/fail messages
-      setTimeout(() => {
-        const msg = document.getElementById('successMsg');
-        if (msg) {
-          msg.style.transition = "opacity 0.5s";
-          msg.style.opacity = "0";
-          setTimeout(() => msg.remove(), 500);
-        }
-        const failMsg = document.getElementById('failMsg');
-        if (failMsg) {
-          failMsg.style.transition = "opacity 0.5s";
-          failMsg.style.opacity = "0";
-          setTimeout(() => failMsg.remove(), 500);
-        }
-      }, 3000);
-    });
+    setTimeout(() => {
+      const box = document.getElementById("errorBox");
+      if (box) {
+        box.style.opacity = "0";
+        setTimeout(() => box.remove(), 500);
+      }
+    }, 3000);
   </script>
 </body>
 

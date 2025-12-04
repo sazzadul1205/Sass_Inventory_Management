@@ -13,6 +13,7 @@ if (!isset($_SESSION['user_id'])) {
 
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Categories | Sass Inventory Management System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
 
@@ -57,7 +58,6 @@ $conn = connectDB();
 $sql = "SELECT * FROM category ORDER BY id ASC";
 $result = $conn->query($sql);
 ?>
-
 
 <!-- Body -->
 

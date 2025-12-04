@@ -154,6 +154,8 @@ $conn->close();
         <div class="container-fluid">
           <div class="card shadow-sm rounded-3">
             <div class="card-body">
+
+              <!-- Header -->
               <h4 class="mb-4">Update Category Information</h4>
 
               <!-- Form -->

@@ -110,14 +110,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <!-- Role Name -->
             <div class="mb-3">
-              <label class="form-label">Role Name</label>
-              <input type="text" class="form-control" name="role_name" required>
+              <label class="form-label" style="font-weight: 700;">Role Name</label>
+              <input type="text" class="form-control" name="role_name" placeholder="Add Role Name Here" required>
             </div>
 
             <!-- Permissions -->
             <div class="mb-3">
               <!-- Assign Permissions -->
-              <label class="form-label">Assign Permissions</label>
+              <label class="form-label" style="font-weight: 700;">Assign Permissions</label>
 
               <!-- Display Permissions -->
               <div class="row">

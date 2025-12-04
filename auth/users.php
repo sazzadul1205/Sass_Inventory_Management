@@ -31,6 +31,7 @@ include_once __DIR__ . '/../config/db_config.php';
   <link rel="stylesheet"
     href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
 
+  <!-- Custom CSS -->
   <style>
     .btn-warning:hover {
       background-color: #d39e00 !important;
@@ -44,6 +45,7 @@ include_once __DIR__ . '/../config/db_config.php';
   </style>
 </head>
 
+<!-- Fetch all users -->
 <?php
 // Fetch all users with roles
 $conn = connectDB();
@@ -53,6 +55,8 @@ $sql = "SELECT u.*, r.role_name
         ORDER BY u.id ASC";
 $result = $conn->query($sql);
 ?>
+
+<!-- Body -->
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">

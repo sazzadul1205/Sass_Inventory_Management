@@ -48,11 +48,12 @@ $result = $conn->query($sql);
     <!-- Main -->
     <main class="app-main">
 
-      <!-- Header -->
+      <!-- Page Header -->
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
-          <h3 class="mb-0">All Categories</h3>
-          <a href="add.php" class="btn btn-sm btn-primary d-flex align-items-center px-3 py-2">
+          <h3 class="mb-0" style="font-weight: 800;">All Categories</h3>
+
+          <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style="font-size: medium;">
             <i class="bi bi-plus me-1"></i> Add New Category
           </a>
         </div>
@@ -63,10 +64,12 @@ $result = $conn->query($sql);
         <div id="successMsg" class="alert alert-success mt-3"><?= $_SESSION['success_message'] ?></div>
         <?php unset($_SESSION['success_message']); ?>
       <?php endif; ?>
+
       <?php if (!empty($_SESSION['fail_message'])): ?>
         <div id="failMsg" class="alert alert-danger mt-3"><?= $_SESSION['fail_message'] ?></div>
         <?php unset($_SESSION['fail_message']); ?>
       <?php endif; ?>
+
 
       <!-- Table -->
       <div class="app-content-body mt-3">

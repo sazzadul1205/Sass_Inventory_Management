@@ -1,8 +1,12 @@
 <?php
 session_start();
 include_once __DIR__ . '/../config/db_config.php';
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+  header("Location: ../auth/login.php");
+  exit;
+}
 ?>
-
 <!doctype html>
 <html lang="en">
 
@@ -84,7 +88,7 @@ while ($row = $result->fetch_assoc()) {
       <!-- Page Header -->
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
-          <h3 class="mb-0" style="font-weight: 800;">All Roles</h3>
+          <h3 class="mb-0" style="font-weight: 800;">Manage Permissions </h3>
 
           <button
             id="updatePermissionsBtn"

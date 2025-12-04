@@ -1,6 +1,12 @@
 <?php
 session_start();
 include_once __DIR__ . '/../config/db_config.php';
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+  header("Location: ../auth/login.php");
+  exit;
+}
 ?>
 <!doctype html>
 <html lang="en">

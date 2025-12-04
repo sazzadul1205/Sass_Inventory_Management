@@ -1,5 +1,12 @@
-<?php include_once __DIR__ . '/../config/db_config.php'; ?>
-
+<?php
+session_start();
+include_once __DIR__ . '/../config/db_config.php';
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+  header("Location: ../auth/login.php");
+  exit;
+}
+?>
 
 <!doctype html>
 <html lang="en">
@@ -60,7 +67,6 @@
 
 
 <?php
-session_start();
 $formError = "";
 
 // Fetch roles
@@ -76,15 +82,29 @@ if (isset($_POST['submit'])) {
 
   $hashed_password = md5($password);
 
-  $sql = "INSERT INTO user (username, email, password, role_id, created_at, updated_at)
-          VALUES ('$username', '$email', '$hashed_password', '$role_id', NOW(), NOW())";
+  // Check for duplicate username
+  $stmt = $conn->prepare("SELECT id FROM user WHERE username = ?");
+  $stmt->bind_param("s", $username);
+  $stmt->execute();
+  $stmt->store_result();
 
-  if ($conn->query($sql)) {
-    $_SESSION['success_message'] = "User added successfully!";
-    header("Location: users.php");
-    exit;
+  if ($stmt->num_rows > 0) {
+    $formError = "Username already exists. Choose another.";
   } else {
-    $formError = "Failed to add user: " . $conn->error;
+
+    $sql = "INSERT INTO user (username, email, password, role_id, created_at, updated_at)
+            VALUES (?, ?, ?, ?, NOW(), NOW())";
+
+    $stmt2 = $conn->prepare($sql);
+    $stmt2->bind_param("sssi", $username, $email, $hashed_password, $role_id);
+
+    if ($stmt2->execute()) {
+      $_SESSION['success_message'] = "User added successfully!";
+      header("Location: users.php");
+      exit;
+    } else {
+      $formError = "Failed to add user: " . $conn->error;
+    }
   }
 }
 ?>
@@ -107,8 +127,7 @@ if (isset($_POST['submit'])) {
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
           <!-- Page Title -->
-          <h3 class="mb-0 " style="font-weight: 800;">Add New User</h3>
-
+          <h3 class="mb-0 " style="font-weight: 800;">Add New User </h3>
         </div>
       </div>
 
@@ -127,7 +146,7 @@ if (isset($_POST['submit'])) {
 
               <!-- Header -->
               <h4 class="mb-4 fw-bold text-secondary border-bottom pb-2">
-                User Information
+                Add User Information
               </h4>
 
               <!-- Form -->
@@ -153,6 +172,7 @@ if (isset($_POST['submit'])) {
                     <input type="password" name="password" class="form-control" placeholder="Create a strong password" required>
                   </div>
 
+                  <!-- Role -->
                   <div class="col-md-6">
                     <label class="form-label">Role</label>
                     <select name="role_id" class="form-select" required>
@@ -175,9 +195,7 @@ if (isset($_POST['submit'])) {
                     <i class="bi bi-x-circle"></i> Cancel
                   </a>
                 </div>
-
               </form>
-
             </div>
           </div>
         </div>
@@ -189,7 +207,8 @@ if (isset($_POST['submit'])) {
   </div>
 
   <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlaysscrollbars.browser.es6.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"></script>
 
   <!-- Auto-hide error -->
   <script>

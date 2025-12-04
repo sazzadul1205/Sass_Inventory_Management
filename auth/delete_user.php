@@ -1,13 +1,21 @@
-<?php include_once __DIR__ . '/../config/db_config.php'; ?>
 <?php
 session_start();
+include_once __DIR__ . '/../config/db_config.php';
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../auth/login.php");
+    exit;
+}
+
 $formError = "";
-?>
-
-<?php
-
 $conn = connectDB();
 
+// Check if user ID is provided
+if (!isset($_GET['id']) || empty($_GET['id'])) {
+    $_SESSION['fail_message'] = "Invalid user ID!";
+    header("Location: users.php");
+    exit;
+}
 
 $user_id = $_GET['id'];
 

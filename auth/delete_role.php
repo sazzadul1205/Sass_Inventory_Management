@@ -1,6 +1,11 @@
 <?php
 session_start();
 include_once __DIR__ . '/../config/db_config.php';
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../auth/login.php");
+    exit;
+}
 
 if (!isset($_GET['id']) || empty($_GET['id'])) {
     $_SESSION['fail_message'] = "Invalid role ID!";

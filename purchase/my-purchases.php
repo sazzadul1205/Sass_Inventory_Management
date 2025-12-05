@@ -1,6 +1,7 @@
 <?php
 session_start();
 include_once __DIR__ . '/../config/db_config.php';
+$userId = $_SESSION['user_id'];
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
@@ -14,7 +15,7 @@ if (!isset($_SESSION['user_id'])) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Purchases | Sass Inventory Management System</title>
+  <title>My Purchase's | Sass Inventory Management System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
 
   <!-- Mobile + Theme -->
@@ -55,7 +56,10 @@ if (!isset($_SESSION['user_id'])) {
 $conn = connectDB();
 
 // Fetch all product_with_details
-$sql = "SELECT * FROM purchase_details ORDER BY id DESC";
+$sql = "SELECT * 
+        FROM purchase_details
+        WHERE purchased_by = '$userId'
+        ORDER BY id DESC";
 $result = $conn->query($sql);
 ?>
 
@@ -75,7 +79,7 @@ $result = $conn->query($sql);
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
           <!-- Page Title -->
-          <h3 class="mb-0 " style="font-weight: 800;">All Purchases</h3>
+          <h3 class="mb-0 " style="font-weight: 800;">My Purchases</h3>
 
           <!-- Add User Button -->
           <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
@@ -105,11 +109,10 @@ $result = $conn->query($sql);
                     <th>ID</th>
                     <th>Product</th>
                     <th>Supplier</th>
-                    <th>Purchased By</th>
                     <th>Quantity</th>
                     <th>Purchase Price</th>
                     <th>Purchase Date</th>
-                    <th>View recept</th>
+                    <th>View Receipt</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -118,7 +121,6 @@ $result = $conn->query($sql);
                       <td><?= $row['id'] ?></td>
                       <td><?= htmlspecialchars($row['product_name'] ?? 'Unknown') ?></td>
                       <td><?= htmlspecialchars($row['supplier_name'] ?? 'Unknown') ?></td>
-                      <td><?= htmlspecialchars($row['purchased_by_name'] ?? '-') ?></td>
                       <td><?= htmlspecialchars($row['quantity'] ?? '-') ?></td>
                       <td><?= htmlspecialchars(number_format($row['purchase_price'], 2) ?? '-') ?></td>
                       <td><?= !empty($row['purchase_date']) ? date('d M Y', strtotime($row['purchase_date'])) : '-' ?></td>
@@ -134,7 +136,6 @@ $result = $conn->query($sql);
                 </tbody>
               </table>
             </div>
-
           <?php else: ?>
             <div class="text-center text-muted py-5">
               <i class="bi bi-inbox fs-1 d-block mb-2"></i>

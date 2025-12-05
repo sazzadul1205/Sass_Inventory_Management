@@ -17,7 +17,6 @@ if (!isset($_SESSION['user_id'])) {
   <title>Add Purchase | Sass Inventory Management System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
 
-
   <!-- Mobile + Theme -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="light dark" />
@@ -33,6 +32,10 @@ if (!isset($_SESSION['user_id'])) {
 
   <!-- AdminLTE (Core Theme) -->
   <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
+
+  <!-- DataTables -->
+  <link rel="stylesheet"
+    href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
 
   <!-- Select2 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -88,6 +91,26 @@ if (!isset($_SESSION['user_id'])) {
     .select2-container--default .select2-selection--single .select2-selection__arrow {
       height: calc(1.75em + 1rem + 2px);
       top: 0;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow b {
+      border-color: #000 transparent transparent transparent;
+    }
+
+    .select2-container--default .select2-dropdown {
+      background-color: #fff;
+      color: #000;
+    }
+
+    .select2-container--default .select2-results__option {
+      color: #000;
+    }
+
+    .select2-container--default .select2-search--dropdown .select2-search__field {
+      background-color: #fff;
+      color: #000;
+      height: auto;
+      line-height: 1.5;
     }
 
     /* Total amount display styling */
@@ -181,30 +204,34 @@ if (isset($_POST['submit'])) {
 
         // --- Insert each product into 'purchase' table ---
         $stmtPurchase = $conn->prepare("
-                    INSERT INTO purchase 
-                    (receipt_id, product_id, supplier_id, quantity, purchase_price, purchase_date, created_at, updated_at) 
-                    VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
-                ");
+        INSERT INTO purchase 
+        (receipt_id, product_id, supplier_id, quantity, purchase_price, purchase_date, purchased_by, created_at, updated_at) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        ");
 
         foreach ($allData as $item) {
-          // Bind parameters for this purchase row
+
+          // Bind parameters including purchased_by
           $stmtPurchase->bind_param(
-            "iiiids",
+            "iiiidsi",
             $receiptId,
             $item['product_id'],
             $item['supplier_id'],
             $item['quantity'],
             $item['purchase_price'],
-            $item['purchase_date']
+            $item['purchase_date'],
+            $createdBy  // <-- THIS IS THE NEW PART
           );
+
           $stmtPurchase->execute();
 
-          // --- Update product stock in 'product' table ---
+          // --- Update stock ---
           $conn->query("
-                        UPDATE product 
-                        SET quantity_in_stock = quantity_in_stock + {$item['quantity']}, updated_at = NOW() 
-                        WHERE id = {$item['product_id']}
-                    ");
+          UPDATE product 
+          SET quantity_in_stock = quantity_in_stock + {$item['quantity']}, 
+              updated_at = NOW() 
+          WHERE id = {$item['product_id']}
+          ");
         }
 
         $stmtPurchase->close();

@@ -1,28 +1,11 @@
 <?php
 session_start();
 include_once __DIR__ . '/../config/db_config.php';
-
-$conn = connectDB();
-
-// Fetch sales with product and user info
-$sql = "
-  SELECT 
-    s.id,
-    s.product_id,
-    pr.name AS product_name,
-    s.quantity,
-    s.sale_price,
-    s.sale_date,
-    s.created_by,
-    u.username AS created_by_name,
-    s.created_at,
-    s.updated_at
-  FROM sale s
-  LEFT JOIN product pr ON s.product_id = pr.id
-  LEFT JOIN user u ON s.created_by = u.id
-  ORDER BY s.id DESC
-";
-$result = $conn->query($sql);
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+  header("Location: ../auth/login.php");
+  exit;
+}
 ?>
 
 <!doctype html>
@@ -34,25 +17,70 @@ $result = $conn->query($sql);
   <title>Sales | Sass Inventory Management System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
 
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css">
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+  <!-- Mobile + Theme -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
+
+  <!-- Fonts -->
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
+    media="print" onload="this.media='all'" />
+
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+
+  <!-- AdminLTE (Core Theme) -->
+  <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
+
+  <!-- DataTables (Needed for user list table) -->
+  <link rel="stylesheet"
+    href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+
+  <!-- Custom CSS -->
+  <style>
+    .btn-warning:hover {
+      background-color: #d39e00 !important;
+      border-color: #c99700 !important;
+    }
+
+    .btn-danger:hover {
+      background-color: #bb2d3b !important;
+      border-color: #b02a37 !important;
+    }
+  </style>
 </head>
 
+<?php
+$conn = connectDB();
+
+// Fetch all product_with_details
+$sql = "SELECT * FROM sale_details ORDER BY id DESC";
+$result = $conn->query($sql);
+?>
+
+<!-- Body -->
+
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
-
   <div class="app-wrapper">
-
+    <!--Header-->
     <?php include_once '../Inc/Navbar.php'; ?>
+
+    <!--Sidebar-->
     <?php include_once '../Inc/Sidebar.php'; ?>
 
-    <main class="app-main">
 
+    <!-- Main -->
+    <main class="app-main">
+      <!-- Page Header -->
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
-          <h3 class="mb-0">All Sales</h3>
-          <a href="add.php" class="btn btn-sm btn-primary px-3 py-2">
+          <!-- Page Title -->
+          <h3 class="mb-0 " style="font-weight: 800;">All Sales</h3>
+
+          <!-- Add User Button -->
+          <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
             <i class="bi bi-plus me-1"></i> Add New Sale
           </a>
         </div>
@@ -68,15 +96,10 @@ $result = $conn->query($sql);
         <?php unset($_SESSION['fail_message']); ?>
       <?php endif; ?>
 
+      <!-- Table -->
       <div class="app-content-body mt-3">
-        <div class="container-fluid">
-
-          <?php if ($result->num_rows == 0): ?>
-            <div class="text-center text-muted py-5">
-              <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-              <h5>No sales found</h5>
-            </div>
-          <?php else: ?>
+        <div class="table-responsive container-fluid">
+          <?php if ($result->num_rows > 0): ?>
             <div class="table-responsive">
               <table id="salesTable" class="table table-bordered table-striped table-hover align-middle">
                 <thead class="table-primary">
@@ -88,6 +111,7 @@ $result = $conn->query($sql);
                     <th>Sale Date</th>
                     <th>Created By</th>
                     <th>Created At</th>
+                    <th>Updated At</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -100,27 +124,39 @@ $result = $conn->query($sql);
                       <td><?= !empty($row['sale_date']) ? date('d M Y', strtotime($row['sale_date'])) : '-' ?></td>
                       <td><?= htmlspecialchars($row['created_by_name'] ?? '-') ?></td>
                       <td><?= !empty($row['created_at']) ? date('d M Y h:i A', strtotime($row['created_at'])) : '-' ?></td>
+                      <td><?= !empty($row['updated_at']) ? date('d M Y h:i A', strtotime($row['updated_at'])) : '-' ?></td>
                     </tr>
                   <?php endwhile; ?>
                 </tbody>
               </table>
             </div>
-          <?php endif; ?>
 
+          <?php else: ?>
+            <div class="text-center text-muted py-5">
+              <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+              <h5>No sales found</h5>
+            </div>
+          <?php endif; ?>
         </div>
       </div>
 
     </main>
 
+    <!-- Footer -->
     <?php include_once '../Inc/Footer.php'; ?>
-
   </div>
 
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- JS Dependencies -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"></script>
+  <script src="<?= $Project_URL ?>/js/adminlte.js"></script>
+
+  <!-- DataTables -->
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
+  <!-- Custom JS -->
   <script>
     $(document).ready(function() {
       $('#salesTable').DataTable({
@@ -132,18 +168,12 @@ $result = $conn->query($sql);
         info: true,
         autoWidth: false
       });
-
-      setTimeout(() => {
-        ['successMsg', 'failMsg'].forEach(id => {
-          const el = document.getElementById(id);
-          if (el) {
-            el.style.transition = "opacity 0.5s";
-            el.style.opacity = "0";
-            setTimeout(() => el.remove(), 500);
-          }
-        });
-      }, 3000);
     });
+
+    setTimeout(() => {
+      const msg = document.getElementById('successMsg') || document.getElementById('failMsg');
+      if (msg) msg.remove();
+    }, 3000);
   </script>
 
 </body>

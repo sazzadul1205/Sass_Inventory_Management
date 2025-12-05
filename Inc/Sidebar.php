@@ -147,12 +147,12 @@ $sidebarMenu = [
         'icon' => 'bi bi-person-check'
       ],
       [
-        'title' => 'All Receipts',
+        'title' => 'All Purchase Receipts',
         'url' => 'purchase/all-receipt.php',
         'icon' => 'bi bi-receipt'
       ],
       [
-        'title' => 'My Receipts',
+        'title' => 'My Purchase Receipts',
         'url' => 'purchase/my-receipts.php',
         'icon' => 'bi bi-person-lines-fill'
       ],
@@ -187,12 +187,12 @@ $sidebarMenu = [
         'icon' => 'bi bi-person-check'
       ],
       [
-        'title' => 'All Receipts',
+        'title' => 'All Sales Receipts',
         'url' => 'sales/all-receipt.php',
         'icon' => 'bi bi-receipt'
       ],
       [
-        'title' => 'My Receipts',
+        'title' => 'My Sales Receipts',
         'url' => 'sales/my-receipts.php',
         'icon' => 'bi bi-person-lines-fill'
       ],
@@ -208,6 +208,12 @@ $sidebarMenu = [
         'icon' => 'bi bi-plus-circle'
       ],
     ]
+  ],
+
+  [
+    'title' => 'All Receipts',
+    'icon' => 'bi bi-box-arrow-right',
+    'url' => 'receipts/index.php'
   ],
 
   [

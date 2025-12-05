@@ -2,6 +2,7 @@
 session_start();
 include_once __DIR__ . '/../config/db_config.php';
 
+// --- Check user login ---
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
   exit;
@@ -13,7 +14,7 @@ if (!isset($_SESSION['user_id'])) {
 
 <head>
   <meta charset="utf-8">
-  <title>Sales Receipt | Sass Inventory</title>
+  <title>Receipt | Sass Inventory</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- Fonts & Icons -->
@@ -85,43 +86,56 @@ if ($receiptId <= 0) die("Invalid receipt ID.");
 
 $conn = connectDB();
 
-// --- Get Sale Receipt Info ---
+// --- Get Receipt Info (sale or purchase) ---
 $stmt = $conn->prepare("
-    SELECT r.*, u.username AS seller_name
+    SELECT r.*, u.username AS user_name
     FROM receipt r
     LEFT JOIN user u ON r.created_by = u.id
-    WHERE r.id = ? AND r.type = 'sale'
+    WHERE r.id = ?
 ");
 $stmt->bind_param("i", $receiptId);
 $stmt->execute();
 $receipt = $stmt->get_result()->fetch_assoc();
 $stmt->close();
-if (!$receipt) die("Sale receipt not found.");
 
-// --- Get Sale Items ---
-$stmt = $conn->prepare("
-    SELECT s.*, pr.name AS product_name
-    FROM sale s
-    LEFT JOIN product pr ON s.product_id = pr.id
-    WHERE s.receipt_id = ?
-");
+if (!$receipt) die("Receipt not found.");
+
+// --- Initialize variables ---
+$items = [];
+$totalQty = 0;    // Initialize total quantity
+$totalAmount = 0; // Initialize total amount
+
+// --- Get Items based on receipt type ---
+if ($receipt['type'] === 'sale') {
+  $stmt = $conn->prepare("
+        SELECT s.*, pr.name AS product_name
+        FROM sale s
+        LEFT JOIN product pr ON s.product_id = pr.id
+        WHERE s.receipt_id = ?
+    ");
+} else if ($receipt['type'] === 'purchase') {
+  $stmt = $conn->prepare("
+        SELECT p.*, pr.name AS product_name, s.name AS supplier_name
+        FROM purchase p
+        LEFT JOIN product pr ON p.product_id = pr.id
+        LEFT JOIN supplier s ON p.supplier_id = s.id
+        WHERE p.receipt_id = ?
+    ");
+}
+
 $stmt->bind_param("i", $receiptId);
 $stmt->execute();
-$saleItems = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
 // --- Calculate totals ---
-$totalQty = 0;
-$totalAmount = 0;
-
-foreach ($saleItems as $item) {
-  $totalQty += $item['quantity'];
-  $totalAmount += $item['sale_price'];
+if (!empty($items)) {
+  foreach ($items as $item) {
+    $totalQty += $item['quantity'];
+    $totalAmount += ($receipt['type'] === 'sale') ? $item['sale_price'] : $item['purchase_price'];
+  }
 }
-
 ?>
-
-<!-- Body -->
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
@@ -138,7 +152,7 @@ foreach ($saleItems as $item) {
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
           <!-- Page Title -->
-          <h3 class="mb-0" style="font-weight: 800;">Recept</h3>
+          <h3 class="mb-0" style="font-weight: 800;">Receipt</h3>
 
           <!-- View Selector Buttons -->
           <div class="d-flex gap-2">
@@ -158,7 +172,7 @@ foreach ($saleItems as $item) {
             <p class="mb-1">Phone: +880123456789 | Email: info@sassinventory.com</p>
           </div>
           <div class="col-md-6 text-md-end">
-            <h3 class="fw-bold mb-1">Sale Receipt</h3>
+            <h3 class="fw-bold mb-1"><?= ucfirst($receipt['type']) ?> Receipt</h3>
             <p class="mb-0">(Seller Copy)</p>
           </div>
         </div>
@@ -169,34 +183,34 @@ foreach ($saleItems as $item) {
         <div class="row mb-3">
           <div class="col-md-6"><strong>Receipt #:</strong> <?= htmlspecialchars($receipt['receipt_number']) ?></div>
           <div class="col-md-6"><strong>Date:</strong> <?= date('Y-m-d H:i', strtotime($receipt['created_at'])) ?></div>
-          <div class="col-md-6"><strong>Sold By:</strong> <?= htmlspecialchars($receipt['seller_name']) ?></div>
+          <div class="col-md-6"><strong><?= $receipt['type'] === 'sale' ? 'Sold By' : 'Purchased By' ?>:</strong> <?= htmlspecialchars($receipt['user_name']) ?></div>
         </div>
 
-        <!-- Purchase Table -->
+        <!-- Items Table -->
         <table class="table table-bordered table-striped mt-3">
           <thead class="table-dark">
             <tr>
               <th>Product</th>
               <th>Qty</th>
-              <th>Unit Price</th>
+              <th><?= $receipt['type'] === 'sale' ? 'Unit Price' : 'Purchase Price' ?></th>
               <th>Total</th>
             </tr>
           </thead>
           <tbody>
-            <?php foreach ($saleItems as $item):
-              $unitPrice = $item['sale_price'] / $item['quantity'];
+            <?php foreach ($items as $item):
+              $unitPrice = ($receipt['type'] === 'sale') ? $item['sale_price'] / $item['quantity'] : $item['purchase_price'] / $item['quantity'];
             ?>
               <tr>
                 <td><?= htmlspecialchars($item['product_name']) ?></td>
                 <td><?= $item['quantity'] ?></td>
                 <td><?= number_format($unitPrice, 2) ?></td>
-                <td><?= number_format($item['sale_price'], 2) ?></td>
+                <td><?= number_format(($receipt['type'] === 'sale' ? $item['sale_price'] : $item['purchase_price']), 2) ?></td>
               </tr>
             <?php endforeach; ?>
           </tbody>
           <tfoot class="table-light">
             <tr>
-              <th colspan="1">Total</th>
+              <th>Total</th>
               <th><?= $totalQty ?></th>
               <th></th>
               <th><?= number_format($totalAmount, 2) ?></th>
@@ -226,37 +240,37 @@ foreach ($saleItems as $item) {
           <p class="mb-0">Your Trusted Inventory Solution</p>
           <p class="mb-0">Address: 123, Main Street, City</p>
           <p class="mb-0">Phone: +880123456789 | Email: info@sassinventory.com</p>
-          <h6 class="fw-bold mt-2">Sale Receipt (Sealer Copy)</h6>
+          <h6 class="fw-bold mt-2"><?= ucfirst($receipt['type']) ?> Receipt (Seller Copy)</h6>
         </div>
 
         <!-- Receipt Info -->
         <p><strong>#<?= htmlspecialchars($receipt['receipt_number']) ?></strong></p>
         <p>Date: <?= date('Y-m-d H:i', strtotime($receipt['created_at'])) ?></p>
-        <p>By: <?= htmlspecialchars($receipt['seller_name']) ?></p>
+        <p>By: <?= htmlspecialchars($receipt['user_name']) ?></p>
 
-        <!-- Purchase Table -->
-        <table class="table table-sm table-borderless mt-2">
-          <thead>
+        <!-- Items Table -->
+        <table class="table table-bordered table-striped mt-3">
+          <thead class="table-dark">
             <tr>
-              <th>Item</th>
+              <th>Product</th>
               <th>Qty</th>
-              <th>Unit</th>
+              <th><?= $receipt['type'] === 'sale' ? 'Unit Price' : 'Purchase Price' ?></th>
               <th>Total</th>
             </tr>
           </thead>
           <tbody>
-            <?php foreach ($saleItems as $item):
-              $unitPrice = $item['sale_price'] / $item['quantity'];
+            <?php foreach ($items as $item):
+              $unitPrice = ($receipt['type'] === 'sale') ? $item['sale_price'] / $item['quantity'] : $item['purchase_price'] / $item['quantity'];
             ?>
               <tr>
                 <td><?= htmlspecialchars($item['product_name']) ?></td>
                 <td><?= $item['quantity'] ?></td>
                 <td><?= number_format($unitPrice, 2) ?></td>
-                <td><?= number_format($item['sale_price'], 2) ?></td>
+                <td><?= number_format(($receipt['type'] === 'sale' ? $item['sale_price'] : $item['purchase_price']), 2) ?></td>
               </tr>
             <?php endforeach; ?>
           </tbody>
-          <tfoot>
+          <tfoot class="table-light">
             <tr>
               <th>Total</th>
               <th><?= $totalQty ?></th>
@@ -285,7 +299,6 @@ foreach ($saleItems as $item) {
     <!-- Footer -->
     <?php include_once '../Inc/Footer.php'; ?>
   </div>
-
 
   <!-- JS Dependencies -->
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

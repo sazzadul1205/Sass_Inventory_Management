@@ -33,12 +33,16 @@ if (!isset($_SESSION['user_id'])) {
   <!-- AdminLTE (Core Theme) -->
   <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
 
-  <!-- DataTables (Needed for user list table) -->
+  <!-- DataTables -->
   <link rel="stylesheet"
     href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
 
+  <!-- Select2 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
   <!-- Custom CSS -->
   <style>
+    /* Buttons hover */
     .btn-warning:hover {
       background-color: #d39e00 !important;
       border-color: #c99700 !important;
@@ -48,18 +52,84 @@ if (!isset($_SESSION['user_id'])) {
       background-color: #bb2d3b !important;
       border-color: #b02a37 !important;
     }
+
+    /* Select2 - match Bootstrap height & fix jump */
+    .select2-container--default .select2-selection--single {
+      background-color: #fff;
+      color: #000;
+      border: 1px solid #ced4da;
+      border-radius: 0.25rem;
+      height: calc(1.5em + 0.75rem + 2px);
+      line-height: 1.5;
+      padding: 0.375rem 0.75rem;
+      box-sizing: border-box;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+      color: #000;
+      line-height: 1.5;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow b {
+      border-color: #000 transparent transparent transparent;
+    }
+
+    .select2-container--default .select2-dropdown {
+      background-color: #fff;
+      color: #000;
+    }
+
+    .select2-container--default .select2-results__option {
+      color: #000;
+    }
+
+    .select2-container--default .select2-search--dropdown .select2-search__field {
+      background-color: #fff;
+      color: #000;
+      height: auto;
+      line-height: 1.5;
+    }
+
+    /* Toolbar container for better visual separation */
+    .table-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      gap: 10px;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+
+    .table-toolbar .form-control,
+    .table-toolbar .form-select {
+      min-width: 200px;
+    }
+
+    /* Spin animation */
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Apply spin when .spinning class is added */
+    .reset-icon.spinning {
+      animation: spin 0.8s linear infinite;
+    }
   </style>
 </head>
 
 <?php
 $conn = connectDB();
 
-// Fetch all product_with_details
+// Fetch all products
 $sql = "SELECT * FROM product_with_details ORDER BY id ASC";
 $result = $conn->query($sql);
 ?>
-
-<!-- Body -->
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
@@ -77,7 +147,7 @@ $result = $conn->query($sql);
           <!-- Page Title -->
           <h3 class="mb-0 " style="font-weight: 800;">All Products</h3>
 
-          <!-- Add User Button -->
+          <!-- Add Product Button -->
           <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
             <i class="bi bi-plus me-1"></i> Add New Product
           </a>
@@ -94,57 +164,109 @@ $result = $conn->query($sql);
         <?php unset($_SESSION['fail_message']); ?>
       <?php endif; ?>
 
-      <!-- Table -->
-      <div class="app-content-body mt-3">
-        <div class="table-responsive container-fluid">
-          <?php if ($result->num_rows > 0): ?>
-            <div class="table-responsive">
-              <table id="productsTable" class="table table-bordered table-striped table-hover align-middle">
-                <thead class="table-primary">
-                  <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th>Supplier</th>
-                    <th>Price</th>
-                    <th>Stock</th>
-                    <th>Created</th>
-                    <th>Updated</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php while ($row = $result->fetch_assoc()): ?>
-                    <tr>
-                      <td><?= $row['id'] ?></td>
-                      <td><?= htmlspecialchars($row['name']) ?></td>
-                      <td><?= $row['category_name'] ?: "—" ?></td>
-                      <td><?= $row['supplier_name'] ?: "—" ?></td>
-                      <td><?= number_format($row['price'], 2) ?></td>
-                      <td><?= $row['quantity_in_stock'] ?></td>
-                      <td><?= !empty($row['created_at']) ? date('d M Y h:i A', strtotime($row['created_at'])) : '' ?></td>
-                      <td><?= !empty($row['updated_at']) ? date('d M Y h:i A', strtotime($row['updated_at'])) : '' ?></td>
-                      <td>
-                        <div class="d-flex gap-1">
-                          <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-warning btn-sm flex-fill">
-                            <i class="bi bi-pencil-square"></i> Edit
-                          </a>
-                          <a href="delete.php?id=<?= $row['id'] ?>" class="btn btn-danger btn-sm flex-fill" onclick="return confirm('Delete this product?');">
-                            <i class="bi bi-trash"></i> Delete
-                          </a>
-                        </div>
-                      </td>
-                    </tr>
-                  <?php endwhile; ?>
-                </tbody>
-              </table>
-            </div>
-          <?php else: ?>
-            <div class="text-center text-muted py-5">
-              <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-              <h5>No products found</h5>
-            </div>
-          <?php endif; ?>
+      <!-- Toolbar: Product Search + Category Filter -->
+      <div class="app-content-body mt-3 container-fluid">
+
+        <!-- Toolbar -->
+        <div class="table-toolbar p-3 mb-3 rounded shadow-sm bg-white d-flex flex-wrap align-items-end gap-3">
+          <!-- Product Search -->
+          <div class="d-flex flex-column flex-grow-1" style="min-width: 200px;">
+            <label for="productSearch" class="form-label fw-semibold mb-1">Search Product</label>
+            <input type="text" id="productSearch" class="form-control" placeholder="Type to search...">
+          </div>
+          <!-- Category Filter -->
+          <div class="d-flex flex-column" style="min-width: 200px;">
+            <label for="categoryFilter" class="form-label fw-semibold mb-1">Filter by Category</label>
+            <select id="categoryFilter" class="form-select">
+              <option value="">All Categories</option>
+              <?php
+              // Only categories that have products
+              $catResult = $conn->query("
+              SELECT c.name 
+              FROM category c
+              JOIN product_with_details p ON p.category_name = c.name
+              GROUP BY c.name
+              ORDER BY c.name ASC
+              ");
+              while ($cat = $catResult->fetch_assoc()) {
+                echo "<option value=\"{$cat['name']}\">{$cat['name']}</option>";
+              }
+              ?>
+            </select>
+          </div>
+
+          <!-- Supplier Filter -->
+          <div class="d-flex flex-column" style="min-width: 200px;">
+            <label for="supplierFilter" class="form-label fw-semibold mb-1">Filter by Supplier</label>
+            <select id="supplierFilter" class="form-select">
+              <option value="">All Suppliers</option>
+              <?php
+              // Only suppliers that have products
+              $supResult = $conn->query("
+              SELECT s.name 
+              FROM supplier s
+              JOIN product_with_details p ON p.supplier_name = s.name
+              GROUP BY s.name
+              ORDER BY s.name ASC
+              ");
+              while ($sup = $supResult->fetch_assoc()) {
+                echo "<option value=\"{$sup['name']}\">{$sup['name']}</option>";
+              }
+              ?>
+            </select>
+          </div>
+
+
+          <!-- Reset Button -->
+          <div class="d-flex flex-column align-items-start" style="min-width: 120px;">
+            <label class="form-label mb-1">&nbsp;</label> <!-- Empty label for alignment -->
+            <button id="resetFilters" class="btn btn-secondary w-100 d-flex align-items-center justify-content-center gap-2">
+              <i class="bi bi-arrow-counterclockwise reset-icon"></i> Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-responsive">
+          <table id="productsTable" class="table table-bordered table-striped table-hover align-middle">
+            <thead class="table-primary">
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Supplier</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Created</th>
+                <th>Updated</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php while ($row = $result->fetch_assoc()): ?>
+                <tr>
+                  <td><?= $row['id'] ?></td>
+                  <td><?= htmlspecialchars($row['name']) ?></td>
+                  <td><?= $row['category_name'] ?: "—" ?></td>
+                  <td><?= $row['supplier_name'] ?: "—" ?></td>
+                  <td><?= number_format($row['price'], 2) ?></td>
+                  <td><?= $row['quantity_in_stock'] ?></td>
+                  <td><?= !empty($row['created_at']) ? date('d M Y h:i A', strtotime($row['created_at'])) : '' ?></td>
+                  <td><?= !empty($row['updated_at']) ? date('d M Y h:i A', strtotime($row['updated_at'])) : '' ?></td>
+                  <td>
+                    <div class="d-flex gap-1">
+                      <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-warning btn-sm flex-fill">
+                        <i class="bi bi-pencil-square"></i> Edit
+                      </a>
+                      <a href="delete.php?id=<?= $row['id'] ?>" class="btn btn-danger btn-sm flex-fill" onclick="return confirm('Delete this product?');">
+                        <i class="bi bi-trash"></i> Delete
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              <?php endwhile; ?>
+            </tbody>
+          </table>
         </div>
       </div>
     </main>
@@ -163,25 +285,114 @@ $result = $conn->query($sql);
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
+  <!-- Select2 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
   <!-- Custom JS -->
   <script>
     $(document).ready(function() {
-      $('#productsTable').DataTable({
+      // Initialize DataTable
+      var table = $('#productsTable').DataTable({
         paging: true,
         pageLength: 10,
         lengthChange: true,
         ordering: true,
         order: [],
         info: true,
-        autoWidth: false
+        autoWidth: false,
+        dom: '<"top-pagination d-flex justify-content-between mb-2"lp>rt<"bottom-pagination"ip>',
+        language: {
+          search: "" // Remove default search
+        }
       });
-    });
 
-    setTimeout(() => {
-      const msg = document.getElementById('successMsg') || document.getElementById('failMsg');
-      if (msg) msg.remove();
-    }, 3000);
+      // Reset all filters and search with animation
+      $('#resetFilters').on('click', function() {
+        var icon = $(this).find('.reset-icon');
+
+        // Add spin class
+        icon.addClass('spinning');
+
+        // Clear DataTable search
+        $('#productSearch').val('');
+        table.search('').draw();
+
+        // Reset Select2 filters
+        $('#categoryFilter').val('').trigger('change');
+        $('#supplierFilter').val('').trigger('change');
+
+        // Remove spin after 800ms
+        setTimeout(function() {
+          icon.removeClass('spinning');
+        }, 800);
+      });
+
+      // Initialize Select2 for category and supplier filters
+      $('#categoryFilter, #supplierFilter').select2({
+        placeholder: "Select",
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('body'),
+        // Custom matcher to always show "All" option
+        matcher: function(params, data) {
+          // Always show empty option (value="")
+          if (data.id === "") {
+            return data;
+          }
+
+          // Default matching
+          if ($.trim(params.term) === '') {
+            return data;
+          }
+
+          if (typeof data.text === 'undefined') {
+            return null;
+          }
+
+          if (data.text.toLowerCase().indexOf(params.term.toLowerCase()) > -1) {
+            return data;
+          }
+
+          // Return null if no match
+          return null;
+        }
+      });
+
+      // Filter table by category
+      $('#categoryFilter').on('change', function() {
+        var selectedCategory = $(this).val();
+        if (!selectedCategory) {
+          // Reset filter when "All Categories" is selected
+          table.column(2).search('').draw();
+        } else {
+          table.column(2).search(selectedCategory).draw(); // column 2 = Category
+        }
+      });
+
+      // Filter table by supplier
+      $('#supplierFilter').on('change', function() {
+        var selectedSupplier = $(this).val();
+        if (!selectedSupplier) {
+          // Reset filter when "All Suppliers" is selected
+          table.column(3).search('').draw();
+        } else {
+          table.column(3).search(selectedSupplier).draw(); // column 3 = Supplier
+        }
+      });
+
+      // Search products by name
+      $('#productSearch').on('keyup', function() {
+        table.search(this.value).draw();
+      });
+
+      // Remove success/fail messages after 3s
+      setTimeout(() => {
+        const msg = document.getElementById('successMsg') || document.getElementById('failMsg');
+        if (msg) msg.remove();
+      }, 3000);
+    });
   </script>
+
 </body>
 
 </html>

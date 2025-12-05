@@ -92,6 +92,8 @@ if (isset($_POST['submit'])) {
     $updateStock = $conn->prepare("UPDATE product SET quantity_in_stock = quantity_in_stock + ? WHERE id = ?");
     $createdAt = $updatedAt = date('Y-m-d H:i:s');
 
+    $lastPurchaseId = null;
+
     foreach ($productIds as $i => $prodId) {
       $prodId = intval($prodId);
       $qty = intval($quantities[$i]);
@@ -107,6 +109,10 @@ if (isset($_POST['submit'])) {
       if (!$stmt->execute()) {
         $errors[] = "Failed to add product ID $prodId: " . $stmt->error;
       } else {
+        // Capture the last inserted purchase ID
+        $lastPurchaseId = $stmt->insert_id;
+
+        // Update product stock
         $updateStock->bind_param("ii", $qty, $prodId);
         $updateStock->execute();
       }
@@ -115,15 +121,18 @@ if (isset($_POST['submit'])) {
     $stmt->close();
     $updateStock->close();
 
-    if (empty($errors)) {
-      $_SESSION['success_message'] = "Purchase(s) added successfully!";
-      header("Location: index.php");
+    if (empty($errors) && $lastPurchaseId) {
+      // Redirect to receipt page using last purchase ID
+      header("Location: receipt.php?id=" . $lastPurchaseId);
       exit;
-    } else {
+    } elseif (!empty($errors)) {
       $formError = implode("<br>", $errors);
+    } else {
+      $formError = "Purchase was not added. Please try again.";
     }
   }
 }
+
 ?>
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">

@@ -29,6 +29,9 @@ if (!isset($_SESSION['user_id'])) {
   <!-- AdminLTE (Core Theme) -->
   <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
 
+  <!-- Select2 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
   <!-- Custom CSS -->
   <style>
     .card-custom {
@@ -59,6 +62,34 @@ if (!isset($_SESSION['user_id'])) {
     .btn-secondary {
       border-radius: 8px;
     }
+
+    /* Make Select2 slightly taller than default Bootstrap input */
+    .select2-container--default .select2-selection--single {
+      height: calc(1.75em + 1rem + 2px);
+      padding: 0.5rem 0.75rem;
+      line-height: 1.75;
+      border-radius: 0.5rem;
+      border: 1px solid #ced4da;
+      background-color: #fff;
+      color: #495057;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+      line-height: 1.75;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+      height: calc(1.75em + 1rem + 2px);
+      top: 0;
+    }
+
+    /* Total amount display styling */
+    #totalAmountDisplay {
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
   </style>
 </head>
 
@@ -77,59 +108,100 @@ $products = $conn->query("
   ORDER BY p.name ASC
 ");
 
-// Handle form submission
+// Check if form is submitted
 if (isset($_POST['submit'])) {
   $quantities = $_POST['quantity'] ?? [];
   $productIds = $_POST['product_id'] ?? [];
   $purchasePrice = $_POST['purchase_price'] ?? [];
   $purchaseDates = $_POST['purchase_date'] ?? [];
+  $createdBy = $_SESSION['user_id'] ?? '0';
+  $today = date('Ymd');
+
+  // Generate 32-character receipt number: YYYYMMDD + user_id + random hash
+  $randomHash = substr(md5(uniqid('', true)), 0, 32 - strlen($today . $createdBy));
+  $receiptNumber = $today . $createdBy . $randomHash;
 
   if (empty($productIds)) {
     $formError = "Please select at least one product.";
   } else {
-    $errors = [];
-    $stmt = $conn->prepare("INSERT INTO purchase (product_id, supplier_id, quantity, purchase_price, purchase_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $updateStock = $conn->prepare("UPDATE product SET quantity_in_stock = quantity_in_stock + ? WHERE id = ?");
-    $createdAt = $updatedAt = date('Y-m-d H:i:s');
+    $allData = [];
+    $totalAmount = 0;
 
-    $lastPurchaseId = null;
-
+    // Prepare all purchase items
     foreach ($productIds as $i => $prodId) {
       $prodId = intval($prodId);
       $qty = intval($quantities[$i]);
-      $price = floatval($purchasePrice[$i]);
+      $price = floatval(str_replace(',', '', $purchasePrice[$i]));
       $purchaseDate = !empty($purchaseDates[$i]) ? $purchaseDates[$i] : date('Y-m-d');
 
       if ($qty <= 0) continue;
 
-      $productRow = $conn->query("SELECT supplier_id FROM product WHERE id = $prodId")->fetch_assoc();
-      $supplierId = $productRow['supplier_id'];
+      $productRow = $conn->query("SELECT supplier_id, name FROM product WHERE id = $prodId")->fetch_assoc();
+      $supplierId = $productRow['supplier_id'] ?? null;
+      $productName = $productRow['name'] ?? 'Unknown';
 
-      $stmt->bind_param("iiidsss", $prodId, $supplierId, $qty, $price, $purchaseDate, $createdAt, $updatedAt);
-      if (!$stmt->execute()) {
-        $errors[] = "Failed to add product ID $prodId: " . $stmt->error;
-      } else {
-        // Capture the last inserted purchase ID
-        $lastPurchaseId = $stmt->insert_id;
+      $allData[] = [
+        'product_id' => $prodId,
+        'product_name' => $productName,
+        'supplier_id' => $supplierId,
+        'quantity' => $qty,
+        'purchase_price' => $price,
+        'purchase_date' => $purchaseDate
+      ];
 
-        // Update product stock
-        $updateStock->bind_param("ii", $qty, $prodId);
-        $updateStock->execute();
-      }
+      $totalAmount += $price * $qty;
     }
 
-    $stmt->close();
-    $updateStock->close();
+    // ---------------- INSERT RECEIPT ----------------
+    // Use jQuery total instead of recalculated PHP total
+    $totalAmount = isset($_POST['total_amount']) ? floatval($_POST['total_amount']) : 0;
 
-    if (empty($errors) && $lastPurchaseId) {
-      // Redirect to receipt page using last purchase ID
-      header("Location: receipt.php?id=" . $lastPurchaseId);
-      exit;
-    } elseif (!empty($errors)) {
-      $formError = implode("<br>", $errors);
-    } else {
-      $formError = "Purchase was not added. Please try again.";
+    $stmtReceipt = $conn->prepare("
+      INSERT INTO receipt 
+      (receipt_number, type, total_amount, created_by, created_at, updated_at) 
+      VALUES (?, 'Purchase', ?, ?, NOW(), NOW())
+    ");
+
+    $stmtReceipt->bind_param(
+      "sdi",
+      $receiptNumber,
+      $totalAmount,
+      $createdBy
+    );
+
+    $stmtReceipt->execute();
+    $receiptId = $stmtReceipt->insert_id;
+    $stmtReceipt->close();
+
+
+    // ---------------- INSERT PURCHASE ITEMS ----------------
+    // NOW() instead of PHP variables
+    $stmtPurchase = $conn->prepare("
+      INSERT INTO purchase 
+      (receipt_id, product_id, supplier_id, quantity, purchase_price, purchase_date, created_at, updated_at) 
+      VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
+    ");
+
+    foreach ($allData as $item) {
+      $stmtPurchase->bind_param(
+        "iiiids",
+        $receiptId,
+        $item['product_id'],
+        $item['supplier_id'],
+        $item['quantity'],
+        $item['purchase_price'],
+        $item['purchase_date']
+      );
+      $stmtPurchase->execute();
+
+      // ---------------- UPDATE STOCK ----------------
+      $conn->query("UPDATE product SET quantity_in_stock = quantity_in_stock + {$item['quantity']} WHERE id = {$item['product_id']}");
     }
+    $stmtPurchase->close();
+
+    // Redirect
+    header("Location: receipt.php?id=" . $receiptId);
+    exit;
   }
 }
 
@@ -166,9 +238,12 @@ if (isset($_POST['submit'])) {
                 <div class="row pb-2 product-row">
                   <div class="col-md-4">
                     <label class="form-label">Product</label>
-                    <select name="product_id[]" class="form-select product-select" required>
+                    <select name="product_id[]" class="form-select select-product" required>
                       <option value="">-- Select Product --</option>
-                      <?php while ($prod = $products->fetch_assoc()): ?>
+                      <?php
+                      $products->data_seek(0); // reset pointer
+                      while ($prod = $products->fetch_assoc()):
+                      ?>
                         <option value="<?= $prod['id'] ?>"
                           data-price="<?= $prod['price'] ?>"
                           data-stock="<?= $prod['quantity_in_stock'] ?>"
@@ -202,23 +277,36 @@ if (isset($_POST['submit'])) {
                       <i class="bi bi-trash"></i>
                     </button>
                   </div>
+
+                  <!-- Hidden Total Amount -->
+                  <input type="hidden" id="total_amount" name="total_amount" value="0">
+
+
+                  <div class="col-12 mt-2 product-info text-muted small">
+                    Default Estimated Price: <span class="info-price">-</span> |
+                    Current Available Stock: <span class="info-stock">-</span> |
+                    Supplier Name: <span class="info-supplier">-</span> |
+                    <span class="comparison-text text-muted">Difference per unit: - (-%)</span>
+                  </div>
                 </div>
 
-                <!-- Product Info -->
-                <div class="product-info text-muted small">
-                  Default Estimated Price: <span class="info-price">-</span> |
-                  Current Available Stock: <span class="info-stock">-</span> |
-                  Supplier Name: <span class="info-supplier">-</span> |
-                  <span class="comparison-text text-muted">Difference per unit: - (-%)</span>
-                </div>
+                <!-- Total Amount & Save & Cancel -->
+                <div class="mt-4 d-flex justify-content-between align-items-center">
+                  <!-- Save & Cancel Buttons -->
+                  <div class="d-flex gap-2">
+                    <button type="submit" name="submit" class="btn btn-primary px-4 py-2">
+                      <i class="bi bi-check2-circle"></i> Save Purchase
+                    </button>
+                    <a href="index.php" class="btn btn-secondary px-4 py-2">
+                      <i class="bi bi-x-circle"></i> Cancel
+                    </a>
+                  </div>
 
-                <div class="mt-4 d-flex gap-2">
-                  <button type="submit" name="submit" class="btn btn-primary px-4 py-2">
-                    <i class="bi bi-check2-circle"></i> Save Purchase
-                  </button>
-                  <a href="index.php" class="btn btn-secondary px-4 py-2">
-                    <i class="bi bi-x-circle"></i> Cancel
-                  </a>
+
+                  <!-- Total Amount Display -->
+                  <div class="text-start">
+                    <h5>Total Purchase Amount: <span id="totalAmountDisplay">0.00</span></h5>
+                  </div>
                 </div>
               </form>
             </div>
@@ -234,16 +322,21 @@ if (isset($_POST['submit'])) {
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"></script>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
+  <!-- Select2 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
   <!-- Custom JS -->
   <script>
     $(document).ready(function() {
       const $form = $('#purchaseForm');
 
+      // Format number with commas
       function formatNumberWithCommas(x) {
         if (!x && x !== 0) return '';
         return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
       }
 
+      // Format currency (for info display)
       function formatCurrency(num) {
         if (isNaN(num)) return '';
         return new Intl.NumberFormat('en-US', {
@@ -252,20 +345,20 @@ if (isset($_POST['submit'])) {
         }).format(num);
       }
 
+      // Update product info display (default price, stock, supplier, difference)
       function updateProductInfo($row) {
         const quantity = parseInt($row.find('input[name="quantity[]"]').val()) || 1;
-        const totalPrice = parseFloat($row.find('.purchase-price').data('raw')) || 0;
-        const unitPrice = quantity > 0 ? totalPrice / quantity : 0;
-        const $option = $row.find('.product-select option:selected');
+        const unitPrice = parseFloat($row.find('.purchase-price').data('raw')) || 0;
+        const $option = $row.find('.select-product option:selected');
         const defaultUnitPrice = parseFloat($option.data('price')) || 0;
 
-        // Update global product info section
-        $('.info-price').text(formatCurrency(defaultUnitPrice));
-        $('.info-stock').text($option.data('stock') ?? '-');
-        $('.info-supplier').text($option.data('supplier') ?? '-');
+        const $info = $row.find('.product-info');
+        $info.find('.info-price').text(formatCurrency(defaultUnitPrice));
+        $info.find('.info-stock').text($option.data('stock') ?? '-');
+        $info.find('.info-supplier').text($option.data('supplier') ?? '-');
 
         if (defaultUnitPrice === 0 || unitPrice === 0) {
-          $('.comparison-text')
+          $info.find('.comparison-text')
             .text('Difference per unit: - (-%)')
             .removeClass('text-success text-danger text-secondary')
             .addClass('text-muted');
@@ -278,92 +371,198 @@ if (isset($_POST['submit'])) {
         if (diffPerUnit < 0) textColor = 'text-success';
         if (diffPerUnit > 0) textColor = 'text-danger';
         const sign = diffPerUnit >= 0 ? '+' : '';
-        $('.comparison-text')
+        $info.find('.comparison-text')
           .text(`Difference per unit: ${sign}${diffPerUnit.toFixed(2)} (${sign}${diffPercent}%)`)
           .removeClass('text-success text-danger text-secondary text-muted')
           .addClass(textColor);
       }
 
+      // Handle row update
       function handleRowUpdate($row, forceRecalc = false) {
         const quantity = parseInt($row.find('input[name="quantity[]"]').val()) || 1;
-        const defaultUnitPrice = parseFloat($row.find('.product-select option:selected').data('price')) || 0;
+        const defaultUnitPrice = parseFloat($row.find('.select-product option:selected').data('price')) || 0;
+        let unitPrice = parseFloat($row.find('.purchase-price').data('raw')) || 0;
 
-        let rawVal = parseFloat($row.find('.purchase-price').data('raw')) || 0;
+        if (unitPrice === 0 || forceRecalc) {
+          unitPrice = defaultUnitPrice;
+          $row.find('.purchase-price').data('raw', unitPrice);
 
-        // If rawVal is 0 or forceRecalc is true, calculate total automatically
-        if (rawVal === 0 || forceRecalc) {
-          rawVal = defaultUnitPrice * quantity;
-          $row.find('.purchase-price').val(formatNumberWithCommas(rawVal.toFixed(2)));
-          $row.find('.purchase-price').data('raw', rawVal);
+          // Show total in input
+          const displayVal = (unitPrice * quantity).toFixed(2);
+          $row.find('.purchase-price').val(formatNumberWithCommas(displayVal));
         }
 
         updateProductInfo($row);
+        updateTotalAmount();
       }
 
-      // Initialize rows on page load
-      $('.product-row').each(function() {
-        const $row = $(this);
-        const $option = $row.find('.product-select option:selected');
-        if ($option.val()) {
-          handleRowUpdate($row, true);
-        }
-      });
+      // Initialize Select2
+      function initSelect2($element) {
+        $element.select2({
+          placeholder: "-- Select Product --",
+          allowClear: true,
+          width: '100%',
+          dropdownParent: $('body')
+        });
+      }
 
-      // Product selection change
-      $form.on('change', '.product-select', function() {
+      // Update total amount
+      function updateTotalAmount() {
+        let total = 0;
+
+        $('.product-row').each(function() {
+          const qty = parseFloat($(this).find('input[name="quantity[]"]').val()) || 0;
+          const unitPrice = parseFloat($(this).find('.purchase-price').data('raw')) || 0;
+          total += qty * unitPrice;
+        });
+
+        const formatted = formatNumberWithCommas(total.toFixed(2));
+        $('#totalAmountDisplay').text(formatted);
+
+        //  Store raw number in hidden input (no commas!)
+        $('#total_amount').val(total.toFixed(2));
+      }
+
+
+      // Initialize first row
+      initSelect2($('.select-product'));
+
+      // Event: Product change
+      $form.on('change', '.select-product', function() {
         const $row = $(this).closest('.product-row');
         handleRowUpdate($row, true);
       });
 
-      // Quantity change
+      // Event: Quantity change
       $form.on('input', 'input[name="quantity[]"]', function() {
         const $row = $(this).closest('.product-row');
         handleRowUpdate($row, true);
       });
 
-      // Manual purchase price input
+      // Event: Manual purchase price input
       $form.on('input', '.purchase-price', function() {
         const $row = $(this).closest('.product-row');
-        const val = parseFloat($(this).val().replace(/,/g, '')) || 0;
-        $(this).data('raw', val);
+        let input = this;
+        let val = input.value;
+
+        // Save cursor position
+        let selectionStart = input.selectionStart;
+
+        // Count how many commas are to the left of cursor
+        let commasBefore = (val.slice(0, selectionStart).match(/,/g) || []).length;
+
+        // Remove commas to get numeric value
+        let numericVal = val.replace(/,/g, '');
+        let floatVal = parseFloat(numericVal) || 0;
+
+        // Store as unit price (divide by quantity)
+        const quantity = parseInt($row.find('input[name="quantity[]"]').val()) || 1;
+        const unitPrice = floatVal / quantity;
+        $(input).data('raw', unitPrice);
+
+        // Format with commas for display
+        let formattedVal = formatNumberWithCommas((unitPrice * quantity).toFixed(2));
+        input.value = formattedVal;
+
+        // Calculate new cursor position
+        let newCommasBefore = (formattedVal.slice(0, selectionStart).match(/,/g) || []).length;
+        let diffCommas = newCommasBefore - commasBefore;
+        input.selectionStart = input.selectionEnd = selectionStart + diffCommas;
 
         updateProductInfo($row);
+        updateTotalAmount();
       });
 
-      // Add row
+
+      $form.on('blur', '.purchase-price', function() {
+        let val = parseFloat($(this).val().replace(/,/g, '')) || 0;
+        $(this).val(formatNumberWithCommas(val.toFixed(2)));
+      });
+
+      // Add new row
+      // Add new row manually (no cloning previous)
       $form.on('click', '.btn-add-product', function() {
-        const $lastRow = $('.product-row').last();
-        const $newRow = $lastRow.clone();
+        const $newRow = $(`
+        <div class="row pb-2 product-row">
+          <div class="col-md-4">
+            <label class="form-label">Product</label>
+            <select name="product_id[]" class="form-select select-product" required>
+              <option value="">-- Select Product --</option>
+              <?php
+              $products->data_seek(0);
+              while ($prod = $products->fetch_assoc()):
+              ?>
+                  <option value="<?= $prod['id'] ?>"
+                    data-price="<?= $prod['price'] ?>"
+                    data-stock="<?= $prod['quantity_in_stock'] ?>"
+                    data-supplier="<?= htmlspecialchars($prod['supplier_name']) ?>">
+                    <?= htmlspecialchars($prod['name']) ?>
+                  </option>
+                <?php endwhile; ?>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Quantity</label>
+              <input type="number" name="quantity[]" class="form-control" min="1" value="1" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Purchase Price</label>
+              <input type="text" name="purchase_price[]" class="form-control purchase-price" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Purchase Date</label>
+              <input type="date" name="purchase_date[]" class="form-control" value="<?= date('Y-m-d') ?>" required>
+            </div>
+            <div class="col-md-1 d-flex align-items-end btn-box">
+              <button type="button" class="btn btn-success btn-add-product me-1">
+                <i class="bi bi-plus-circle"></i>
+              </button>
+              <button type="button" class="btn btn-danger btn-remove-product">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+            <div class="col-12 mt-2 product-info text-muted small">
+              Default Estimated Price: <span class="info-price">-</span> |
+              Current Available Stock: <span class="info-stock">-</span> |
+              Supplier Name: <span class="info-supplier">-</span> |
+              <span class="comparison-text text-muted">Difference per unit: - (-%)</span>
+            </div>
+          </div>`);
 
-        $newRow.find('.product-select').val('');
-        $newRow.find('input[name="quantity[]"]').val(1);
-        $newRow.find('.purchase-price').val('').data('raw', 0);
-        $newRow.find('input[name="purchase_date[]"]').val('<?= date('Y-m-d') ?>');
-
-        $lastRow.after($newRow);
+        $('.product-row').last().after($newRow);
+        initSelect2($newRow.find('.select-product'));
       });
+
 
       // Remove row
       $form.on('click', '.btn-remove-product', function() {
         const $allRows = $('.product-row');
         const $row = $(this).closest('.product-row');
+
         if ($allRows.length > 1) {
           $row.remove();
-          handleRowUpdate($('.product-row').last(), true);
         } else {
-          $row.find('.product-select').val('');
+          $row.find('select.select-product').val('').trigger('change');
           $row.find('input[name="quantity[]"]').val(1);
-          $row.find('.purchase-price').val('').data('raw', 0);
+          $row.find('input[name="purchase_price[]"]').val('').data('raw', 0);
           $row.find('input[name="purchase_date[]"]').val('<?= date('Y-m-d') ?>');
-          $('.info-price, .info-stock, .info-supplier').text('-');
-          $('.comparison-text')
+          const $info = $row.find('.product-info');
+          $info.find('.info-price').text('-');
+          $info.find('.info-stock').text('-');
+          $info.find('.info-supplier').text('-');
+          $info.find('.comparison-text')
             .text('Difference per unit: - (-%)')
             .removeClass('text-success text-danger text-secondary')
             .addClass('text-muted');
         }
+        updateTotalAmount();
       });
+
+      // Initial total calculation
+      updateTotalAmount();
     });
   </script>
+
 </body>
 
 </html>

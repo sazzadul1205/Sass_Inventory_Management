@@ -161,7 +161,7 @@ if (isset($_POST['submit'])) {
       <!-- Page Header -->
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
-          <h3 class="mb-0" style="font-weight: 800;">Edit Product</h3>
+          <h3 class="mb-0" style="font-weight: 800;">Add New Product</h3>
         </div>
       </div>
 

@@ -17,6 +17,11 @@ if (!isset($_SESSION['user_id'])) {
   <title>Add Purchase | Sass Inventory Management System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
 
+
+  <!-- Mobile + Theme -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
+
   <!-- Fonts -->
   <link rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
@@ -99,47 +104,50 @@ $formError = "";
 // Connect to DB
 $conn = connectDB();
 
-// Fetch all products with supplier info
+// Fetch all products for dropdown
 $products = $conn->query("
-  SELECT 
-    p.id, p.name, p.price, p.quantity_in_stock, s.name AS supplier_name
-  FROM product p
-  LEFT JOIN supplier s ON p.supplier_id = s.id
-  ORDER BY p.name ASC
+ SELECT p.id, p.name, p.price, p.quantity_in_stock, s.id AS supplier_id, s.name AS supplier_name
+ FROM product p
+ LEFT JOIN supplier s ON p.supplier_id = s.id
+ ORDER BY p.name ASC
 ");
 
-// Check if form is submitted
+// Check if the purchase form was submitted
 if (isset($_POST['submit'])) {
+  // Retrieve submitted arrays from the form
   $quantities = $_POST['quantity'] ?? [];
   $productIds = $_POST['product_id'] ?? [];
   $purchasePrice = $_POST['purchase_price'] ?? [];
   $purchaseDates = $_POST['purchase_date'] ?? [];
-  $createdBy = $_SESSION['user_id'] ?? '0';
-  $today = date('Ymd');
+  $createdBy = $_SESSION['user_id'] ?? 0; // Logged-in user ID
 
-  // Generate 32-character receipt number: YYYYMMDD + user_id + random hash
-  $randomHash = substr(md5(uniqid('', true)), 0, 32 - strlen($today . $createdBy));
+  // Generate a unique 32-character receipt number: YYYYMMDD + user_id + random hash
+  $today = date('Ymd'); // e.g., 20251205
+  $randomHash = substr(md5(uniqid('', true)), 0, 32 - strlen($today . $createdBy)); // Random part
   $receiptNumber = $today . $createdBy . $randomHash;
 
+  // If no products were selected, show an error
   if (empty($productIds)) {
     $formError = "Please select at least one product.";
   } else {
-    $allData = [];
-    $totalAmount = 0;
+    $allData = []; // Will store all validated purchase items
 
-    // Prepare all purchase items
+    // Loop through all selected products
     foreach ($productIds as $i => $prodId) {
-      $prodId = intval($prodId);
-      $qty = intval($quantities[$i]);
-      $price = floatval(str_replace(',', '', $purchasePrice[$i]));
-      $purchaseDate = !empty($purchaseDates[$i]) ? $purchaseDates[$i] : date('Y-m-d');
+      $prodId = intval($prodId); // Ensure product ID is an integer
+      $qty = intval($quantities[$i]); // Convert quantity to integer
+      $price = floatval(str_replace(',', '', $purchasePrice[$i])); // Convert price to float
+      $purchaseDate = !empty($purchaseDates[$i]) ? $purchaseDates[$i] : date('Y-m-d'); // Default to today if not set
 
-      if ($qty <= 0) continue;
+      // Skip invalid rows (quantity or price <= 0)
+      if ($qty <= 0 || $price <= 0) continue;
 
+      // Fetch supplier info and product name from the database
       $productRow = $conn->query("SELECT supplier_id, name FROM product WHERE id = $prodId")->fetch_assoc();
       $supplierId = $productRow['supplier_id'] ?? null;
       $productName = $productRow['name'] ?? 'Unknown';
 
+      // Add this product to the array of all purchase items
       $allData[] = [
         'product_id' => $prodId,
         'product_name' => $productName,
@@ -148,60 +156,71 @@ if (isset($_POST['submit'])) {
         'purchase_price' => $price,
         'purchase_date' => $purchaseDate
       ];
-
-      $totalAmount += $price * $qty;
     }
 
-    // ---------------- INSERT RECEIPT ----------------
-    // Use jQuery total instead of recalculated PHP total
-    $totalAmount = isset($_POST['total_amount']) ? floatval($_POST['total_amount']) : 0;
+    // If no valid products were found, show an error
+    if (empty($allData)) {
+      $formError = "Please provide at least one valid product with quantity and price.";
+    } else {
+      // Get total purchase amount from the frontend (calculated by JS)
+      $totalAmount = isset($_POST['total_amount']) ? floatval($_POST['total_amount']) : 0;
 
-    $stmtReceipt = $conn->prepare("
-      INSERT INTO receipt 
-      (receipt_number, type, total_amount, created_by, created_at, updated_at) 
-      VALUES (?, 'Purchase', ?, ?, NOW(), NOW())
-    ");
+      // Begin database transaction to ensure all-or-nothing
+      $conn->begin_transaction();
+      try {
+        // --- Insert into 'receipt' table ---
+        $stmtReceipt = $conn->prepare("
+                    INSERT INTO receipt 
+                    (receipt_number, type, total_amount, created_by, created_at, updated_at) 
+                    VALUES (?, 'purchase', ?, ?, NOW(), NOW())
+                ");
+        $stmtReceipt->bind_param("sdi", $receiptNumber, $totalAmount, $createdBy);
+        $stmtReceipt->execute();
+        $receiptId = $stmtReceipt->insert_id; // Get generated receipt ID
+        $stmtReceipt->close();
 
-    $stmtReceipt->bind_param(
-      "sdi",
-      $receiptNumber,
-      $totalAmount,
-      $createdBy
-    );
+        // --- Insert each product into 'purchase' table ---
+        $stmtPurchase = $conn->prepare("
+                    INSERT INTO purchase 
+                    (receipt_id, product_id, supplier_id, quantity, purchase_price, purchase_date, created_at, updated_at) 
+                    VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
+                ");
 
-    $stmtReceipt->execute();
-    $receiptId = $stmtReceipt->insert_id;
-    $stmtReceipt->close();
+        foreach ($allData as $item) {
+          // Bind parameters for this purchase row
+          $stmtPurchase->bind_param(
+            "iiiids",
+            $receiptId,
+            $item['product_id'],
+            $item['supplier_id'],
+            $item['quantity'],
+            $item['purchase_price'],
+            $item['purchase_date']
+          );
+          $stmtPurchase->execute();
 
+          // --- Update product stock in 'product' table ---
+          $conn->query("
+                        UPDATE product 
+                        SET quantity_in_stock = quantity_in_stock + {$item['quantity']}, updated_at = NOW() 
+                        WHERE id = {$item['product_id']}
+                    ");
+        }
 
-    // ---------------- INSERT PURCHASE ITEMS ----------------
-    // NOW() instead of PHP variables
-    $stmtPurchase = $conn->prepare("
-      INSERT INTO purchase 
-      (receipt_id, product_id, supplier_id, quantity, purchase_price, purchase_date, created_at, updated_at) 
-      VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
-    ");
+        $stmtPurchase->close();
 
-    foreach ($allData as $item) {
-      $stmtPurchase->bind_param(
-        "iiiids",
-        $receiptId,
-        $item['product_id'],
-        $item['supplier_id'],
-        $item['quantity'],
-        $item['purchase_price'],
-        $item['purchase_date']
-      );
-      $stmtPurchase->execute();
+        // Commit transaction if all inserts/updates succeeded
+        $conn->commit();
 
-      // ---------------- UPDATE STOCK ----------------
-      $conn->query("UPDATE product SET quantity_in_stock = quantity_in_stock + {$item['quantity']} WHERE id = {$item['product_id']}");
+        // Redirect to the receipt page
+        header("Location: receipt.php?id=" . $receiptId);
+        exit;
+      } catch (Exception $e) {
+        // Rollback if anything fails
+        $conn->rollback();
+        $formError = "Error saving purchase: " . $e->getMessage();
+      }
     }
-    $stmtPurchase->close();
-
-    // Redirect
-    header("Location: receipt.php?id=" . $receiptId);
-    exit;
   }
 }
 
@@ -209,33 +228,50 @@ if (isset($_POST['submit'])) {
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
+
+    <!-- Navbar -->
     <?php include_once '../Inc/Navbar.php'; ?>
+
+    <!-- Sidebar -->
     <?php include_once '../Inc/Sidebar.php'; ?>
 
+    <!-- App Main -->
     <main class="app-main">
+      <!-- Page Header -->
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
           <h3 class="mb-0" style="font-weight: 800;">Add New Purchase</h3>
         </div>
       </div>
 
+      <!-- Form Error -->
       <?php if (!empty($formError)): ?>
-        <div id="errorBox" class="alert alert-danger text-center"><?= htmlspecialchars($formError) ?></div>
+        <div id="errorBox" class="alert alert-danger text-center">
+          <?= htmlspecialchars($formError) ?>
+        </div>
       <?php endif; ?>
 
-      <div class="app-content-body mt-4">
+      <!-- App Content Body -->
+      <div class="app-content-body mt-3">
         <div class="container-fluid">
           <div class="card card-custom shadow-sm">
-            <div class="card-body p-4">
+            <div class="card-body">
+
+              <!-- Header -->
               <h4 class="mb-4">Add Purchase Information</h4>
 
+              <!-- Form -->
               <form method="post" id="purchaseForm">
+
+                <!-- Alert -->
                 <div class="alert alert-info mt-3">
                   <i class="bi bi-info-circle"></i> Once a purchase is created, it cannot be edited.
                 </div>
 
                 <!-- Product Row -->
                 <div class="row pb-2 product-row">
+
+                  <!-- Product -->
                   <div class="col-md-4">
                     <label class="form-label">Product</label>
                     <select name="product_id[]" class="form-select select-product" required>
@@ -247,28 +283,33 @@ if (isset($_POST['submit'])) {
                         <option value="<?= $prod['id'] ?>"
                           data-price="<?= $prod['price'] ?>"
                           data-stock="<?= $prod['quantity_in_stock'] ?>"
-                          data-supplier="<?= htmlspecialchars($prod['supplier_name']) ?>">
+                          data-supplier="<?= htmlspecialchars($prod['supplier_name'] ?? '') ?>"
+                          data-supplier-id="<?= $prod['supplier_id'] ?? 0 ?>">
                           <?= htmlspecialchars($prod['name']) ?>
                         </option>
                       <?php endwhile; ?>
                     </select>
                   </div>
 
+                  <!-- Quantity -->
                   <div class="col-md-2">
                     <label class="form-label">Quantity</label>
                     <input type="number" name="quantity[]" class="form-control" min="1" value="1" required>
                   </div>
 
+                  <!-- Purchase Price -->
                   <div class="col-md-2">
                     <label class="form-label">Purchase Price</label>
                     <input type="text" name="purchase_price[]" class="form-control purchase-price" required>
                   </div>
 
+                  <!-- Purchase Date -->
                   <div class="col-md-3">
                     <label class="form-label">Purchase Date</label>
                     <input type="date" name="purchase_date[]" class="form-control" value="<?= date('Y-m-d') ?>" required>
                   </div>
 
+                  <!-- Buttons -->
                   <div class="col-md-1 d-flex align-items-end btn-box">
                     <button type="button" class="btn btn-success btn-add-product me-1">
                       <i class="bi bi-plus-circle"></i>
@@ -278,10 +319,13 @@ if (isset($_POST['submit'])) {
                     </button>
                   </div>
 
+                  <!-- Hidden supplier ID for procedure -->
+                  <input type="hidden" name="supplier_id[]" class="supplier-id-hidden" value="">
+
                   <!-- Hidden Total Amount -->
                   <input type="hidden" id="total_amount" name="total_amount" value="0">
 
-
+                  <!-- Product Info -->
                   <div class="col-12 mt-2 product-info text-muted small">
                     Default Estimated Price: <span class="info-price">-</span> |
                     Current Available Stock: <span class="info-stock">-</span> |
@@ -301,7 +345,6 @@ if (isset($_POST['submit'])) {
                       <i class="bi bi-x-circle"></i> Cancel
                     </a>
                   </div>
-
 
                   <!-- Total Amount Display -->
                   <div class="text-start">
@@ -430,8 +473,12 @@ if (isset($_POST['submit'])) {
       // Event: Product change
       $form.on('change', '.select-product', function() {
         const $row = $(this).closest('.product-row');
+        const supplierId = $(this).find('option:selected').data('supplier-id') || 0;
+        $row.find('.supplier-id-hidden').val(supplierId);
+
         handleRowUpdate($row, true);
       });
+
 
       // Event: Quantity change
       $form.on('input', 'input[name="quantity[]"]', function() {

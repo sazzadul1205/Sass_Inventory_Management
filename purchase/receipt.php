@@ -88,38 +88,40 @@ if ($receiptId <= 0) die("Invalid receipt ID.");
 // --- Connect to database ---
 $conn = connectDB();
 
-// --- Get Sale Receipt Info ---
+// --- Get Purchase Receipt Info ---
 $stmt = $conn->prepare("
-    SELECT r.*, u.username AS seller_name
+    SELECT r.*, u.username AS purchaser_name
     FROM receipt r
     LEFT JOIN user u ON r.created_by = u.id
-    WHERE r.id = ? AND r.type = 'sale'
+    WHERE r.id = ? AND r.type = 'purchase'
 ");
 $stmt->bind_param("i", $receiptId);
 $stmt->execute();
 $receipt = $stmt->get_result()->fetch_assoc();
 $stmt->close();
-if (!$receipt) die("Sale receipt not found.");
+if (!$receipt) die("Purchase receipt not found.");
 
-// --- Get Sale Items ---
+// --- Get Purchase Items ---
 $stmt = $conn->prepare("
-    SELECT s.*, pr.name AS product_name
-    FROM sale s
-    LEFT JOIN product pr ON s.product_id = pr.id
-    WHERE s.receipt_id = ?
+    SELECT p.*, pr.name AS product_name, s.name AS supplier_name
+    FROM purchase p
+    LEFT JOIN product pr ON p.product_id = pr.id
+    LEFT JOIN supplier s ON p.supplier_id = s.id
+    WHERE p.receipt_id = ?
 ");
 $stmt->bind_param("i", $receiptId);
 $stmt->execute();
-$saleItems = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$purchaseItems = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
 // --- Calculate totals ---
 $totalQty = 0;
-$totalAmount = 0;
-foreach ($saleItems as $item) {
+$totalAmount = 0; 
+foreach ($purchaseItems as $item) {
   $totalQty += $item['quantity'];
-  $totalAmount += $item['sale_price'];
+  $totalAmount += $item['purchase_price'];
 }
+
 ?>
 
 <!-- Body -->

@@ -215,15 +215,15 @@ $sidebarMenu = [
     'icon' => 'bi bi-box-arrow-right',
     'url' => 'receipts/index.php'
   ],
+  // [
+  //   'title' => 'Inventory Adjustments',
+  //   'icon' => 'bi bi-pencil-square',
+  //   'submenu' => [
+  //     ['title' => 'Adjustment History', 'url' => 'adjustments/index.php'],
+  //     ['title' => 'Add Adjustment', 'url' => 'adjustments/add.php']
+  //   ]
+  // ],
 
-  [
-    'title' => 'Inventory Adjustments',
-    'icon' => 'bi bi-pencil-square',
-    'submenu' => [
-      ['title' => 'Adjustment History', 'url' => 'adjustments/index.php'],
-      ['title' => 'Add Adjustment', 'url' => 'adjustments/add.php']
-    ]
-  ],
   [
     'title' => 'Reports',
     'icon' => 'bi bi-graph-up-arrow',

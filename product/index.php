@@ -94,7 +94,6 @@ $result = $conn->query($sql);
         <?php unset($_SESSION['fail_message']); ?>
       <?php endif; ?>
 
-
       <!-- Table -->
       <div class="app-content-body mt-3">
         <div class="table-responsive container-fluid">
@@ -154,7 +153,6 @@ $result = $conn->query($sql);
     <?php include_once '../Inc/Footer.php'; ?>
   </div>
 
-
   <!-- JS Dependencies -->
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
@@ -184,8 +182,6 @@ $result = $conn->query($sql);
       if (msg) msg.remove();
     }, 3000);
   </script>
-
-
 </body>
 
 </html>

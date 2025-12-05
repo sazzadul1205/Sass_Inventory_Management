@@ -1,28 +1,11 @@
 <?php
 session_start();
 include_once __DIR__ . '/../config/db_config.php';
-
-$conn = connectDB();
-
-// Fetch purchases with product & supplier names
-$sql = "
-  SELECT 
-    p.id,
-    p.product_id,
-    pr.name AS product_name,
-    p.supplier_id,
-    s.name AS supplier_name,
-    p.quantity,
-    p.purchase_price,
-    p.purchase_date,
-    p.created_at,
-    p.updated_at
-  FROM purchase p
-  LEFT JOIN product pr ON p.product_id = pr.id
-  LEFT JOIN supplier s ON p.supplier_id = s.id
-  ORDER BY p.id DESC
-";
-$result = $conn->query($sql);
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+  header("Location: ../auth/login.php");
+  exit;
+}
 ?>
 
 <!doctype html>
@@ -34,26 +17,68 @@ $result = $conn->query($sql);
   <title>Purchases | Sass Inventory Management System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
 
-  <!-- Bootstrap & Icons -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css">
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+  <!-- Mobile + Theme -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
+
+  <!-- Fonts -->
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
+    media="print" onload="this.media='all'" />
+
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+
+  <!-- AdminLTE (Core Theme) -->
+  <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
+
+  <!-- DataTables (Needed for user list table) -->
+  <link rel="stylesheet"
+    href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+
+  <!-- Custom CSS -->
+  <style>
+    .btn-warning:hover {
+      background-color: #d39e00 !important;
+      border-color: #c99700 !important;
+    }
+
+    .btn-danger:hover {
+      background-color: #bb2d3b !important;
+      border-color: #b02a37 !important;
+    }
+  </style>
 </head>
 
+<?php
+$conn = connectDB();
+
+// Fetch all product_with_details
+$sql = "SELECT * FROM purchase_details ORDER BY id DESC";
+$result = $conn->query($sql);
+?>
+
+<!-- Body -->
+
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
-
   <div class="app-wrapper">
-
+    <!--Header-->
     <?php include_once '../Inc/Navbar.php'; ?>
+
+    <!--Sidebar-->
     <?php include_once '../Inc/Sidebar.php'; ?>
 
+    <!-- Main -->
     <main class="app-main">
-
+      <!-- Page Header -->
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
-          <h3 class="mb-0">All Purchases</h3>
-          <a href="add.php" class="btn btn-sm btn-primary px-3 py-2">
+          <!-- Page Title -->
+          <h3 class="mb-0 " style="font-weight: 800;">All Purchases</h3>
+
+          <!-- Add User Button -->
+          <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
             <i class="bi bi-plus me-1"></i> Add New Purchase
           </a>
         </div>
@@ -69,15 +94,10 @@ $result = $conn->query($sql);
         <?php unset($_SESSION['fail_message']); ?>
       <?php endif; ?>
 
+      <!-- Table -->
       <div class="app-content-body mt-3">
-        <div class="container-fluid">
-
-          <?php if ($result->num_rows == 0): ?>
-            <div class="text-center text-muted py-5">
-              <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-              <h5>No purchases found</h5>
-            </div>
-          <?php else: ?>
+        <div class="table-responsive container-fluid">
+          <?php if ($result->num_rows > 0): ?>
             <div class="table-responsive">
               <table id="purchaseTable" class="table table-bordered table-striped table-hover align-middle">
                 <thead class="table-primary">
@@ -106,15 +126,18 @@ $result = $conn->query($sql);
                 </tbody>
               </table>
             </div>
+          <?php else: ?>
+            <div class="text-center text-muted py-5">
+              <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+              <h5>No purchases found</h5>
+            </div>
           <?php endif; ?>
-
         </div>
       </div>
-
     </main>
 
+    <!-- Footer -->
     <?php include_once '../Inc/Footer.php'; ?>
-
   </div>
 
   <!-- JS Dependencies -->
@@ -127,11 +150,17 @@ $result = $conn->query($sql);
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
+  <!-- Custom JS -->
   <script>
     $(document).ready(function() {
-      $('#usersTable').DataTable({
+      $('#purchaseTable').DataTable({
+        paging: true,
         pageLength: 10,
-        lengthChange: false
+        lengthChange: true,
+        ordering: true,
+        order: [],
+        info: true,
+        autoWidth: false
       });
     });
 

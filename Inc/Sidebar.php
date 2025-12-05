@@ -97,7 +97,7 @@ $sidebarMenu = [
       ['title' => 'All Suppliers', 'url' => 'supplier/index.php', 'icon' => 'bi bi-list'],
       ['title' => 'Add Supplier', 'url' => 'supplier/add.php', 'icon' => 'bi bi-plus-circle'],
       [
-        'title' => 'Edit Supplier', 
+        'title' => 'Edit Supplier',
         'url'   => 'supplier/edit.php',
         'icon'  => 'bi bi-pencil-square',
         'hidden' => true,
@@ -113,7 +113,7 @@ $sidebarMenu = [
       ['title' => 'All Products', 'url' => 'product/index.php', 'icon' => 'bi bi-list'],
       ['title' => 'Add Product', 'url' => 'product/add.php', 'icon' => 'bi bi-plus-circle'],
       [
-        'title' => 'Edit Product',  
+        'title' => 'Edit Product',
         'url'   => 'product/edit.php',
         'icon'  => 'bi bi-pencil-square',
         'hidden' => true,
@@ -122,26 +122,33 @@ $sidebarMenu = [
     ]
   ],
 
-  [
-    'title' => 'Product Requests',
-    'icon' => 'bi bi-envelope-exclamation',
-    'submenu' => [
-      ['title' => 'Request List', 'url' => 'requests/index.php']
-    ]
-  ],
+  // Request Section
+  // [
+  //   'title' => 'Product Requests',
+  //   'icon' => 'bi bi-envelope-exclamation',
+  //   'submenu' => [
+  //     ['title' => 'Request List', 'url' => 'requests/index.php']
+  //   ]
+  // ],
+
+  // Purchase Section
   [
     'title' => 'Purchases',
     'icon' => 'bi bi-cart-check',
     'submenu' => [
       ['title' => 'All Purchases', 'url' => 'purchase/index.php'],
+      ['title' => 'My Purchases', 'url' => 'purchase/my-purchases.php'],
       ['title' => 'Add Purchase', 'url' => 'purchase/add.php']
     ]
   ],
+
+  // Sales Section
   [
     'title' => 'Sales',
     'icon' => 'bi bi-cash-stack',
     'submenu' => [
       ['title' => 'All Sales', 'url' => 'sales/index.php'],
+      ['title' => 'My Sales', 'url' => 'purchase/my-sales.php'],
       ['title' => 'Add Sale', 'url' => 'sales/add.php']
     ]
   ],

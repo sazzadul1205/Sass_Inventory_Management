@@ -2,7 +2,6 @@
 session_start();
 include_once __DIR__ . '/../config/db_config.php';
 
-// --- Check if user is logged in ---
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
   exit;
@@ -14,7 +13,7 @@ if (!isset($_SESSION['user_id'])) {
 
 <head>
   <meta charset="utf-8">
-  <title>Purchase Receipt | Sass Inventory</title>
+  <title>Sales Receipt | Sass Inventory</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- Fonts & Icons -->
@@ -81,11 +80,9 @@ if (!isset($_SESSION['user_id'])) {
 </head>
 
 <?php
-// --- Get receipt ID from query string ---
 $receiptId = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if ($receiptId <= 0) die("Invalid receipt ID.");
 
-// --- Connect to database ---
 $conn = connectDB();
 
 // --- Get Sale Receipt Info ---
@@ -112,14 +109,6 @@ $stmt->bind_param("i", $receiptId);
 $stmt->execute();
 $saleItems = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
-
-// --- Calculate totals ---
-$totalQty = 0;
-$totalAmount = 0;
-foreach ($saleItems as $item) {
-  $totalQty += $item['quantity'];
-  $totalAmount += $item['sale_price'];
-}
 ?>
 
 <!-- Body -->
@@ -135,7 +124,6 @@ foreach ($saleItems as $item) {
 
     <!-- Main Content -->
     <main class="app-main">
-
       <!-- Page Header -->
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
@@ -152,8 +140,6 @@ foreach ($saleItems as $item) {
 
       <!-- ========================= A4 View ========================= -->
       <div id="a4View" class="card p-4">
-
-        <!-- Top Header Row -->
         <div class="row mb-4 align-items-center">
           <div class="col-md-6">
             <h2 class="fw-bold mb-1"><?= strtoupper($Project_Name ?? 'Sass Inventory') ?></h2>
@@ -162,8 +148,8 @@ foreach ($saleItems as $item) {
             <p class="mb-1">Phone: +880123456789 | Email: info@sassinventory.com</p>
           </div>
           <div class="col-md-6 text-md-end">
-            <h3 class="fw-bold mb-1">Purchase Receipt</h3>
-            <p class="mb-0">(Purchaser Copy)</p>
+            <h3 class="fw-bold mb-1">Sale Receipt</h3>
+            <p class="mb-0">(Seller Copy)</p>
           </div>
         </div>
 
@@ -173,7 +159,7 @@ foreach ($saleItems as $item) {
         <div class="row mb-3">
           <div class="col-md-6"><strong>Receipt #:</strong> <?= htmlspecialchars($receipt['receipt_number']) ?></div>
           <div class="col-md-6"><strong>Date:</strong> <?= date('Y-m-d H:i', strtotime($receipt['created_at'])) ?></div>
-          <div class="col-md-6"><strong>Purchased By:</strong> <?= htmlspecialchars($receipt['purchaser_name']) ?></div>
+          <div class="col-md-6"><strong>Sold By:</strong> <?= htmlspecialchars($receipt['seller_name']) ?></div>
         </div>
 
         <!-- Purchase Table -->
@@ -181,28 +167,26 @@ foreach ($saleItems as $item) {
           <thead class="table-dark">
             <tr>
               <th>Product</th>
-              <th>Supplier</th>
               <th>Qty</th>
               <th>Unit Price</th>
               <th>Total</th>
             </tr>
           </thead>
           <tbody>
-            <?php foreach ($purchaseItems as $item):
-              $unitPrice = $item['purchase_price'] / $item['quantity'];
+            <?php foreach ($saleItems as $item):
+              $unitPrice = $item['sale_price'] / $item['quantity'];
             ?>
               <tr>
                 <td><?= htmlspecialchars($item['product_name']) ?></td>
-                <td><?= htmlspecialchars($item['supplier_name']) ?></td>
                 <td><?= $item['quantity'] ?></td>
                 <td><?= number_format($unitPrice, 2) ?></td>
-                <td><?= number_format($item['purchase_price'], 2) ?></td>
+                <td><?= number_format($item['sale_price'], 2) ?></td>
               </tr>
             <?php endforeach; ?>
           </tbody>
           <tfoot class="table-light">
             <tr>
-              <th colspan="2">Total</th>
+              <th colspan="1">Total</th>
               <th><?= $totalQty ?></th>
               <th></th>
               <th><?= number_format($totalAmount, 2) ?></th>
@@ -212,12 +196,12 @@ foreach ($saleItems as $item) {
 
         <!-- Signature Block -->
         <div class="signature">
-          <div>________________<br>Purchaser</div>
-          <div>________________<br>Supplier</div>
+          <div>________________<br>Seller</div>
+          <div>________________<br>Customer</div>
           <div>________________<br>Guarantor</div>
         </div>
 
-        <!-- Print & Download Buttons -->
+        <!-- Print and Download Buttons -->
         <div class="mt-3 d-flex justify-content-center gap-2">
           <button class="btn btn-primary btn-sm" onclick="window.print()">Print</button>
           <button class="btn btn-success btn-sm" onclick="downloadPDF('a4View')">Download</button>
@@ -226,20 +210,19 @@ foreach ($saleItems as $item) {
 
       <!-- ========================= POS View ========================= -->
       <div id="posView" class="card p-3">
-
         <!-- Top Header -->
         <div class="text-center mb-3">
           <h5 class="fw-bold mb-1"><?= strtoupper($Project_Name ?? 'Sass Inventory') ?></h5>
           <p class="mb-0">Your Trusted Inventory Solution</p>
           <p class="mb-0">Address: 123, Main Street, City</p>
           <p class="mb-0">Phone: +880123456789 | Email: info@sassinventory.com</p>
-          <h6 class="fw-bold mt-2">Purchase Receipt (Purchaser Copy)</h6>
+          <h6 class="fw-bold mt-2">Sale Receipt (Sealer Copy)</h6>
         </div>
 
         <!-- Receipt Info -->
         <p><strong>#<?= htmlspecialchars($receipt['receipt_number']) ?></strong></p>
         <p>Date: <?= date('Y-m-d H:i', strtotime($receipt['created_at'])) ?></p>
-        <p>By: <?= htmlspecialchars($receipt['purchaser_name']) ?></p>
+        <p>By: <?= htmlspecialchars($receipt['seller_name']) ?></p>
 
         <!-- Purchase Table -->
         <table class="table table-sm table-borderless mt-2">
@@ -252,14 +235,14 @@ foreach ($saleItems as $item) {
             </tr>
           </thead>
           <tbody>
-            <?php foreach ($purchaseItems as $item):
-              $unitPrice = $item['purchase_price'] / $item['quantity'];
+            <?php foreach ($saleItems as $item):
+              $unitPrice = $item['sale_price'] / $item['quantity'];
             ?>
               <tr>
                 <td><?= htmlspecialchars($item['product_name']) ?></td>
                 <td><?= $item['quantity'] ?></td>
                 <td><?= number_format($unitPrice, 2) ?></td>
-                <td><?= number_format($item['purchase_price'], 2) ?></td>
+                <td><?= number_format($item['sale_price'], 2) ?></td>
               </tr>
             <?php endforeach; ?>
           </tbody>
@@ -275,12 +258,12 @@ foreach ($saleItems as $item) {
 
         <!-- Signature Block -->
         <div class="signature d-flex justify-content-between text-center">
-          <div>__________<br>Purchaser</div>
-          <div>__________<br>Supplier</div>
+          <div>__________<br>Seller</div>
+          <div>__________<br>Customer</div>
           <div>__________<br>Guarantor</div>
         </div>
 
-        <!-- Print & Download Buttons -->
+        <!-- Print and Download Buttons -->
         <div class="mt-3 d-flex justify-content-center gap-2">
           <button class="btn btn-primary btn-sm" onclick="window.print()">Print</button>
           <button class="btn btn-success btn-sm" onclick="downloadPDF('posView')">Download</button>
@@ -293,6 +276,7 @@ foreach ($saleItems as $item) {
     <?php include_once '../Inc/Footer.php'; ?>
   </div>
 
+
   <!-- JS Dependencies -->
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
@@ -302,7 +286,6 @@ foreach ($saleItems as $item) {
   <!-- Custom JS -->
   <script>
     $(document).ready(function() {
-      // Toggle between A4 and POS views
       $('#btnA4').click(() => {
         $('#a4View').show();
         $('#posView').hide();
@@ -313,14 +296,11 @@ foreach ($saleItems as $item) {
       });
     });
 
-    // --- Download / Preview PDF ---
     function downloadPDF(viewId) {
       const {
         jsPDF
       } = window.jspdf;
       const element = document.getElementById(viewId);
-
-      // Temporarily show element if hidden
       const originalDisplay = element.style.display;
       element.style.display = 'block';
 
@@ -331,18 +311,12 @@ foreach ($saleItems as $item) {
         const pdf = new jsPDF('p', 'pt', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-
-        // Open PDF in a new tab for preview/download
-        const pdfBlob = pdf.output('bloburl');
-        window.open(pdfBlob, '_blank');
-
-        // Restore original display
+        window.open(pdf.output('bloburl'), '_blank');
         element.style.display = originalDisplay;
       }).catch(err => {
-        console.error("PDF generation error:", err);
-        alert("Error generating PDF. Check console.");
+        console.error(err);
+        alert("Error generating PDF");
       });
     }
   </script>

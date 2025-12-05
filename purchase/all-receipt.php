@@ -55,14 +55,14 @@ if (!isset($_SESSION['user_id'])) {
 <?php
 $conn = connectDB();
 
-// Fetch purchases joined with receipt info for only current user
-$sql = "SELECT r.id, r.receipt_number, r.type, r.total_amount, r.created_at,
-               (SELECT COUNT(*) FROM purchase_details pd WHERE pd.receipt_id = r.id) AS num_products
-        FROM receipt r
-        WHERE r.created_by = ?
-        ORDER BY r.id DESC";
+// Count products correctly based on type
+$sqlPurchase = "SELECT r.id, r.receipt_number, r.type, r.total_amount, r.created_at,
+                       (SELECT COUNT(*) FROM purchase p WHERE p.receipt_id = r.id) AS num_products
+                FROM receipt r
+                WHERE r.created_by = ? AND r.type = 'purchase'
+                ORDER BY r.id DESC";
 
-$stmt = $conn->prepare($sql);
+$stmt = $conn->prepare($sqlPurchase);
 $stmt->bind_param("i", $userId);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -84,7 +84,7 @@ $result = $stmt->get_result();
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
           <!-- Page Title -->
-          <h3 class="mb-0 " style="font-weight: 800;">All Receipts</h3>
+          <h3 class="mb-0 " style="font-weight: 800;">All Purchase Receipts</h3>
 
           <!-- Add User Button -->
           <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">

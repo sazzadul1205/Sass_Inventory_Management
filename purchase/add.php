@@ -300,7 +300,7 @@ if (isset($_POST['submit'])) {
 
                   <!-- Product -->
                   <div class="col-md-4">
-                    <label class="form-label">Product</label>
+                    <label class="form-label">Product Name</label>
                     <select name="product_id[]" class="form-select select-product" required>
                       <option value="">-- Select Product --</option>
                       <?php

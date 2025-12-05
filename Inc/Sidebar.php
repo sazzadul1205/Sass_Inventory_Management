@@ -174,13 +174,42 @@ $sidebarMenu = [
   // Sales Section
   [
     'title' => 'Sales',
-    'icon' => 'bi bi-cash-stack',
+    'icon'  => 'bi bi-bag-check', // different icon from purchases
     'submenu' => [
-      ['title' => 'All Sales', 'url' => 'sales/index.php'],
-      ['title' => 'My Sales', 'url' => 'purchase/my-sales.php'],
-      ['title' => 'Add Sale', 'url' => 'sales/add.php']
+      [
+        'title' => 'All Sales',
+        'url' => 'sales/index.php',
+        'icon' => 'bi bi-list-ul'
+      ],
+      [
+        'title' => 'My Sales',
+        'url' => 'sales/my-sales.php',
+        'icon' => 'bi bi-person-check'
+      ],
+      [
+        'title' => 'All Receipts',
+        'url' => 'sales/all-receipt.php',
+        'icon' => 'bi bi-receipt'
+      ],
+      [
+        'title' => 'My Receipts',
+        'url' => 'sales/my-receipts.php',
+        'icon' => 'bi bi-person-lines-fill'
+      ],
+      [
+        'title' => 'Receipts',
+        'url' => 'sales/receipt.php',
+        'icon' => 'bi bi-receipt',
+        'hidden' => true
+      ],
+      [
+        'title' => 'Add Sale',
+        'url' => 'sales/add.php',
+        'icon' => 'bi bi-plus-circle'
+      ],
     ]
   ],
+
   [
     'title' => 'Inventory Adjustments',
     'icon' => 'bi bi-pencil-square',

@@ -109,9 +109,8 @@ $result = $conn->query($sql);
                     <th>Quantity</th>
                     <th>Sale Price</th>
                     <th>Sale Date</th>
-                    <th>Created By</th>
-                    <th>Created At</th>
-                    <th>Updated At</th>
+                    <th>Sold By</th>
+                    <th>View Receipt</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -123,8 +122,13 @@ $result = $conn->query($sql);
                       <td><?= !empty($row['sale_price']) ? number_format($row['sale_price'], 2) : '-' ?></td>
                       <td><?= !empty($row['sale_date']) ? date('d M Y', strtotime($row['sale_date'])) : '-' ?></td>
                       <td><?= htmlspecialchars($row['created_by_name'] ?? '-') ?></td>
-                      <td><?= !empty($row['created_at']) ? date('d M Y h:i A', strtotime($row['created_at'])) : '-' ?></td>
-                      <td><?= !empty($row['updated_at']) ? date('d M Y h:i A', strtotime($row['updated_at'])) : '-' ?></td>
+                      <td>
+                        <?php if (!empty($row['receipt_id'])): ?>
+                          <a href="receipt.php?id=<?= $row['receipt_id'] ?>" class="btn btn-sm btn-primary w-100">
+                            <i class="bi bi-receipt"></i> Receipt
+                          </a>
+                        <?php endif; ?>
+                      </td>
                     </tr>
                   <?php endwhile; ?>
                 </tbody>

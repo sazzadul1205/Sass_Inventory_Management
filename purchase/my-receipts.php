@@ -15,7 +15,7 @@ if (!isset($_SESSION['user_id'])) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Receipts | Sass Inventory Management System</title>
+  <title>My Purchase Receipts | Sass Inventory Management System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
 
   <!-- Mobile + Theme -->
@@ -58,7 +58,7 @@ $conn = connectDB();
 $sql = "SELECT r.id, r.receipt_number, r.type, r.total_amount, r.created_at,
                (SELECT COUNT(*) FROM purchase_details pd WHERE pd.receipt_id = r.id) AS num_products
         FROM receipt r
-        WHERE created_by = ?
+        WHERE r.type = 'purchase' AND r.created_by = ?
         ORDER BY r.id DESC";
 
 $stmt = $conn->prepare($sql);

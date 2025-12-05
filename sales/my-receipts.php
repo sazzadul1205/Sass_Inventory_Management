@@ -1,6 +1,7 @@
 <?php
 session_start();
 include_once __DIR__ . '/../config/db_config.php';
+$userId = $_SESSION['user_id'];
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
@@ -14,7 +15,7 @@ if (!isset($_SESSION['user_id'])) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Purchases | Sass Inventory Management System</title>
+  <title>My Sales Receipts | Sass Inventory Management System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
 
   <!-- Mobile + Theme -->
@@ -54,9 +55,16 @@ if (!isset($_SESSION['user_id'])) {
 <?php
 $conn = connectDB();
 
-// Fetch all product_with_details
-$sql = "SELECT * FROM purchase_details ORDER BY id DESC";
-$result = $conn->query($sql);
+$sql = "SELECT r.id, r.receipt_number, r.type, r.total_amount, r.created_at,
+               (SELECT COUNT(*) FROM sale s WHERE s.receipt_id = r.id) AS num_products
+        FROM receipt r
+        WHERE r.type = 'sale' AND r.created_by = ?
+        ORDER BY r.id DESC";
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param('i', $userId);
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 
 <!-- Body -->
@@ -75,7 +83,7 @@ $result = $conn->query($sql);
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
           <!-- Page Title -->
-          <h3 class="mb-0 " style="font-weight: 800;">All Purchases</h3>
+          <h3 class="mb-0 " style="font-weight: 800;">All Receipts</h3>
 
           <!-- Add User Button -->
           <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
@@ -99,42 +107,38 @@ $result = $conn->query($sql);
         <div class="table-responsive container-fluid">
           <?php if ($result->num_rows > 0): ?>
             <div class="table-responsive">
-              <table id="purchaseTable" class="table table-bordered table-striped table-hover align-middle">
+              <table id="receiptTable" class="table table-bordered table-striped table-hover align-middle">
                 <thead class="table-primary">
                   <tr>
                     <th>ID</th>
-                    <th>Product</th>
-                    <th>Supplier</th>
-                    <th>Purchased By</th>
-                    <th>Quantity</th>
-                    <th>Purchase Price</th>
-                    <th>Purchase Date</th>
-                    <th>View Recept</th>
+                    <th>Receipt #</th>
+                    <th>Type</th>
+                    <th># of Products</th>
+                    <th>Total Amount</th>
+                    <th>Created At</th>
+                    <th>View Receipt</th>
                   </tr>
                 </thead>
                 <tbody>
                   <?php while ($row = $result->fetch_assoc()): ?>
                     <tr>
                       <td><?= $row['id'] ?></td>
-                      <td><?= htmlspecialchars($row['product_name'] ?? 'Unknown') ?></td>
-                      <td><?= htmlspecialchars($row['supplier_name'] ?? 'Unknown') ?></td>
-                      <td><?= htmlspecialchars($row['purchased_by_name'] ?? '-') ?></td>
-                      <td><?= htmlspecialchars($row['quantity'] ?? '-') ?></td>
-                      <td><?= htmlspecialchars(number_format($row['purchase_price'], 2) ?? '-') ?></td>
-                      <td><?= !empty($row['purchase_date']) ? date('d M Y', strtotime($row['purchase_date'])) : '-' ?></td>
+                      <td><?= htmlspecialchars($row['receipt_number']) ?></td>
+                      <td><?= htmlspecialchars($row['type']) ?></td>
+                      <td><?= $row['num_products'] ?></td>
+                      <td><?= number_format($row['total_amount'], 2) ?></td>
+                      <td><?= date('d M Y h:i A', strtotime($row['created_at'])) ?></td>
                       <td>
-                        <?php if (!empty($row['receipt_id'])): ?>
-                          <a href="receipt.php?id=<?= $row['receipt_id'] ?>" class="btn btn-sm btn-primary w-100">
-                            <i class="bi bi-receipt"></i> Receipt
-                          </a>
-                        <?php endif; ?>
+                        <a href="receipt.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-primary w-100">
+                          <i class="bi bi-receipt"></i> View
+                        </a>
                       </td>
                     </tr>
                   <?php endwhile; ?>
                 </tbody>
+
               </table>
             </div>
-
           <?php else: ?>
             <div class="text-center text-muted py-5">
               <i class="bi bi-inbox fs-1 d-block mb-2"></i>
@@ -162,7 +166,7 @@ $result = $conn->query($sql);
   <!-- Custom JS -->
   <script>
     $(document).ready(function() {
-      $('#purchaseTable').DataTable({
+      $('#receiptTable').DataTable({
         paging: true,
         pageLength: 10,
         lengthChange: true,

@@ -24,11 +24,100 @@ $sales = $result->fetch_all(MYSQLI_ASSOC);
   <title>Sales Report | Sass Inventory</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- Favicon -->
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
+
+  <!-- Source Sans 3 Font -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" media="print" onload="this.media='all'" />
+
+  <!-- Bootstrap Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+
+  <!-- AdminLTE Styles -->
   <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
+
+  <!-- DataTables Bootstrap 5 CSS -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+
+  <!-- Select2 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+  <style>
+    .text-truncate {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      cursor: pointer;
+    }
+
+    /* Select2 - match Bootstrap height & fix jump */
+    .select2-container--default .select2-selection--single {
+      background-color: #fff;
+      color: #000;
+      border: 1px solid #ced4da;
+      border-radius: 0.25rem;
+      height: calc(1.5em + 0.75rem + 2px);
+      line-height: 1.5;
+      padding: 0.375rem 0.75rem;
+      box-sizing: border-box;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+      color: #000;
+      line-height: 1.5;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow b {
+      border-color: #000 transparent transparent transparent;
+    }
+
+    .select2-container--default .select2-dropdown {
+      background-color: #fff;
+      color: #000;
+    }
+
+    .select2-container--default .select2-results__option {
+      color: #000;
+    }
+
+    .select2-container--default .select2-search--dropdown .select2-search__field {
+      background-color: #fff;
+      color: #000;
+      height: auto;
+      line-height: 1.5;
+    }
+
+    /* Toolbar container for better visual separation */
+    .table-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      gap: 10px;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+
+    .table-toolbar .form-control,
+    .table-toolbar .form-select {
+      min-width: 200px;
+    }
+
+    /* Spin animation */
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Apply spin when .spinning class is added */
+    .reset-icon.spinning {
+      animation: spin 0.8s linear infinite;
+    }
+  </style>
 </head>
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
@@ -45,6 +134,61 @@ $sales = $result->fetch_all(MYSQLI_ASSOC);
         </div>
       </div>
 
+      <!-- Toolbar -->
+      <div class="table-toolbar p-3 mb-3 rounded shadow-sm bg-white d-flex flex-wrap align-items-end gap-3">
+        <!-- Product Search -->
+        <div class="d-flex flex-column flex-grow-1" style="min-width: 200px;">
+          <label for="productSearch" class="form-label fw-semibold mb-1">Search Product</label>
+          <input type="text" id="productSearch" class="form-control" placeholder="Type to search...">
+        </div>
+
+        <!-- Supplier Filter -->
+        <div class="d-flex flex-column" style="min-width: 200px;">
+          <label for="supplierFilter" class="form-label fw-semibold mb-1">Filter by Supplier</label>
+          <select id="supplierFilter" class="form-select">
+            <option value="">All Suppliers</option>
+            <?php
+            $supResult = $conn->query("
+            SELECT DISTINCT s.name 
+            FROM supplier s
+            JOIN product p ON p.supplier_id = s.id
+            ORDER BY s.name ASC
+            ");
+            while ($sup = $supResult->fetch_assoc()) {
+              echo "<option value=\"{$sup['name']}\">{$sup['name']}</option>";
+            }
+            ?>
+          </select>
+        </div>
+
+        <!-- Purchased By Filter -->
+        <div class="d-flex flex-column" style="min-width: 200px;">
+          <label for="purchasedFilter" class="form-label fw-semibold mb-1">Filter by Purchased By</label>
+          <select id="purchasedFilter" class="form-select">
+            <option value="">All Users</option>
+            <?php
+            $userResult = $conn->query("
+            SELECT DISTINCT username 
+            FROM user
+            ORDER BY username ASC
+            ");
+            while ($usr = $userResult->fetch_assoc()) {
+              echo "<option value=\"{$usr['username']}\">{$usr['username']}</option>";
+            }
+            ?>
+          </select>
+        </div>
+
+
+        <!-- Reset Button -->
+        <div class="d-flex flex-column align-items-start" style="min-width: 120px;">
+          <label class="form-label mb-1">&nbsp;</label>
+          <button id="resetFilters" class="btn btn-secondary w-100 d-flex align-items-center justify-content-center gap-2">
+            <i class="bi bi-arrow-counterclockwise reset-icon"></i> Reset
+          </button>
+        </div>
+      </div>
+
       <!-- Sales Table -->
       <div class="app-content-body mt-3">
         <div class="table-responsive container-fluid">
@@ -54,7 +198,6 @@ $sales = $result->fetch_all(MYSQLI_ASSOC);
                 <tr>
                   <th>#</th>
                   <th>Product</th>
-                  <th>Supplier</th>
                   <th>Qty Sold</th>
                   <th>Unit Price</th>
                   <th>Total Revenue</th>
@@ -68,12 +211,15 @@ $sales = $result->fetch_all(MYSQLI_ASSOC);
                   <tr>
                     <td><?= $index + 1 ?></td>
                     <td><?= htmlspecialchars($row['product_name']) ?></td>
-                    <td><?= htmlspecialchars($row['supplier_name']) ?></td>
                     <td><?= $row['qty_sold'] ?></td>
                     <td><?= number_format($row['unit_price'], 2) ?></td>
                     <td><?= number_format($row['total_revenue'], 2) ?></td>
                     <td><?= $row['sale_date'] ?></td>
-                    <td><?= htmlspecialchars($row['receipt_number']) ?></td>
+                    <td class="text-truncate" style="max-width:120px;"
+                      data-bs-toggle="tooltip" data-bs-placement="top"
+                      title="<?= htmlspecialchars($row['receipt_number']) ?>">
+                      <?= htmlspecialchars($row['receipt_number']) ?>
+                    </td>
                     <td><?= htmlspecialchars($row['sold_by']) ?></td>
                   </tr>
                 <?php endforeach; ?>
@@ -125,39 +271,120 @@ $sales = $result->fetch_all(MYSQLI_ASSOC);
 
               <!-- Chart Container -->
               <div id="salesChartContainer" style="width: calc(100% - 60px); height: 450px; margin: 0 auto;"></div>
-
             </div>
           </div>
         </div>
       </div>
-
     </main>
   </div>
 
-  <!-- JS Dependencies -->
+  <!-- jQuery Library -->
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+  <!-- Popper.js for Bootstrap tooltips & popovers -->
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+
+  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"></script>
+
+  <!-- AdminLTE Dashboard JS -->
   <script src="<?= $Project_URL ?>/js/adminlte.js"></script>
+
+  <!-- DataTables Core JS -->
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+  <!-- DataTables Bootstrap 5 Integration -->
   <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
-  <!-- ApexCharts -->
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+
+  <!-- ApexCharts Library -->
   <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
+  <!-- Select2 Library for enhanced select dropdowns -->
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+  <!-- Tooltip -->
   <script>
     $(document).ready(function() {
       // Initialize DataTable
-      $('#salesTable').DataTable({
+      var table = $('#salesTable').DataTable({
         paging: true,
-        pageLength: 10,
+        pageLength: 5,
         lengthChange: true,
         ordering: true,
         order: [],
+        lengthMenu: [
+          [5, 10, 25, 50, -1],
+          [5, 10, 25, 50, "All"]
+        ],
         info: true,
-        autoWidth: false
+        autoWidth: false,
+        dom: '<"top-pagination d-flex justify-content-between mb-2"lp>rt<"bottom-pagination"ip>',
+        language: {
+          search: "" // Remove default search
+        }
       });
 
+      // Reset all filters and search with animation
+      $('#resetFilters').on('click', function() {
+        var icon = $(this).find('.reset-icon');
+        icon.addClass('spinning');
+
+        $('#productSearch').val('');
+        $('#supplierFilter').val('').trigger('change');
+        $('#purchasedFilter').val('').trigger('change');
+        table.search('').columns().search('').draw();
+
+        setTimeout(function() {
+          icon.removeClass('spinning');
+        }, 800);
+      });
+
+      // Initialize Select2 for Supplier and Sold By
+      $('#supplierFilter, #purchasedFilter').select2({
+        placeholder: "Select",
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('body'),
+        matcher: function(params, data) {
+          if (data.id === "") return data;
+          if ($.trim(params.term) === '') return data;
+          if (typeof data.text === 'undefined') return null;
+          if (data.text.toLowerCase().indexOf(params.term.toLowerCase()) > -1) return data;
+          return null;
+        }
+      });
+
+      // Filter table by Supplier
+      $('#supplierFilter').on('change', function() {
+        var val = $(this).val();
+        table.column(7).search(val ? val : '').draw(); // column 7 = Supplier
+      });
+
+      // Filter table by Sold By
+      $('#purchasedFilter').on('change', function() {
+        var val = $(this).val();
+        table.column(8).search(val ? val : '').draw(); // column 8 = Sold By
+      });
+
+      // Search products by name
+      $('#productSearch').on('keyup', function() {
+        table.column(1).search(this.value).draw(); // column 1 = Product
+      });
+
+      // Tooltips (unchanged)
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+      var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+      });
+    });
+  </script>
+
+  <!-- Initialize DataTable -->
+  <script>
+    $(document).ready(function() {
       // Prepare sales data for JS
       const salesData = <?php echo json_encode(array_map(function ($s) {
                           return [
@@ -166,7 +393,7 @@ $sales = $result->fetch_all(MYSQLI_ASSOC);
                           ];
                         }, $sales)); ?>;
 
-      let chart; // ApexCharts instance
+      let chart;
 
       // Function to update chart based on selected range
       function updateChart(range) {
@@ -298,10 +525,26 @@ $sales = $result->fetch_all(MYSQLI_ASSOC);
         $("#selectedRange").text($(this).text());
 
         // Scroll to chart
-        $('html, body').animate({ 
+        $('html, body').animate({
           scrollTop: $("#salesGraphBox").offset().top - 100
         }, 400);
       });
+
+
+      // Initialize tooltip
+      $(document).ready(function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+          return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+      });
+
+      // Tooltips
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+      var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+      });
+
     });
   </script>
 

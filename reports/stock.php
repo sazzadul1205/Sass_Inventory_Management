@@ -114,6 +114,9 @@ $products = $result->fetch_all(MYSQLI_ASSOC);
         </div>
       </div>
     </main>
+
+    <!-- Footer -->
+    <?php include_once '../Inc/Footer.php'; ?>
   </div>
 
   <!-- JS Dependencies -->

@@ -174,6 +174,7 @@ $result = $conn->query($sql);
             <label for="productSearch" class="form-label fw-semibold mb-1">Search Product</label>
             <input type="text" id="productSearch" class="form-control" placeholder="Type to search...">
           </div>
+          
           <!-- Category Filter -->
           <div class="d-flex flex-column" style="min-width: 200px;">
             <label for="categoryFilter" class="form-label fw-semibold mb-1">Filter by Category</label>

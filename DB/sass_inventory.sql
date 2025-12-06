@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 05, 2025 at 07:44 PM
+-- Generation Time: Dec 06, 2025 at 07:32 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -595,16 +595,33 @@ INSERT INTO `user` (`id`, `username`, `password`, `email`, `role_id`, `created_a
 -- --------------------------------------------------------
 
 --
+-- Stand-in structure for view `view_product_movement_report`
+-- (See below for the actual view)
+--
+CREATE TABLE `view_product_movement_report` (
+`movement_id` int(11)
+,`type` varchar(8)
+,`product_name` varchar(100)
+,`supplier_or_customer` varchar(100)
+,`quantity` int(11)
+,`unit_price` decimal(14,6)
+,`total_price` decimal(10,2)
+,`movement_date` date
+);
+
+-- --------------------------------------------------------
+
+--
 -- Stand-in structure for view `view_purchase_report`
 -- (See below for the actual view)
 --
 CREATE TABLE `view_purchase_report` (
-`purchase_id` int(11)
+`id` int(11)
 ,`product_name` varchar(100)
 ,`supplier_name` varchar(100)
 ,`qty_purchased` int(11)
-,`unit_price` decimal(10,2)
-,`total_cost` decimal(20,2)
+,`unit_price` decimal(11,2)
+,`total_cost` decimal(10,2)
 ,`purchase_date` date
 ,`receipt_number` varchar(50)
 ,`purchased_by` varchar(100)
@@ -676,11 +693,20 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 -- --------------------------------------------------------
 
 --
+-- Structure for view `view_product_movement_report`
+--
+DROP TABLE IF EXISTS `view_product_movement_report`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `view_product_movement_report`  AS   (select `pu`.`id` AS `movement_id`,'Purchase' AS `type`,`p`.`name` AS `product_name`,`s`.`name` AS `supplier_or_customer`,`pu`.`quantity` AS `quantity`,`pu`.`purchase_price` / `pu`.`quantity` AS `unit_price`,`pu`.`purchase_price` AS `total_price`,`pu`.`purchase_date` AS `movement_date` from ((`purchase` `pu` join `product` `p` on(`pu`.`product_id` = `p`.`id`)) left join `supplier` `s` on(`pu`.`supplier_id` = `s`.`id`))) union all (select `sa`.`id` AS `movement_id`,'Sale' AS `type`,`p`.`name` AS `product_name`,`u`.`username` AS `supplier_or_customer`,`sa`.`quantity` AS `quantity`,`sa`.`sale_price` / `sa`.`quantity` AS `unit_price`,`sa`.`sale_price` AS `total_price`,`sa`.`sale_date` AS `movement_date` from ((`sale` `sa` join `product` `p` on(`sa`.`product_id` = `p`.`id`)) left join `user` `u` on(`sa`.`sold_by` = `u`.`id`))) order by `movement_date` desc  ;
+
+-- --------------------------------------------------------
+
+--
 -- Structure for view `view_purchase_report`
 --
 DROP TABLE IF EXISTS `view_purchase_report`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `view_purchase_report`  AS SELECT `pu`.`id` AS `purchase_id`, `p`.`name` AS `product_name`, `s`.`name` AS `supplier_name`, `pu`.`quantity` AS `qty_purchased`, `pu`.`purchase_price` AS `unit_price`, `pu`.`quantity`* `pu`.`purchase_price` AS `total_cost`, `pu`.`purchase_date` AS `purchase_date`, `r`.`receipt_number` AS `receipt_number`, `u`.`username` AS `purchased_by` FROM ((((`purchase` `pu` left join `product` `p` on(`pu`.`product_id` = `p`.`id`)) left join `supplier` `s` on(`pu`.`supplier_id` = `s`.`id`)) left join `receipt` `r` on(`pu`.`receipt_id` = `r`.`id`)) left join `user` `u` on(`pu`.`purchased_by` = `u`.`id`)) ORDER BY `pu`.`purchase_date` ASC ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `view_purchase_report`  AS SELECT `pu`.`id` AS `id`, `p`.`name` AS `product_name`, `s`.`name` AS `supplier_name`, `pu`.`quantity` AS `qty_purchased`, round(`pu`.`purchase_price` / `pu`.`quantity`,2) AS `unit_price`, `pu`.`purchase_price` AS `total_cost`, `pu`.`purchase_date` AS `purchase_date`, `r`.`receipt_number` AS `receipt_number`, `u`.`username` AS `purchased_by` FROM ((((`purchase` `pu` left join `product` `p` on(`pu`.`product_id` = `p`.`id`)) left join `supplier` `s` on(`pu`.`supplier_id` = `s`.`id`)) left join `receipt` `r` on(`pu`.`receipt_id` = `r`.`id`)) left join `user` `u` on(`pu`.`purchased_by` = `u`.`id`)) ORDER BY `pu`.`purchase_date` ASC ;
 
 -- --------------------------------------------------------
 

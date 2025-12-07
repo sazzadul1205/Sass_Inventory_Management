@@ -1,6 +1,8 @@
 <?php
 include_once 'link.php';
 
+$role = $_SESSION['role_id'];
+
 // Returns the current project root folder (e.g., /Sass_Inventory_Management)
 function getProjectRoot()
 {
@@ -10,6 +12,7 @@ function getProjectRoot()
 
 $projectRoot = getProjectRoot();
 $Project_URL = $projectRoot; // use this as the base URL
+
 
 // Sidebar menu structure
 $sidebarMenu = [
@@ -226,26 +229,42 @@ $sidebarMenu = [
 
   [
     'title' => 'Reports',
-    'icon' => 'bi bi-graph-up-arrow',
+    'icon'  => 'bi bi-graph-up-arrow',
     'submenu' => [
-      ['title' => 'Stock Report', 'url' => 'reports/stock.php'],
-      ['title' => 'Low Stock', 'url' => 'reports/low_stock.php'],
-      ['title' => 'Sales Report', 'url' => 'reports/sales.php'],
-      ['title' => 'Purchase Report', 'url' => 'reports/purchases.php'],
-      ['title' => 'Product Movement', 'url' => 'reports/movement.php']
+      [
+        'title' => 'Stock Report',
+        'url'   => 'reports/stock.php',
+        'icon'  => 'bi bi-box-seam'
+      ],
+      [
+        'title' => 'Low Stock',
+        'url'   => 'reports/low_stock.php',
+        'icon'  => 'bi bi-arrow-down-short'
+      ],
+      [
+        'title' => 'Sales Report',
+        'url'   => 'reports/sales.php',
+        'icon'  => 'bi bi-cash-coin'
+      ],
+      [
+        'title' => 'Purchase Report',
+        'url'   => 'reports/purchases.php',
+        'icon'  => 'bi bi-cart-check'
+      ],
     ]
   ],
-  [
-    'title' => 'System Settings',
-    'icon' => 'bi bi-gear',
-    'submenu' => [
-      ['title' => 'Company Info', 'url' => 'settings/company.php'],
-      ['title' => 'Theme Settings', 'url' => 'settings/theme.php'],
-      ['title' => 'Email Settings', 'url' => 'settings/email.php'],
-      ['title' => 'Backup & Restore', 'url' => 'settings/backup.php']
-    ]
-  ],
-  ['title' => 'Activity Logs', 'icon' => 'bi bi-journal-text', 'url' => 'logs/index.php'],
+
+  // [
+  //   'title' => 'System Settings',
+  //   'icon' => 'bi bi-gear',
+  //   'submenu' => [
+  //     ['title' => 'Company Info', 'url' => 'settings/company.php'],
+  //     ['title' => 'Theme Settings', 'url' => 'settings/theme.php'],
+  //     ['title' => 'Email Settings', 'url' => 'settings/email.php'],
+  //     ['title' => 'Backup & Restore', 'url' => 'settings/backup.php']
+  //   ]
+  // ],
+  // ['title' => 'Activity Logs', 'icon' => 'bi bi-journal-text', 'url' => 'logs/index.php'],
   [
     'title' => 'Logout',
     'icon' => 'bi bi-box-arrow-right',

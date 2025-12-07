@@ -8,6 +8,8 @@ $conn = connectDB();
 // Now $conn exists
 $USER_PERMISSIONS = getUserPermissions($role, $conn);
 
+
+
 // Returns the current project root folder (e.g., /Sass_Inventory_Management)
 function getProjectRoot()
 {
@@ -358,6 +360,7 @@ function isActivePage($url)
   }
 </style>
 
+
 <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
   <div class="sidebar-brand">
     <a href="<?= $Project_URL; ?>index.php" class="brand-link">
@@ -372,78 +375,77 @@ function isActivePage($url)
         <?php foreach ($sidebarMenu as $index => $menu): ?>
 
           <?php
-          // Skip menu if user does not have permission
-          if (!empty($menu['permission']) && !in_array($menu['permission'], $USER_PERMISSIONS)) {
-            continue;
-          }
-          ?>
+          $hasSubmenu = isset($menu['submenu']);
 
-          <?php if (isset($menu['submenu'])): ?>
-            <?php
-            $collapseId = "collapseMenu$index";
-
-            // Check which submenus the user can see
+          if ($hasSubmenu) {
+            // Only count submenus that are visible (not hidden) AND allowed by permission
             $visibleSubmenus = array_filter($menu['submenu'], function ($sub) use ($USER_PERMISSIONS) {
-              if (!empty($sub['permission']) && !in_array($sub['permission'], $USER_PERMISSIONS)) {
-                return false;
-              }
-              // hidden pages still included if user has permission
-              return true;
+              $hasPermission = empty($sub['permission']) || in_array($sub['permission'], $USER_PERMISSIONS);
+              $notHidden = empty($sub['hidden']) || $sub['hidden'] !== true;
+              return $hasPermission && $notHidden;
             });
 
-            if (empty($visibleSubmenus)) continue; // no allowed submenus, skip menu
+            if (empty($visibleSubmenus)) continue; // Skip if no visible submenus
 
-            // check if any submenu is active
-            $anyActive = false;
-            foreach ($visibleSubmenus as $sub) {
-              if (isActivePage($sub['url'])) $anyActive = true;
+            if (count($visibleSubmenus) === 1) {
+              // Only 1 visible submenu, show it as normal link
+              $sub = array_values($visibleSubmenus)[0];
+          ?>
+              <li class="nav-item">
+                <a href="<?= $Project_URL . $sub['url'] ?>" class="nav-link <?= isActivePage($sub['url']) ? 'active-page' : '' ?>">
+                  <i class="nav-icon <?= $sub['icon'] ?>"></i>
+                  <p><?= $sub['title'] ?></p>
+                </a>
+              </li>
+            <?php
+            } else {
+              // Multiple visible submenus → collapsible menu
+              $collapseId = "collapseMenu$index";
+              $anyActive = false;
+              foreach ($visibleSubmenus as $sub) {
+                if (isActivePage($sub['url'])) $anyActive = true;
+              }
+            ?>
+              <li class="nav-item">
+                <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse"
+                  href="#<?= $collapseId ?>" aria-expanded="<?= $anyActive ? 'true' : 'false' ?>"
+                  aria-controls="<?= $collapseId ?>">
+                  <span class="d-inline-flex align-items-center gap-2">
+                    <i class="nav-icon <?= $menu['icon'] ?>"></i>
+                    <?= $menu['title'] ?>
+                  </span>
+                  <i class="bi bi-chevron-down collapse-arrow rotate-0"></i>
+                </a>
+                <div class="collapse <?= $anyActive ? 'show' : '' ?>" id="<?= $collapseId ?>" data-bs-parent="#sidebarAccordion">
+                  <ul class="nav flex-column ms-3">
+                    <?php foreach ($visibleSubmenus as $sub): ?>
+                      <li class="nav-item">
+                        <a href="<?= $Project_URL . $sub['url'] ?>" class="nav-link <?= isActivePage($sub['url']) ? 'active-page' : '' ?>">
+                          <i class="nav-icon <?= $sub['icon'] ?>"></i>
+                          <p><?= $sub['title'] ?></p>
+                        </a>
+                      </li>
+                    <?php endforeach; ?>
+                  </ul>
+                </div>
+              </li>
+            <?php
+            }
+          } else {
+            // No submenu → check parent permission
+            if (!empty($menu['permission']) && !in_array($menu['permission'], $USER_PERMISSIONS)) {
+              continue;
             }
             ?>
-
             <li class="nav-item">
-              <a class="nav-link d-flex justify-content-between align-items-center"
-                data-bs-toggle="collapse"
-                href="#<?= $collapseId ?>"
-                aria-expanded="<?= $anyActive ? 'true' : 'false' ?>"
-                aria-controls="<?= $collapseId ?>">
-                <span class="d-inline-flex align-items-center gap-2">
-                  <i class="nav-icon <?= $menu['icon'] ?>"></i>
-                  <?= $menu['title'] ?>
-                </span>
-                <i class="bi bi-chevron-down collapse-arrow rotate-0"></i>
-              </a>
-
-              <div class="collapse <?= $anyActive ? 'show' : '' ?>" id="<?= $collapseId ?>" data-bs-parent="#sidebarAccordion">
-                <ul class="nav flex-column ms-3">
-                  <?php foreach ($visibleSubmenus as $sub): ?>
-                    <?php
-                    $isActive = isActivePage($sub['url']);
-                    $iconClass = !empty($sub['icon']) ? $sub['icon'] : 'bi bi-circle';
-                    ?>
-                    <li class="nav-item">
-                      <a href="<?= $Project_URL . $sub['url'] ?>"
-                        class="nav-link <?= $isActive ? 'active-page' : '' ?>">
-                        <i class="nav-icon <?= $iconClass ?>"></i>
-                        <p><?= $sub['title'] ?></p>
-                      </a>
-                    </li>
-                  <?php endforeach; ?>
-                </ul>
-              </div>
-            </li>
-
-          <?php else: ?>
-            <li class="nav-item">
-              <a href="<?= $Project_URL . $menu['url'] ?>"
-                class="nav-link <?= isActivePage($menu['url']) ? 'active-page' : '' ?>">
+              <a href="<?= $Project_URL . $menu['url'] ?>" class="nav-link <?= isActivePage($menu['url']) ? 'active-page' : '' ?>">
                 <i class="nav-icon <?= $menu['icon'] ?>"></i>
                 <p><?= $menu['title'] ?></p>
               </a>
             </li>
-          <?php endif; ?>
+          <?php } ?>
 
         <?php endforeach; ?>
-
       </ul>
     </nav>
   </div>

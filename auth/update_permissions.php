@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['changes'])) {
 
     foreach ($changes as $key => $value) {
         list($role_id, $perm_id) = explode('-', $key);
-        if ($role_id == 1) continue;
+        // if ($role_id == 1) continue;
 
         if ($value == 1) {
             $stmt = $conn->prepare("INSERT IGNORE INTO role_permission (role_id, permission_id) VALUES (?, ?)");

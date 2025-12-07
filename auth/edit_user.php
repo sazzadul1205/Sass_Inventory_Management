@@ -59,7 +59,7 @@ if (isset($_POST['submit'])) {
         $p->execute();
         $password = $p->get_result()->fetch_assoc()['password'];
       } else {
-        $password = password_hash($password, PASSWORD_BCRYPT);
+        $password = md5($password);
       }
 
       // Perform Update

@@ -72,9 +72,25 @@ $result = $conn->query($sql);
     <!-- Sidebar -->
     <?php include_once '../Inc/Sidebar.php'; ?>
 
+    <?php
+    $hasPermission = can('view_users');
+    ?>
+
+    <!-- Later in the HTML, right after your includes -->
+    <?php if (!$hasPermission): ?>
+      <div class="container mt-5">
+        <div class="alert alert-danger">
+          You do not have permission to access this page.
+        </div>
+        <a href="../index.php" class="btn btn-primary mt-3">Go Back</a>
+      </div>
+      <?php exit; // stop rendering the rest of the page 
+      ?>
+    <?php endif; ?>
+
+
     <!-- App Main -->
     <main class="app-main">
-
       <!-- Page Header -->
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
@@ -82,9 +98,12 @@ $result = $conn->query($sql);
           <h3 class="mb-0 " style="font-weight: 800;">All Users</h3>
 
           <!-- Add User Button -->
-          <a href="add_user.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
-            <i class="bi bi-plus me-1"></i> Add New User
-          </a>
+          <?php if (can('add_user')): ?>
+            <!-- Add User Button -->
+            <a href="add_user.php" class="btn btn-sm btn-primary px-3 py-2" style="font-size: medium;">
+              <i class="bi bi-plus me-1"></i> Add New User
+            </a>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -97,6 +116,7 @@ $result = $conn->query($sql);
         <div id="failMsg" class="alert alert-danger mt-3"><?= $_SESSION['fail_message'] ?></div>
         <?php unset($_SESSION['fail_message']); ?>
       <?php endif; ?>
+
 
       <!-- App Content Table -->
       <div class="app-content-body mt-3">
@@ -147,17 +167,21 @@ $result = $conn->query($sql);
                       <td>
                         <div class="d-flex gap-1">
                           <!-- Edit button -->
-                          <a href="edit_user.php?id=<?= urlencode($row['id']) ?>"
-                            class="btn btn-warning btn-sm flex-fill">
-                            <i class="bi bi-pencil-square"></i> Edit
-                          </a>
+                          <?php if (can('edit_user')): ?>
+                            <!-- Edit button -->
+                            <a href="edit_user.php?id=<?= urlencode($row['id']) ?>" class="btn btn-warning btn-sm flex-fill">
+                              <i class="bi bi-pencil-square"></i> Edit
+                            </a>
+                          <?php endif; ?>
 
                           <!-- Delete button -->
-                          <a href="delete_user.php?id=<?= urlencode($row['id']) ?>"
-                            class="btn btn-danger btn-sm flex-fill"
-                            onclick="return confirm('Are you sure you want to delete this user?');">
-                            <i class="bi bi-trash"></i> Delete
-                          </a>
+                          <?php if (can('delete_user')): ?>
+                            <a href="delete_user.php?id=<?= urlencode($row['id']) ?>"
+                              class="btn btn-danger btn-sm flex-fill"
+                              onclick="return confirm('Are you sure you want to delete this user?');">
+                              <i class="bi bi-trash"></i> Delete
+                            </a>
+                          <?php endif; ?>
                         </div>
                       </td>
 

@@ -65,21 +65,6 @@ if (!isset($_SESSION['user_id'])) {
       max-width: 300px;
       margin-bottom: 10px;
     }
-
-    /* Toolbar container for better visual separation */
-    .table-toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-start;
-      gap: 10px;
-      margin-bottom: 1rem;
-      align-items: center;
-    }
-
-    .table-toolbar .form-control,
-    .table-toolbar .form-select {
-      min-width: 200px;
-    }
   </style>
 </head>
 
@@ -143,7 +128,7 @@ while ($row = $result->fetch_assoc()) {
       <div class="table-toolbar p-3 mb-3 rounded shadow-sm bg-white d-flex flex-wrap align-items-end gap-3">
         <!-- Product Search -->
         <div class="d-flex flex-column flex-grow-1" style="min-width: 200px;">
-          <label for="permissionSearch" class="form-label fw-semibold mb-1">Search Permission Name</label>
+          <label for="permissionSearch" class="form-label fw-semibold mb-1">Search Product</label>
           <input type="text" id="permissionSearch" class="form-control" placeholder="Type to search...">
         </div>
       </div>

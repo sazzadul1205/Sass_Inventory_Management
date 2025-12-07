@@ -21,5 +21,15 @@ function connectDB()
   return $conn;
 }
 
+/**
+ * Check if the current user has permission
+ */
+function can($permission, $userPermissions = null)
+{
+  global $USER_PERMISSIONS;
+  $userPermissions = $userPermissions ?? $USER_PERMISSIONS;
+  return in_array($permission, $userPermissions);
+}
+
 // $Project_URL = "http://localhost/PWAD-68-1293312/Sass_Inventory/";
 $Project_URL = "http://localhost/Sass_Inventory_Management/";

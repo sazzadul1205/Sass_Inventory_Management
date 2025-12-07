@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 06, 2025 at 07:32 AM
+-- Generation Time: Dec 07, 2025 at 07:06 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -104,6 +104,53 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `create_purchase_receipt` (IN `p_cre
     COMMIT;
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `update_role_with_permissions` (IN `p_role_id` INT, IN `p_role_name` VARCHAR(255), IN `p_permissions` VARCHAR(255))   BEGIN
+    DECLARE
+        perm_id INT ; DECLARE pos INT DEFAULT 1 ; DECLARE next_pos INT ; DECLARE val VARCHAR(10) ;
+    START TRANSACTION
+        ;
+        -- Update role name
+    UPDATE
+        role
+    SET
+        role_name = p_role_name
+    WHERE
+        id = p_role_id ;
+        -- Delete existing permissions
+    DELETE
+FROM
+    role_permission
+WHERE
+    role_id = p_role_id ;
+    -- Insert new permissions
+    WHILE pos > 0
+DO
+SET
+    next_pos = LOCATE(',', p_permissions, pos) ; IF next_pos > 0 THEN
+SET
+    val = SUBSTRING(
+        p_permissions,
+        pos,
+        next_pos - pos
+    ) ;
+SET
+    pos = next_pos + 1 ; ELSE
+SET
+    val = SUBSTRING(p_permissions, pos) ;
+SET
+    pos = 0 ;
+END IF ; IF val != '' THEN
+INSERT INTO role_permission(role_id, permission_id)
+VALUES(
+    p_role_id,
+    CAST(val AS UNSIGNED)
+) ;
+END IF ;
+END WHILE ;
+COMMIT
+    ;
+END$$
+
 DELIMITER ;
 
 -- --------------------------------------------------------
@@ -162,40 +209,50 @@ CREATE TABLE `permission` (
 --
 
 INSERT INTO `permission` (`id`, `permission_name`) VALUES
-(17, 'Add Category'),
-(29, 'Add Inventory Adjustment'),
-(9, 'Add Product'),
-(21, 'Add Purchase'),
-(5, 'Add Role'),
-(25, 'Add Sale'),
-(13, 'Add Supplier'),
-(1, 'Add User'),
-(19, 'Delete Category'),
-(31, 'Delete Inventory Adjustment'),
-(11, 'Delete Product'),
-(23, 'Delete Purchase'),
-(7, 'Delete Role'),
-(27, 'Delete Sale'),
-(15, 'Delete Supplier'),
-(3, 'Delete User'),
-(18, 'Edit Category'),
-(30, 'Edit Inventory Adjustment'),
-(10, 'Edit Product'),
-(22, 'Edit Purchase'),
-(6, 'Edit Role'),
-(26, 'Edit Sale'),
-(14, 'Edit Supplier'),
-(2, 'Edit User'),
-(34, 'Process Product Request'),
-(20, 'View Categories'),
-(32, 'View Inventory Adjustments'),
-(33, 'View Product Requests'),
-(12, 'View Products'),
-(24, 'View Purchases'),
-(8, 'View Roles'),
-(28, 'View Sales'),
-(16, 'View Suppliers'),
-(4, 'View Users');
+(12, 'add_category'),
+(20, 'add_product'),
+(29, 'add_purchase'),
+(8, 'add_role'),
+(36, 'add_sale'),
+(16, 'add_supplier'),
+(4, 'add_user'),
+(43, 'delete_user'),
+(13, 'edit_category'),
+(21, 'edit_product'),
+(7, 'edit_role'),
+(17, 'edit_supplier'),
+(5, 'edit_user'),
+(44, 'update_permissions'),
+(26, 'view_all_purchase_receipts'),
+(37, 'view_all_receipts'),
+(33, 'view_all_sales_receipts'),
+(2, 'view_authentication_menu'),
+(11, 'view_categories'),
+(10, 'view_categories_menu'),
+(1, 'view_dashboard'),
+(40, 'view_low_stock'),
+(25, 'view_my_purchases'),
+(27, 'view_my_purchase_receipts'),
+(32, 'view_my_sales'),
+(34, 'view_my_sales_receipts'),
+(9, 'view_permissions'),
+(19, 'view_products'),
+(18, 'view_products_menu'),
+(24, 'view_purchases'),
+(23, 'view_purchases_menu'),
+(28, 'view_purchase_receipt'),
+(42, 'view_purchase_report'),
+(38, 'view_reports_menu'),
+(6, 'view_roles'),
+(31, 'view_sales'),
+(30, 'view_sales_menu'),
+(35, 'view_sales_receipt'),
+(41, 'view_sales_report'),
+(22, 'view_stock_overview'),
+(39, 'view_stock_report'),
+(15, 'view_suppliers'),
+(14, 'view_suppliers_menu'),
+(3, 'view_users');
 
 -- --------------------------------------------------------
 
@@ -430,21 +487,23 @@ INSERT INTO `role_permission` (`role_id`, `permission_id`) VALUES
 (1, 32),
 (1, 33),
 (1, 34),
-(2, 1),
-(2, 9),
-(2, 10),
+(1, 35),
+(1, 36),
+(1, 37),
+(1, 38),
+(1, 39),
+(1, 40),
+(1, 41),
+(1, 42),
+(1, 43),
+(1, 44),
+(2, 7),
 (2, 12),
-(2, 13),
-(2, 14),
-(2, 16),
-(2, 21),
+(2, 19),
+(2, 20),
 (2, 22),
-(2, 24),
-(2, 25),
-(2, 26),
-(2, 28),
-(2, 33),
-(2, 34),
+(2, 29),
+(2, 36),
 (3, 1),
 (3, 4),
 (3, 8),
@@ -456,7 +515,8 @@ INSERT INTO `role_permission` (`role_id`, `permission_id`) VALUES
 (3, 24),
 (3, 28),
 (3, 32),
-(3, 33);
+(3, 33),
+(3, 36);
 
 -- --------------------------------------------------------
 
@@ -585,8 +645,7 @@ CREATE TABLE `user` (
 INSERT INTO `user` (`id`, `username`, `password`, `email`, `role_id`, `created_at`, `updated_at`) VALUES
 (1, 'sazzadul admin', '13a84f75e1d009808e94f1910115089c', 'admin@gmail.com', 1, '2025-12-01 06:01:46', '2025-12-01 06:01:46'),
 (2, 'Sazzadul Employee', '4405078d2226307785c00984bb847b6d', 'employee@gmail.com', 2, '2025-12-01 06:01:46', '2025-12-01 06:01:46'),
-(3, 'Test', '478c7ba90ee096df1026eab052313474', 'Test@gmail.com', 2, '2025-12-01 20:20:25', '2025-12-01 20:20:25'),
-(5, 'Test2', 'c454552d52d55d3ef56408742887362b', 'Test2@gmail.com', 2, '2025-12-01 20:25:37', '2025-12-01 20:25:37'),
+(3, 'Test', '25f9e794323b453885f5181f1b624d0b', 'Test@gmail.com', 2, '2025-12-01 20:20:25', '2025-12-07 02:10:42'),
 (7, 'Teest3', '17e310318a1e207509c0f0cd8042063b', 'Test3@gmail.com', 2, '2025-12-01 20:30:41', '2025-12-01 20:30:41'),
 (9, 'sedafs', '8cca08722e4108babcb9218e5bb14a2d', 'asfswf@gmail.com', 2, '2025-12-01 20:32:52', '2025-12-01 20:32:52'),
 (10, 'fasfsfsdfvasd', '9dedbcec383f739207577016d7c387b3', 'faswefssdfvsa@gmail.com', 2, '2025-12-01 20:34:41', '2025-12-01 20:34:41'),
@@ -595,18 +654,21 @@ INSERT INTO `user` (`id`, `username`, `password`, `email`, `role_id`, `created_a
 -- --------------------------------------------------------
 
 --
--- Stand-in structure for view `view_product_movement_report`
+-- Stand-in structure for view `view_product_movement`
 -- (See below for the actual view)
 --
-CREATE TABLE `view_product_movement_report` (
+CREATE TABLE `view_product_movement` (
 `movement_id` int(11)
-,`type` varchar(8)
+,`product_id` int(11)
 ,`product_name` varchar(100)
-,`supplier_or_customer` varchar(100)
-,`quantity` int(11)
-,`unit_price` decimal(14,6)
-,`total_price` decimal(10,2)
+,`movement_type` varchar(8)
+,`qty_in` int(11)
+,`qty_out` int(11)
 ,`movement_date` date
+,`receipt_id` int(11)
+,`user_name` varchar(100)
+,`receipt_number` varchar(50)
+,`supplier_name` varchar(100)
 );
 
 -- --------------------------------------------------------
@@ -693,11 +755,11 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 -- --------------------------------------------------------
 
 --
--- Structure for view `view_product_movement_report`
+-- Structure for view `view_product_movement`
 --
-DROP TABLE IF EXISTS `view_product_movement_report`;
+DROP TABLE IF EXISTS `view_product_movement`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `view_product_movement_report`  AS   (select `pu`.`id` AS `movement_id`,'Purchase' AS `type`,`p`.`name` AS `product_name`,`s`.`name` AS `supplier_or_customer`,`pu`.`quantity` AS `quantity`,`pu`.`purchase_price` / `pu`.`quantity` AS `unit_price`,`pu`.`purchase_price` AS `total_price`,`pu`.`purchase_date` AS `movement_date` from ((`purchase` `pu` join `product` `p` on(`pu`.`product_id` = `p`.`id`)) left join `supplier` `s` on(`pu`.`supplier_id` = `s`.`id`))) union all (select `sa`.`id` AS `movement_id`,'Sale' AS `type`,`p`.`name` AS `product_name`,`u`.`username` AS `supplier_or_customer`,`sa`.`quantity` AS `quantity`,`sa`.`sale_price` / `sa`.`quantity` AS `unit_price`,`sa`.`sale_price` AS `total_price`,`sa`.`sale_date` AS `movement_date` from ((`sale` `sa` join `product` `p` on(`sa`.`product_id` = `p`.`id`)) left join `user` `u` on(`sa`.`sold_by` = `u`.`id`))) order by `movement_date` desc  ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `view_product_movement`  AS SELECT `combined_movements`.`movement_id` AS `movement_id`, `combined_movements`.`product_id` AS `product_id`, `combined_movements`.`product_name` AS `product_name`, `combined_movements`.`movement_type` AS `movement_type`, `combined_movements`.`qty_in` AS `qty_in`, `combined_movements`.`qty_out` AS `qty_out`, `combined_movements`.`movement_date` AS `movement_date`, `combined_movements`.`receipt_id` AS `receipt_id`, `combined_movements`.`user_name` AS `user_name`, `combined_movements`.`receipt_number` AS `receipt_number`, `combined_movements`.`supplier_name` AS `supplier_name` FROM (select `sa`.`id` AS `movement_id`,`p`.`id` AS `product_id`,`p`.`name` AS `product_name`,'sale' AS `movement_type`,0 AS `qty_in`,`sa`.`quantity` AS `qty_out`,`sa`.`sale_date` AS `movement_date`,`sa`.`receipt_id` AS `receipt_id`,`u`.`username` AS `user_name`,`r`.`receipt_number` AS `receipt_number`,'-' AS `supplier_name` from (((`sale` `sa` left join `product` `p` on(`sa`.`product_id` = `p`.`id`)) left join `user` `u` on(`sa`.`sold_by` = `u`.`id`)) left join `receipt` `r` on(`sa`.`receipt_id` = `r`.`id`)) union all select `pu`.`id` AS `movement_id`,`p`.`id` AS `product_id`,`p`.`name` AS `product_name`,'purchase' AS `movement_type`,`pu`.`quantity` AS `qty_in`,0 AS `qty_out`,`pu`.`purchase_date` AS `movement_date`,`pu`.`receipt_id` AS `receipt_id`,`u`.`username` AS `user_name`,`r`.`receipt_number` AS `receipt_number`,`s`.`name` AS `supplier_name` from ((((`purchase` `pu` left join `product` `p` on(`pu`.`product_id` = `p`.`id`)) left join `user` `u` on(`pu`.`purchased_by` = `u`.`id`)) left join `receipt` `r` on(`pu`.`receipt_id` = `r`.`id`)) left join `supplier` `s` on(`p`.`supplier_id` = `s`.`id`))) AS `combined_movements` ;
 
 -- --------------------------------------------------------
 
@@ -822,7 +884,7 @@ ALTER TABLE `category`
 -- AUTO_INCREMENT for table `permission`
 --
 ALTER TABLE `permission`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
 
 --
 -- AUTO_INCREMENT for table `product`
@@ -852,7 +914,7 @@ ALTER TABLE `receipt`
 -- AUTO_INCREMENT for table `role`
 --
 ALTER TABLE `role`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `sale`
@@ -870,7 +932,7 @@ ALTER TABLE `supplier`
 -- AUTO_INCREMENT for table `user`
 --
 ALTER TABLE `user`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- Constraints for dumped tables

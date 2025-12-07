@@ -13,9 +13,6 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-
-
-
 // Initialize response
 $response = ["status" => "fail"];
 

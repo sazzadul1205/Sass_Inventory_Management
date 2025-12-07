@@ -127,41 +127,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $selectedPermissions = $_POST['permissions'] ?? [];
 
   if (!empty($roleName)) {
-    // Update role name
-    $stmt = $conn->prepare("UPDATE role SET role_name = ? WHERE id = ?");
-    $stmt->bind_param('si', $roleName, $roleId);
-    $success = $stmt->execute();
-    $stmt->close();
+    // Convert selected permissions array to comma-separated string
+    $permissionsStr = implode(',', $selectedPermissions);
 
-    if ($success) {
-      // Remove old permissions
-      $stmt = $conn->prepare("DELETE FROM role_permission WHERE role_id = ?");
-      $stmt->bind_param('i', $roleId);
-      $stmt->execute();
-      $stmt->close();
+    // Call the stored procedure
+    $stmt = $conn->prepare("CALL update_role_with_permissions(?, ?, ?)");
+    $stmt->bind_param('iss', $roleId, $roleName, $permissionsStr);
 
-      // Insert selected permissions
-      foreach ($selectedPermissions as $permId) {
-        $stmt = $conn->prepare("INSERT INTO role_permission (role_id, permission_id) VALUES (?, ?)");
-        $stmt->bind_param('ii', $roleId, $permId);
-        $stmt->execute();
-        $stmt->close();
-      }
-
+    if ($stmt->execute()) {
       $_SESSION['success_message'] = "Role '$roleName' updated successfully!";
-      header("Location: roles.php");
-      exit;
     } else {
       $_SESSION['fail_message'] = "Failed to update role!";
     }
+
+    $stmt->close();
+    header("Location: roles.php");
+    exit;
   } else {
     $_SESSION['fail_message'] = "Role name cannot be empty!";
   }
 }
 
 $conn->close();
-
 ?>
+
 
 <!-- Body -->
 

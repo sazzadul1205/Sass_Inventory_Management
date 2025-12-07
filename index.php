@@ -1,5 +1,5 @@
 <?php
-include_once './config/db_config.php';
+include_once __DIR__ . '/config/db_config.php';
 session_start(); // Start session if not already started
 
 // Check if user is logged in

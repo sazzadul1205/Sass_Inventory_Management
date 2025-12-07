@@ -1,0 +1,50 @@
+1  - view_dashboard
+
+2  - view_authentication_menu
+3  - view_users
+4  - add_user
+5  - edit_user
+6  - view_roles
+7  - edit_role
+8  - add_role
+9  - view_permissions
+
+10 - view_categories_menu
+11 - view_categories
+12 - add_category
+13 - edit_category
+
+14 - view_suppliers_menu
+15 - view_suppliers
+16 - add_supplier
+17 - edit_supplier
+
+18 - view_products_menu
+19 - view_products
+20 - add_product
+21 - edit_product
+22 - view_stock_overview
+
+23 - view_purchases_menu
+24 - view_purchases
+25 - view_my_purchases
+26 - view_all_purchase_receipts
+27 - view_my_purchase_receipts
+28 - view_purchase_receipt
+29 - add_purchase
+
+30 - view_sales_menu
+31 - view_sales
+32 - view_my_sales
+33 - view_all_sales_receipts
+34 - view_my_sales_receipts
+35 - view_sales_receipt
+36 - add_sale
+
+37 - view_all_receipts
+
+38 - view_reports_menu
+39 - view_stock_report
+40 - view_low_stock
+41 - view_sales_report
+42 - view_purchase_report

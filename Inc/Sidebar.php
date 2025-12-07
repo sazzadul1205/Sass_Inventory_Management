@@ -1,7 +1,12 @@
 <?php
-include_once 'link.php';
+include_once 'link.php';  // This must define $conn
+
 
 $role = $_SESSION['role_id'];
+$conn = connectDB();
+
+// Now $conn exists
+$USER_PERMISSIONS = getUserPermissions($role, $conn);
 
 // Returns the current project root folder (e.g., /Sass_Inventory_Management)
 function getProjectRoot()
@@ -13,57 +18,68 @@ function getProjectRoot()
 $projectRoot = getProjectRoot();
 $Project_URL = $projectRoot; // use this as the base URL
 
-
-// Sidebar menu structure
+// Sidebar Menu
 $sidebarMenu = [
-  ['title' => 'Dashboard', 'icon' => 'bi bi-speedometer2', 'url' => 'index.php'],
+  [
+    'title' => 'Dashboard',
+    'icon' => 'bi bi-speedometer2',
+    'url' => 'index.php',
+    'permission' => 'view_dashboard'
+  ],
 
   // Authentication Section
   [
     'title' => 'Authentication',
     'icon' => 'bi bi-person-badge',
+    'permission' => 'view_authentication_menu',
     'submenu' => [
+
       [
         'title' => 'Users',
         'url' => 'auth/users.php',
-        'icon' => 'bi bi-people'
+        'icon' => 'bi bi-people',
+        'permission' => 'view_users'
       ],
       [
         'title' => 'Add User',
         'url' => 'auth/add_user.php',
-        'icon' => 'bi bi-person-plus'
+        'icon' => 'bi bi-person-plus',
+        'permission' => 'add_user'
       ],
       [
         'title' => 'Edit User',
         'url' => 'auth/edit_user.php',
         'hidden' => true,
-        'icon' => 'bi bi-pencil-square'
+        'icon' => 'bi bi-pencil-square',
+        'permission' => 'edit_user'
       ],
-
 
       [
         'title' => 'Roles',
         'url' => 'auth/roles.php',
-        'icon' => 'bi bi-shield-lock'
+        'icon' => 'bi bi-shield-lock',
+        'permission' => 'view_roles'
       ],
       [
         'title' => 'Edit Role',
         'url' => 'auth/edit_role.php',
         'hidden' => true,
-        'icon' => 'bi bi-pencil-square'
+        'icon' => 'bi bi-pencil-square',
+        'permission' => 'edit_role'
       ],
       [
         'title' => 'Add Role',
         'url' => 'auth/add_role.php',
         'hidden' => true,
-        'icon' => 'bi bi-plus-square'
+        'icon' => 'bi bi-plus-square',
+        'permission' => 'add_role'
       ],
-
 
       [
         'title' => 'Permissions',
         'url' => 'auth/permissions.php',
-        'icon' => 'bi bi-key'
+        'icon' => 'bi bi-key',
+        'permission' => 'view_permissions'
       ],
     ]
   ],
@@ -72,22 +88,26 @@ $sidebarMenu = [
   [
     'title' => 'Categories',
     'icon'  => 'bi bi-tags',
+    'permission' => 'view_categories_menu',
     'submenu' => [
       [
         'title' => 'All Categories',
         'url'   => 'category/index.php',
-        'icon'  => 'bi bi-card-list'
+        'icon'  => 'bi bi-card-list',
+        'permission' => 'view_categories'
       ],
       [
         'title' => 'Add Category',
         'url'   => 'category/add.php',
-        'icon'  => 'bi bi-plus-circle'
+        'icon'  => 'bi bi-plus-circle',
+        'permission' => 'add_category'
       ],
       [
         'title' => 'Edit Category',
         'url'   => 'category/edit.php',
         'icon'  => 'bi bi-pencil-square',
         'hidden' => true,
+        'permission' => 'edit_category'
       ]
     ]
   ],
@@ -96,14 +116,26 @@ $sidebarMenu = [
   [
     'title' => 'Suppliers',
     'icon' => 'bi bi-truck',
+    'permission' => 'view_suppliers_menu',
     'submenu' => [
-      ['title' => 'All Suppliers', 'url' => 'supplier/index.php', 'icon' => 'bi bi-list'],
-      ['title' => 'Add Supplier', 'url' => 'supplier/add.php', 'icon' => 'bi bi-plus-circle'],
+      [
+        'title' => 'All Suppliers',
+        'url' => 'supplier/index.php',
+        'icon' => 'bi bi-list',
+        'permission' => 'view_suppliers'
+      ],
+      [
+        'title' => 'Add Supplier',
+        'url' => 'supplier/add.php',
+        'icon' => 'bi bi-plus-circle',
+        'permission' => 'add_supplier'
+      ],
       [
         'title' => 'Edit Supplier',
         'url'   => 'supplier/edit.php',
         'icon'  => 'bi bi-pencil-square',
         'hidden' => true,
+        'permission' => 'edit_supplier'
       ]
     ]
   ],
@@ -112,103 +144,124 @@ $sidebarMenu = [
   [
     'title' => 'Products',
     'icon' => 'bi bi-box-seam',
+    'permission' => 'view_products_menu',
     'submenu' => [
-      ['title' => 'All Products', 'url' => 'product/index.php', 'icon' => 'bi bi-list'],
-      ['title' => 'Add Product', 'url' => 'product/add.php', 'icon' => 'bi bi-plus-circle'],
+      [
+        'title' => 'All Products',
+        'url' => 'product/index.php',
+        'icon' => 'bi bi-list',
+        'permission' => 'view_products'
+      ],
+      [
+        'title' => 'Add Product',
+        'url' => 'product/add.php',
+        'icon' => 'bi bi-plus-circle',
+        'permission' => 'add_product'
+      ],
       [
         'title' => 'Edit Product',
         'url'   => 'product/edit.php',
         'icon'  => 'bi bi-pencil-square',
         'hidden' => true,
+        'permission' => 'edit_product'
       ],
-      ['title' => 'Stock Overview', 'url' => 'product/stock.php', 'icon' => 'bi bi-bar-chart-line-fill']
+      [
+        'title' => 'Stock Overview',
+        'url' => 'product/stock.php',
+        'icon' => 'bi bi-bar-chart-line-fill',
+        'permission' => 'view_stock_overview'
+      ]
     ]
   ],
 
-  // Request Section
-  // [
-  //   'title' => 'Product Requests',
-  //   'icon' => 'bi bi-envelope-exclamation',
-  //   'submenu' => [
-  //     ['title' => 'Request List', 'url' => 'requests/index.php']
-  //   ]
-  // ],
-
-  // Purchase Section
+  // Purchases Section
   [
     'title' => 'Purchases',
     'icon'  => 'bi bi-cart-check',
+    'permission' => 'view_purchases_menu',
     'submenu' => [
       [
         'title' => 'All Purchases',
         'url' => 'purchase/index.php',
-        'icon' => 'bi bi-list-ul'
+        'icon' => 'bi bi-list-ul',
+        'permission' => 'view_purchases'
       ],
       [
         'title' => 'My Purchases',
         'url' => 'purchase/my-purchases.php',
-        'icon' => 'bi bi-person-check'
+        'icon' => 'bi bi-person-check',
+        'permission' => 'view_my_purchases'
       ],
       [
         'title' => 'All Purchase Receipts',
         'url' => 'purchase/all-receipt.php',
-        'icon' => 'bi bi-receipt'
+        'icon' => 'bi bi-receipt',
+        'permission' => 'view_all_purchase_receipts'
       ],
       [
         'title' => 'My Purchase Receipts',
         'url' => 'purchase/my-receipts.php',
-        'icon' => 'bi bi-person-lines-fill'
+        'icon' => 'bi bi-person-lines-fill',
+        'permission' => 'view_my_purchase_receipts'
       ],
       [
         'title' => 'Receipts',
         'url' => 'purchase/receipt.php',
         'icon' => 'bi bi-receipt',
-        'hidden' => true
+        'hidden' => true,
+        'permission' => 'view_purchase_receipt'
       ],
       [
         'title' => 'Add Purchase',
         'url' => 'purchase/add.php',
-        'icon' => 'bi bi-plus-circle'
+        'icon' => 'bi bi-plus-circle',
+        'permission' => 'add_purchase'
       ],
     ]
   ],
 
-
   // Sales Section
   [
     'title' => 'Sales',
-    'icon'  => 'bi bi-bag-check', // different icon from purchases
+    'icon'  => 'bi bi-bag-check',
+    'permission' => 'view_sales_menu',
     'submenu' => [
       [
         'title' => 'All Sales',
         'url' => 'sales/index.php',
-        'icon' => 'bi bi-list-ul'
+        'icon' => 'bi bi-list-ul',
+        'permission' => 'view_sales'
       ],
       [
         'title' => 'My Sales',
         'url' => 'sales/my-sales.php',
-        'icon' => 'bi bi-person-check'
+        'icon' => 'bi bi-person-check',
+        'permission' => 'view_my_sales'
       ],
       [
         'title' => 'All Sales Receipts',
         'url' => 'sales/all-receipt.php',
-        'icon' => 'bi bi-receipt'
+        'icon' => 'bi bi-receipt',
+        'permission' => 'view_all_sales_receipts'
       ],
       [
         'title' => 'My Sales Receipts',
         'url' => 'sales/my-receipts.php',
-        'icon' => 'bi bi-person-lines-fill'
+        'icon' => 'bi bi-person-lines-fill',
+        'permission' => 'view_my_sales_receipts'
       ],
       [
         'title' => 'Receipts',
         'url' => 'sales/receipt.php',
         'icon' => 'bi bi-receipt',
-        'hidden' => true
+        'hidden' => true,
+        'permission' => 'view_sales_receipt'
       ],
       [
         'title' => 'Add Sale',
         'url' => 'sales/add.php',
-        'icon' => 'bi bi-plus-circle'
+        'icon' => 'bi bi-plus-circle',
+        'permission' => 'add_sale'
       ],
     ]
   ],
@@ -216,61 +269,50 @@ $sidebarMenu = [
   [
     'title' => 'All Receipts',
     'icon' => 'bi bi-box-arrow-right',
-    'url' => 'receipts/index.php'
+    'url' => 'receipts/index.php',
+    'permission' => 'view_all_receipts'
   ],
-  // [
-  //   'title' => 'Inventory Adjustments',
-  //   'icon' => 'bi bi-pencil-square',
-  //   'submenu' => [
-  //     ['title' => 'Adjustment History', 'url' => 'adjustments/index.php'],
-  //     ['title' => 'Add Adjustment', 'url' => 'adjustments/add.php']
-  //   ]
-  // ],
 
+  // Reports Section
   [
     'title' => 'Reports',
     'icon'  => 'bi bi-graph-up-arrow',
+    'permission' => 'view_reports_menu',
     'submenu' => [
       [
         'title' => 'Stock Report',
         'url'   => 'reports/stock.php',
-        'icon'  => 'bi bi-box-seam'
+        'icon'  => 'bi bi-box-seam',
+        'permission' => 'view_stock_report'
       ],
       [
         'title' => 'Low Stock',
         'url'   => 'reports/low_stock.php',
-        'icon'  => 'bi bi-arrow-down-short'
+        'icon'  => 'bi bi-arrow-down-short',
+        'permission' => 'view_low_stock'
       ],
       [
         'title' => 'Sales Report',
         'url'   => 'reports/sales.php',
-        'icon'  => 'bi bi-cash-coin'
+        'icon'  => 'bi bi-cash-coin',
+        'permission' => 'view_sales_report'
       ],
       [
         'title' => 'Purchase Report',
         'url'   => 'reports/purchases.php',
-        'icon'  => 'bi bi-cart-check'
+        'icon'  => 'bi bi-cart-check',
+        'permission' => 'view_purchase_report'
       ],
     ]
   ],
 
-  // [
-  //   'title' => 'System Settings',
-  //   'icon' => 'bi bi-gear',
-  //   'submenu' => [
-  //     ['title' => 'Company Info', 'url' => 'settings/company.php'],
-  //     ['title' => 'Theme Settings', 'url' => 'settings/theme.php'],
-  //     ['title' => 'Email Settings', 'url' => 'settings/email.php'],
-  //     ['title' => 'Backup & Restore', 'url' => 'settings/backup.php']
-  //   ]
-  // ],
-  // ['title' => 'Activity Logs', 'icon' => 'bi bi-journal-text', 'url' => 'logs/index.php'],
   [
     'title' => 'Logout',
     'icon' => 'bi bi-box-arrow-right',
-    'url' => 'auth/logout.php'
+    'url' => 'auth/logout.php',
   ]
 ];
+
 
 // Render sidebar without active/open classes
 ?>
@@ -328,22 +370,42 @@ function isActivePage($url)
       <ul class="nav sidebar-menu flex-column" id="sidebarAccordion">
 
         <?php foreach ($sidebarMenu as $index => $menu): ?>
+
+          <?php
+          // Skip menu if user does not have permission
+          if (!empty($menu['permission']) && !in_array($menu['permission'], $USER_PERMISSIONS)) {
+            continue;
+          }
+          ?>
+
           <?php if (isset($menu['submenu'])): ?>
             <?php
             $collapseId = "collapseMenu$index";
+
+            // Check which submenus the user can see
+            $visibleSubmenus = array_filter($menu['submenu'], function ($sub) use ($USER_PERMISSIONS) {
+              if (!empty($sub['permission']) && !in_array($sub['permission'], $USER_PERMISSIONS)) {
+                return false;
+              }
+              // hidden pages still included if user has permission
+              return true;
+            });
+
+            if (empty($visibleSubmenus)) continue; // no allowed submenus, skip menu
+
+            // check if any submenu is active
             $anyActive = false;
-            foreach ($menu['submenu'] as $sub) {
+            foreach ($visibleSubmenus as $sub) {
               if (isActivePage($sub['url'])) $anyActive = true;
             }
             ?>
+
             <li class="nav-item">
               <a class="nav-link d-flex justify-content-between align-items-center"
                 data-bs-toggle="collapse"
                 href="#<?= $collapseId ?>"
-                role="button"
                 aria-expanded="<?= $anyActive ? 'true' : 'false' ?>"
                 aria-controls="<?= $collapseId ?>">
-
                 <span class="d-inline-flex align-items-center gap-2">
                   <i class="nav-icon <?= $menu['icon'] ?>"></i>
                   <?= $menu['title'] ?>
@@ -353,10 +415,9 @@ function isActivePage($url)
 
               <div class="collapse <?= $anyActive ? 'show' : '' ?>" id="<?= $collapseId ?>" data-bs-parent="#sidebarAccordion">
                 <ul class="nav flex-column ms-3">
-                  <?php foreach ($menu['submenu'] as $sub): ?>
+                  <?php foreach ($visibleSubmenus as $sub): ?>
                     <?php
                     $isActive = isActivePage($sub['url']);
-                    if (!empty($sub['hidden']) && !$isActive) continue; // skip hidden unless active
                     $iconClass = !empty($sub['icon']) ? $sub['icon'] : 'bi bi-circle';
                     ?>
                     <li class="nav-item">
@@ -373,18 +434,21 @@ function isActivePage($url)
 
           <?php else: ?>
             <li class="nav-item">
-              <a href="<?= $Project_URL . $menu['url'] ?>" class="nav-link <?= isActivePage($menu['url']) ? 'active-page' : '' ?>">
+              <a href="<?= $Project_URL . $menu['url'] ?>"
+                class="nav-link <?= isActivePage($menu['url']) ? 'active-page' : '' ?>">
                 <i class="nav-icon <?= $menu['icon'] ?>"></i>
                 <p><?= $menu['title'] ?></p>
               </a>
             </li>
           <?php endif; ?>
+
         <?php endforeach; ?>
 
       </ul>
     </nav>
   </div>
 </aside>
+
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {

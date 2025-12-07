@@ -33,6 +33,30 @@ if (!isset($_SESSION['user_id'])) {
   <!-- Apexcharts & VectorMap -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/css/jsvectormap.min.css" />
+
+  <!-- Add this CSS -->
+  <style>
+    .permission-card {
+      transition: 0.2s;
+      cursor: pointer;
+      user-select: none;
+      text-align: center;
+      padding: 1rem;
+      border-radius: 0.5rem;
+    }
+
+    .permission-card:hover {
+      background: #f0f8ff;
+      transform: translateY(-2px);
+    }
+
+    .permission-card.selected {
+      background: #007bff;
+      color: #fff;
+      font-weight: 600;
+    }
+  </style>
+
 </head>
 
 <?php
@@ -126,14 +150,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <label class="form-label" style="font-weight: 700;">Assign Permissions</label>
 
               <!-- Display Permissions -->
-              <div class="row">
+              <div class="row g-3">
                 <?php foreach ($permissions as $permId => $permName): ?>
-                  <div class="col-md-3">
-                    <div class="form-check">
-                      <input class="form-check-input" type="checkbox" name="permissions[]" value="<?= $permId ?>" id="perm<?= $permId ?>">
-                      <label class="form-check-label" for="perm<?= $permId ?>">
-                        <?= htmlspecialchars($permName) ?>
-                      </label>
+                  <div class="col-md-3 col-sm-6">
+                    <div class="permission-card card p-2 h-100 shadow-sm border-0"
+                      data-perm-id="<?= $permId ?>">
+                      <?= htmlspecialchars(ucwords(str_replace('_', ' ', $permName))) ?>
+                      <input type="checkbox" name="permissions[]" value="<?= $permId ?>" class="d-none">
                     </div>
                   </div>
                 <?php endforeach; ?>
@@ -167,13 +190,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <!-- Auto Remove Messages -->
   <script>
-    setTimeout(() => {
-      document.querySelectorAll("#successMsg, #failMsg").forEach(el => {
-        el.style.transition = "0.5s";
-        el.style.opacity = "0";
-        setTimeout(() => el.remove(), 500);
+    document.querySelectorAll('.permission-card').forEach(card => {
+      card.addEventListener('click', function() {
+        const checkbox = this.querySelector('input[type="checkbox"]');
+        checkbox.checked = !checkbox.checked;
+        this.classList.toggle('selected', checkbox.checked);
       });
-    }, 2500);
+    });
   </script>
 
 </body>

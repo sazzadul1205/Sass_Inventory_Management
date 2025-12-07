@@ -53,6 +53,33 @@ if (!isset($_SESSION['user_id'])) {
       background: #fff;
       z-index: 3;
     }
+
+    /* Admin cells cursor */
+    .admin-cell:hover {
+      cursor: not-allowed;
+      background: #f5f5f5;
+    }
+
+    /* Search input styling */
+    #permissionSearch {
+      max-width: 300px;
+      margin-bottom: 10px;
+    }
+
+    /* Toolbar container for better visual separation */
+    .table-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      gap: 10px;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+
+    .table-toolbar .form-control,
+    .table-toolbar .form-select {
+      min-width: 200px;
+    }
   </style>
 </head>
 
@@ -111,6 +138,17 @@ while ($row = $result->fetch_assoc()) {
         <?php unset($_SESSION['fail_message']); ?>
       <?php endif; ?>
 
+
+      <!-- Toolbar -->
+      <div class="table-toolbar p-3 mb-3 rounded shadow-sm bg-white d-flex flex-wrap align-items-end gap-3">
+        <!-- Product Search -->
+        <div class="d-flex flex-column flex-grow-1" style="min-width: 200px;">
+          <label for="permissionSearch" class="form-label fw-semibold mb-1">Search Permission Name</label>
+          <input type="text" id="permissionSearch" class="form-control" placeholder="Type to search...">
+        </div>
+      </div>
+
+
       <!-- App Content -->
       <div class="app-content-body mt-3">
         <div class="container-fluid">
@@ -133,7 +171,10 @@ while ($row = $result->fetch_assoc()) {
               <tbody>
                 <?php foreach ($permissions as $permId => $permName): ?>
                   <tr>
-                    <td class="sticky-left"><?= htmlspecialchars($permName) ?></td>
+                    <td class="sticky-left">
+                      <?= htmlspecialchars(ucwords(str_replace('_', ' ', $permName))) ?>
+                    </td>
+
 
                     <?php foreach ($roles as $roleId => $roleName): ?>
                       <td class="text-center permission-cell <?= $roleId == 1 ? 'admin-cell' : '' ?>"
@@ -206,6 +247,16 @@ while ($row = $result->fetch_assoc()) {
         $(this).prop("disabled", true);
       });
     });
+
+    // Permission search filter
+    $("#permissionSearch").on("keyup", function() {
+      let value = $(this).val().toLowerCase();
+
+      $("table tbody tr").filter(function() {
+        $(this).toggle($(this).find("td:first").text().toLowerCase().indexOf(value) > -1)
+      });
+    });
+
 
     // Auto fade messages
     setTimeout(() => {

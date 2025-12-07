@@ -94,6 +94,22 @@ while ($row = $result->fetch_assoc()) {
     <!-- Sidebar -->
     <?php include_once '../Inc/Sidebar.php'; ?>
 
+    <?php
+    $hasPermission = can('view_users');
+    ?>
+
+    <!-- Later in the HTML, right after your includes -->
+    <?php if (!$hasPermission): ?>
+      <div class="container mt-5">
+        <div class="alert alert-danger">
+          You do not have permission to access this page.
+        </div>
+        <a href="../index.php" class="btn btn-primary mt-3">Go Back</a>
+      </div>
+      <?php exit; // stop rendering the rest of the page 
+      ?>
+    <?php endif; ?>
+
     <!-- App Main -->
     <main class="app-main">
 

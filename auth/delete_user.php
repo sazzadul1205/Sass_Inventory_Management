@@ -1,14 +1,10 @@
 <?php
-session_start();
-include_once __DIR__ . '/../config/db_config.php';
-// Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../auth/login.php");
-    exit;
-}
+// Include the conflict-free auth guard
+include_once __DIR__ . '/../config/auth_guard.php';
 
-$formError = "";
-$conn = connectDB();
+// Require the user to have 'delete_user' permission
+// Unauthorized users will be redirected to index.php
+requirePermission('delete_user', '../index.php');
 
 // Check if user ID is provided
 if (!isset($_GET['id']) || empty($_GET['id'])) {
@@ -17,7 +13,9 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
     exit;
 }
 
-$user_id = $_GET['id'];
+$user_id = intval($_GET['id']); // always sanitize input
+
+$conn = connectDB();
 
 // Prepare and execute the delete statement
 $stmt = $conn->prepare("DELETE FROM user WHERE id = ?");
@@ -25,11 +23,13 @@ $stmt->bind_param("i", $user_id);
 
 if ($stmt->execute()) {
     $_SESSION['success_message'] = "User deleted successfully!";
-    header("Location: users.php");
 } else {
     $_SESSION['fail_message'] = "Failed to delete user!";
-    header("Location: users.php");
 }
 
 $stmt->close();
 $conn->close();
+
+// Redirect after action
+header("Location: users.php");
+exit;

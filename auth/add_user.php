@@ -1,6 +1,11 @@
 <?php
-session_start();
-include_once __DIR__ . '/../config/db_config.php';
+// Include the conflict-free auth guard
+include_once __DIR__ . '/../config/auth_guard.php';
+
+// Require the user to have 'view_roles' permission
+// Unauthorized users will be redirected to the project root index.php
+requirePermission('view_roles', '../index.php');
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
@@ -118,6 +123,22 @@ if (isset($_POST['submit'])) {
 
     <!-- Sidebar -->
     <?php include '../Inc/Sidebar.php'; ?>
+
+    <?php
+    $hasPermission = can('view_users');
+    ?>
+
+    <!-- Later in the HTML, right after your includes -->
+    <?php if (!$hasPermission): ?>
+      <div class="container mt-5">
+        <div class="alert alert-danger">
+          You do not have permission to access this page.
+        </div>
+        <a href="../index.php" class="btn btn-primary mt-3">Go Back</a>
+      </div>
+      <?php exit; // stop rendering the rest of the page 
+      ?>
+    <?php endif; ?>
 
     <!-- App Main -->
     <main class="app-main">

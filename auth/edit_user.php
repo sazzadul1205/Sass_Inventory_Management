@@ -1,12 +1,76 @@
 <?php
-session_start();
-include_once __DIR__ . '/../config/db_config.php';
+// Include the conflict-free auth guard
+include_once __DIR__ . '/../config/auth_guard.php';
+
+// Require the user to have 'view_roles' permission
+// Unauthorized users will be redirected to the project root index.php
+requirePermission('view_roles', '../index.php');
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
   exit;
 }
+?>
 
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title><?= $pageTitle ?> | Sass Inventory Management</title>
+  <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
+
+  <!-- Mobile + Theme -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
+
+  <!-- Fonts -->
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
+    media="print" onload="this.media='all'" />
+
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+
+  <!-- AdminLTE (Core Theme) -->
+  <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
+
+  <!-- Custom CSS -->
+  <style>
+    .card-custom {
+      border-radius: 12px;
+      border: 1px solid #e9ecef;
+      transition: 0.2s ease;
+    }
+
+    .card-custom:hover {
+      border-color: #cbd3da;
+    }
+
+    .form-label {
+      font-weight: 600;
+    }
+
+    .form-control,
+    .form-select {
+      padding: 10px 14px;
+      border-radius: 8px;
+    }
+
+    .btn-primary {
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .btn-secondary {
+      border-radius: 8px;
+    }
+  </style>
+</head>
+
+<?php
 $conn = connectDB();
 $formError = "";
 
@@ -80,63 +144,6 @@ if (isset($_POST['submit'])) {
   }
 }
 ?>
-
-<!doctype html>
-<html lang="en">
-
-<head>
-  <meta charset="UTF-8" />
-  <title><?= $pageTitle ?> | Sass Inventory Management</title>
-  <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
-
-  <!-- Mobile + Theme -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="color-scheme" content="light dark" />
-
-  <!-- Fonts -->
-  <link rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
-    media="print" onload="this.media='all'" />
-
-  <!-- Bootstrap Icons -->
-  <link rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
-
-  <!-- AdminLTE (Core Theme) -->
-  <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
-
-  <!-- Custom CSS -->
-  <style>
-    .card-custom {
-      border-radius: 12px;
-      border: 1px solid #e9ecef;
-      transition: 0.2s ease;
-    }
-
-    .card-custom:hover {
-      border-color: #cbd3da;
-    }
-
-    .form-label {
-      font-weight: 600;
-    }
-
-    .form-control,
-    .form-select {
-      padding: 10px 14px;
-      border-radius: 8px;
-    }
-
-    .btn-primary {
-      border-radius: 8px;
-      font-weight: 600;
-    }
-
-    .btn-secondary {
-      border-radius: 8px;
-    }
-  </style>
-</head>
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">

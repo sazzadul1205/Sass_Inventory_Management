@@ -1,14 +1,13 @@
+<!-- Sidebar inc -->
 <?php
-include_once 'link.php';  // This must define $conn
+include_once 'link.php'; 
 
-
+// Check if user is logged in
 $role = $_SESSION['role_id'];
 $conn = connectDB();
 
-// Now $conn exists
+// Get user permissions
 $USER_PERMISSIONS = getUserPermissions($role, $conn);
-
-
 
 // Returns the current project root folder (e.g., /Sass_Inventory_Management)
 function getProjectRoot()
@@ -315,11 +314,6 @@ $sidebarMenu = [
   ]
 ];
 
-
-// Render sidebar without active/open classes
-?>
-
-<?php
 // Returns the current relative path from project root
 function getCurrentRelativePath()
 {

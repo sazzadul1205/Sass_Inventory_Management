@@ -1,3 +1,4 @@
+<!-- db_config.php -->
 <?php
 
 // Database configuration

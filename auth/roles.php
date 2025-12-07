@@ -18,7 +18,7 @@ if (!isset($_SESSION['user_id'])) {
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <title>Roles | Sass Inventory Management System</title>
+  <title>All Roles | Sass Inventory Management System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon" />
 
   <!-- Mobile + Theme -->
@@ -53,14 +53,52 @@ if (!isset($_SESSION['user_id'])) {
 
   <!-- Custom CSS -->
   <style>
-    .btn-warning:hover {
-      background-color: #d39e00 !important;
-      border-color: #c99700 !important;
+    .role-card {
+      background-color: #f0f8ff;
+      /* softer blue */
+      border-radius: 0.75rem;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      cursor: pointer;
     }
 
-    .btn-danger:hover {
-      background-color: #bb2d3b !important;
-      border-color: #b02a37 !important;
+    .role-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 1rem 1.5rem rgba(0, 0, 0, 0.15);
+    }
+
+    .role-card .card-footer {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      border-top: 1px solid #e0e0e0;
+      background-color: #ffffff;
+    }
+
+    .role-card .card-footer a {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      transition: background-color 0.2s, transform 0.2s;
+    }
+
+    .role-card .card-footer a:hover {
+      transform: translateY(-2px);
+    }
+
+    .role-card-title {
+      font-weight: 700;
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    @media (max-width: 576px) {
+      .role-card {
+        margin-bottom: 1rem;
+      }
     }
   </style>
 </head>
@@ -71,8 +109,9 @@ $sql = "SELECT * FROM role ORDER BY id ASC";
 $result = $conn->query($sql);
 ?>
 
-<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+<!-- Body -->
 
+<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
 
     <!-- Navbar -->
@@ -87,8 +126,10 @@ $result = $conn->query($sql);
       <!-- Page Header -->
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
+          <!-- Page Title -->
           <h3 class="mb-0" style="font-weight: 800;">All Roles</h3>
 
+          <!-- Add New -->
           <a href="add_role.php" class="btn btn-sm btn-primary px-3 py-2" style="font-size: medium;">
             <i class="bi bi-plus me-1"></i> Add New Role
           </a>
@@ -110,30 +151,33 @@ $result = $conn->query($sql);
       <div class="app-content-body mt-3">
         <div class="container-fluid">
 
+          <!-- Roles -->
           <?php if ($result->num_rows == 0): ?>
             <div class="text-center text-muted py-5">
               <i class="bi bi-inbox fs-1 d-block mb-2"></i>
               <h5>No roles found</h5>
             </div>
-
           <?php else: ?>
-            <div class="row g-3">
+            <!-- All Roles -->
+            <div class="row g-4">
               <?php while ($row = $result->fetch_assoc()): ?>
-                <div class="col-md-3 col-sm-6 mb-3">
-                  <div class="card h-100 shadow-sm border-0 role-card">
-                    <div class="card-body">
-                      <h5 class="card-title mb-2">
-                        <i class="bi bi-shield-check text-primary"></i>
-                        <?= htmlspecialchars($row['role_name']) ?>
-                      </h5>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="card role-card h-100 shadow-sm">
+                    <!-- Body -->
+                    <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
+                      <i class="bi bi-shield-check fs-2 text-primary mb-2"></i>
+                      <h5 class="role-card-title mb-0"><?= htmlspecialchars($row['role_name']) ?></h5>
                     </div>
 
+                    <!-- Footer -->
                     <div class="card-footer bg-white border-0 d-flex gap-2">
+                      <!-- Edit -->
                       <a href="edit_role.php?id=<?= urlencode($row['id']) ?>"
                         class="btn btn-warning btn-sm w-50">
                         <i class="bi bi-pencil"></i> Edit
                       </a>
 
+                      <!-- Delete -->
                       <a href="delete_role.php?id=<?= urlencode($row['id']) ?>"
                         onclick="return confirm('Delete this role?')"
                         class="btn btn-danger btn-sm w-50">
@@ -146,15 +190,12 @@ $result = $conn->query($sql);
             </div>
 
           <?php endif; ?>
-
         </div>
       </div>
-
     </main>
 
     <!-- Footer -->
     <?php include_once '../Inc/Footer.php'; ?>
-
   </div>
 
   <!-- JS Dependencies -->

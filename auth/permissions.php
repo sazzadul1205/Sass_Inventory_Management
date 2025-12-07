@@ -1,12 +1,18 @@
 <?php
-session_start();
-include_once __DIR__ . '/../config/db_config.php';
+// Include the conflict-free auth guard
+include_once __DIR__ . '/../config/auth_guard.php';
+
+// Require the user to have 'view_roles' permission
+// Unauthorized users will be redirected to the project root index.php
+requirePermission('view_roles', '../index.php');
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
   exit;
 }
 ?>
+
 <!doctype html>
 <html lang="en">
 
@@ -65,6 +71,12 @@ if (!isset($_SESSION['user_id'])) {
       max-width: 300px;
       margin-bottom: 10px;
     }
+
+    /* Pending changes */
+    .permission-cell.changed {
+      background-color: #fff3cd;
+      transition: background-color 0.3s;
+    }
   </style>
 </head>
 
@@ -85,6 +97,8 @@ while ($row = $result->fetch_assoc()) {
 }
 ?>
 
+<!-- Body -->
+
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
 
@@ -94,37 +108,25 @@ while ($row = $result->fetch_assoc()) {
     <!-- Sidebar -->
     <?php include_once '../Inc/Sidebar.php'; ?>
 
-    <?php
-    $hasPermission = can('view_users');
-    ?>
-
-    <!-- Later in the HTML, right after your includes -->
-    <?php if (!$hasPermission): ?>
-      <div class="container mt-5">
-        <div class="alert alert-danger">
-          You do not have permission to access this page.
-        </div>
-        <a href="../index.php" class="btn btn-primary mt-3">Go Back</a>
-      </div>
-      <?php exit; // stop rendering the rest of the page 
-      ?>
-    <?php endif; ?>
-
     <!-- App Main -->
     <main class="app-main">
 
       <!-- Page Header -->
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
+          <!-- Page Title -->
           <h3 class="mb-0" style="font-weight: 800;">Manage Permissions </h3>
 
-          <button
-            id="updatePermissionsBtn"
-            class="btn btn-sm btn-primary px-3 py-2"
-            style="font-size: medium;"
-            disabled>
-            <i class="bi bi-arrow-repeat me-1"></i> Update Permissions
-          </button>
+          <!-- Update Permissions -->
+          <?php if (can('update_permissions')): ?>
+            <button
+              id="updatePermissionsBtn"
+              class="btn btn-sm btn-primary px-3 py-2"
+              style="font-size: medium;"
+              disabled>
+              <i class="bi bi-arrow-repeat me-1"></i> Update Permissions
+            </button>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -133,7 +135,6 @@ while ($row = $result->fetch_assoc()) {
         <div id="successMsg" class="alert alert-success mt-3"><?= $_SESSION['success_message'] ?></div>
         <?php unset($_SESSION['success_message']); ?>
       <?php endif; ?>
-
       <?php if (!empty($_SESSION['fail_message'])): ?>
         <div id="failMsg" class="alert alert-danger mt-3"><?= $_SESSION['fail_message'] ?></div>
         <?php unset($_SESSION['fail_message']); ?>
@@ -212,44 +213,78 @@ while ($row = $result->fetch_assoc()) {
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
+  <!-- Custom JS -->
   <script>
     $(function() {
       const adminRoleId = 1;
       let changes = {};
+      let originalState = {};
+
+      // Initialize original state for each cell
+      $(".permission-cell").each(function() {
+        const roleId = $(this).data("role");
+        const permId = $(this).data("permission");
+        const checked = $(this).find("i").hasClass("bi-check-lg") ? 1 : 0;
+
+        originalState[`${roleId}-${permId}`] = checked;
+      });
 
       // Click toggle
       $(".permission-cell").click(function() {
-        let roleId = parseInt($(this).data("role"));
-        let permId = parseInt($(this).data("permission"));
+        const roleId = parseInt($(this).data("role"));
+        const permId = parseInt($(this).data("permission"));
 
         if (roleId === adminRoleId) return;
 
-        let icon = $(this).find("i");
+        const key = `${roleId}-${permId}`;
+        const icon = $(this).find("i");
+
+        let newState;
 
         if (icon.hasClass("bi-check-lg")) {
           icon.removeClass("bi-check-lg text-success").addClass("bi-x-lg text-danger");
-          changes[`${roleId}-${permId}`] = 0;
+          newState = 0;
         } else {
           icon.removeClass("bi-x-lg text-danger").addClass("bi-check-lg text-success");
-          changes[`${roleId}-${permId}`] = 1;
+          newState = 1;
         }
 
+        // Compare with original state
+        if (newState !== originalState[key]) {
+          $(this).addClass("changed");
+          changes[key] = newState;
+        } else {
+          $(this).removeClass("changed");
+          delete changes[key];
+        }
+
+        // Enable or disable the update button
         $("#updatePermissionsBtn").prop("disabled", Object.keys(changes).length === 0);
       });
 
       // Save changes AJAX
       $("#updatePermissionsBtn").click(function() {
+        const btn = $(this);
+        btn.prop("disabled", true);
+
         $.post("update_permissions.php", {
           changes: changes
         }, function() {
-          location.reload();
+          // After successful save, reset originalState and remove highlights
+          for (let key in changes) {
+            const [roleId, permId] = key.split("-");
+            originalState[key] = changes[key]; // update original state
+            $(`.permission-cell[data-role="${roleId}"][data-permission="${permId}"]`).removeClass("changed");
+          }
+          changes = {};
+          location.reload(); // optional
         });
-
-        $(this).prop("disabled", true);
       });
     });
+  </script>
 
-    // Permission search filter
+  <!-- Permission search filter -->
+  <script>
     $("#permissionSearch").on("keyup", function() {
       let value = $(this).val().toLowerCase();
 
@@ -257,9 +292,10 @@ while ($row = $result->fetch_assoc()) {
         $(this).toggle($(this).find("td:first").text().toLowerCase().indexOf(value) > -1)
       });
     });
+  </script>
 
-
-    // Auto fade messages
+  <!-- Auto fade messages -->
+  <script>
     setTimeout(() => {
       $("#successMsg,#failMsg").fadeOut(500, function() {
         $(this).remove();

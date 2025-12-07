@@ -18,7 +18,7 @@ if (!isset($_SESSION['user_id'])) {
 
 <head>
   <meta charset="UTF-8" />
-  <title><?= $pageTitle ?> | Sass Inventory Management</title>
+  <title>Edit User | Sass Inventory Management</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
 
   <!-- Mobile + Theme -->

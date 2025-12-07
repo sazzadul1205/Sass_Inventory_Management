@@ -1,13 +1,90 @@
 <?php
-session_start();
-include_once __DIR__ . '/../config/db_config.php';
+// Include the conflict-free auth guard
+include_once __DIR__ . '/../config/auth_guard.php';
+
+// Require the user to have 'view_roles' permission
+// Unauthorized users will be redirected to the project root index.php
+requirePermission('view_roles', '../index.php');
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
   exit;
 }
+?>
 
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Edit Role | Sass Inventory Management System</title>
+  <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Fonts -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" media="print" onload="this.media='all'" />
+
+  <!-- Overlay Scrollbars -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css" />
+
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+
+  <!-- AdminLTE -->
+  <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
+
+  <!-- Apexcharts & VectorMap -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/css/jsvectormap.min.css" />
+
+  <!-- Custom CSS -->
+  <style>
+    .permission-card {
+      transition: 0.2s;
+      cursor: pointer;
+      user-select: none;
+      text-align: center;
+      padding: 1rem;
+      border-radius: 0.5rem;
+    }
+
+    .permission-card:hover {
+      background: #f0f8ff;
+      transform: translateY(-2px);
+    }
+
+    .permission-card.selected {
+      background: #007bff;
+      color: #fff;
+      font-weight: 600;
+    }
+
+
+    .form-label {
+      font-weight: 600;
+    }
+
+    .form-control,
+    .form-select {
+      padding: 10px 14px;
+      border-radius: 8px;
+    }
+
+    .btn-primary {
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .btn-secondary {
+      border-radius: 8px;
+    }
+  </style>
+</head>
+
+
+<?php
 $conn = connectDB();
 
 // Get role ID from query string
@@ -81,57 +158,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['fail_message'] = "Role name cannot be empty!";
   }
 }
+
+$conn->close();
+
 ?>
 
-<!doctype html>
-<html lang="en">
-
-<head>
-  <meta charset="utf-8" />
-  <title>Edit Role | Sass Inventory Management System</title>
-  <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" />
-
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- Fonts -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" media="print" onload="this.media='all'" />
-
-  <!-- Overlay Scrollbars -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css" />
-
-  <!-- Bootstrap Icons -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
-
-  <!-- AdminLTE -->
-  <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
-
-  <!-- Apexcharts & VectorMap -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/css/jsvectormap.min.css" />
-
-  <!-- Permission card CSS -->
-  <style>
-    .permission-card {
-      transition: 0.2s;
-      cursor: pointer;
-      user-select: none;
-      text-align: center;
-      padding: 1rem;
-      border-radius: 0.5rem;
-    }
-
-    .permission-card:hover {
-      background: #f0f8ff;
-      transform: translateY(-2px);
-    }
-
-    .permission-card.selected {
-      background: #007bff;
-      color: #fff;
-      font-weight: 600;
-    }
-  </style>
-</head>
+<!-- Body -->
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
@@ -150,14 +182,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
       </div>
 
-      <!-- Messages -->
-      <?php if (!empty($_SESSION['success_message'])): ?>
-        <div id="successMsg" class="alert alert-success"><?= $_SESSION['success_message']; ?></div>
-        <?php unset($_SESSION['success_message']); ?>
-      <?php endif; ?>
-      <?php if (!empty($_SESSION['fail_message'])): ?>
-        <div id="failMsg" class="alert alert-danger"><?= $_SESSION['fail_message']; ?></div>
-        <?php unset($_SESSION['fail_message']); ?>
+      <!-- Error -->
+      <?php if (!empty($formError)): ?>
+        <div id="errorBox" class="alert alert-danger text-center">
+          <?= htmlspecialchars($formError) ?>
+        </div>
       <?php endif; ?>
 
       <!-- Form -->
@@ -208,10 +237,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
 
   <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlayscrollbars.browser.es6.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlaysscrollbars.browser.es6.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"></script>
-  <script src="./js/adminlte.js"></script>
 
   <!-- Permission card toggle -->
   <script>
@@ -222,17 +249,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         this.classList.toggle('selected', checkbox.checked);
       });
     });
-
-    // Auto remove messages
-    setTimeout(() => {
-      document.querySelectorAll("#successMsg, #failMsg").forEach(el => {
-        el.style.transition = "0.5s";
-        el.style.opacity = "0";
-        setTimeout(() => el.remove(), 500);
-      });
-    }, 2500);
   </script>
 
+  <!-- Auto-hide error -->
+  <script>
+    setTimeout(() => {
+      const box = document.getElementById("errorBox");
+      if (box) {
+        box.style.opacity = "0";
+        setTimeout(() => box.remove(), 500);
+      }
+    }, 3000);
+  </script>
 </body>
 
 </html>

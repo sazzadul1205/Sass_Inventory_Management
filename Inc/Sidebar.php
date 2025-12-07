@@ -1,6 +1,6 @@
 <!-- Sidebar inc -->
 <?php
-include_once 'link.php'; 
+include_once 'link.php';
 
 // Check if user is logged in
 $role = $_SESSION['role_id'];
@@ -375,7 +375,8 @@ function isActivePage($url)
             // Only count submenus that are visible (not hidden) AND allowed by permission
             $visibleSubmenus = array_filter($menu['submenu'], function ($sub) use ($USER_PERMISSIONS) {
               $hasPermission = empty($sub['permission']) || in_array($sub['permission'], $USER_PERMISSIONS);
-              $notHidden = empty($sub['hidden']) || $sub['hidden'] !== true;
+              // Allow hidden items only if currently active
+              $notHidden = empty($sub['hidden']) || $sub['hidden'] !== true || isActivePage($sub['url']);
               return $hasPermission && $notHidden;
             });
 

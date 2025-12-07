@@ -13,23 +13,27 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
     exit;
 }
 
-$user_id = intval($_GET['id']); // always sanitize input
+// Get the user ID
+$user_id = intval($_GET['id']);
 
+// Connect to the database
 $conn = connectDB();
 
 // Prepare and execute the delete statement
 $stmt = $conn->prepare("DELETE FROM user WHERE id = ?");
 $stmt->bind_param("i", $user_id);
 
+// Execute the delete statement
 if ($stmt->execute()) {
     $_SESSION['success_message'] = "User deleted successfully!";
 } else {
     $_SESSION['fail_message'] = "Failed to delete user!";
 }
 
+// Close the database connection
 $stmt->close();
 $conn->close();
 
-// Redirect after action
+// Redirect back to the users page
 header("Location: users.php");
 exit;

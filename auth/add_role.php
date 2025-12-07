@@ -8,12 +8,13 @@ if (!isset($_SESSION['user_id'])) {
   exit;
 }
 ?>
+
 <!doctype html>
 <html lang="en">
 
 <head>
   <meta charset="utf-8" />
-  <title>Users | Sass Inventory Management System</title>
+  <title>Add New Role | Sass Inventory Management System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -34,7 +35,7 @@ if (!isset($_SESSION['user_id'])) {
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/css/jsvectormap.min.css" />
 
-  <!-- Add this CSS -->
+  <!-- Custom CSS -->
   <style>
     .permission-card {
       transition: 0.2s;
@@ -55,26 +56,54 @@ if (!isset($_SESSION['user_id'])) {
       color: #fff;
       font-weight: 600;
     }
+
+
+    .form-label {
+      font-weight: 600;
+    }
+
+    .form-control,
+    .form-select {
+      padding: 10px 14px;
+      border-radius: 8px;
+    }
+
+    .btn-primary {
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .btn-secondary {
+      border-radius: 8px;
+    }
   </style>
 
 </head>
 
 <?php
+$formError = "";
+
+// Connect to database
 $conn = connectDB();
 
 // Fetch permissions
 $permissions = [];
 $permissionsResult = $conn->query("SELECT * FROM permission ORDER BY permission_name ASC");
+
+// Fetch permissions
 while ($perm = $permissionsResult->fetch_assoc()) {
   $permissions[$perm['id']] = $perm['permission_name'];
 }
 
-// Handle form submit
+// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $roleName = trim($_POST['role_name']);
+  $roleName = trim($_POST['role_name'] ?? '');
   $selectedPermissions = $_POST['permissions'] ?? [];
 
-  if (!empty($roleName)) {
+  if ($roleName === '') {
+    $_SESSION['fail_message'] = "Role name cannot be empty!";
+  } else {
+    // Insert role
     $stmt = $conn->prepare("INSERT INTO role (role_name) VALUES (?)");
     $stmt->bind_param('s', $roleName);
 
@@ -82,24 +111,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $roleId = $stmt->insert_id;
       $stmt->close();
 
-      foreach ($selectedPermissions as $permId) {
-        $stmt = $conn->prepare("INSERT INTO role_permission (role_id, permission_id) VALUES (?, ?)");
-        $stmt->bind_param('ii', $roleId, $permId);
-        $stmt->execute();
-        $stmt->close();
+      // Insert role permissions only if any selected
+      if (!empty($selectedPermissions)) {
+        $stmtPerm = $conn->prepare("INSERT INTO role_permission (role_id, permission_id) VALUES (?, ?)");
+        foreach ($selectedPermissions as $permId) {
+          $permId = (int)$permId; // sanitize input
+          $stmtPerm->bind_param('ii', $roleId, $permId);
+          $stmtPerm->execute();
+        }
+        $stmtPerm->close();
       }
 
       $_SESSION['success_message'] = "Role '$roleName' created successfully!";
       header("Location: roles.php");
       exit;
     } else {
-      $_SESSION['fail_message'] = "Failed to create role!";
+      $formError = "Failed to create role!" . $conn->error;
     }
-  } else {
-    $_SESSION['fail_message'] = "Role name cannot be empty!";
   }
 }
 ?>
+
+
+<!-- Body -->
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
@@ -120,16 +154,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
       </div>
 
-      <!-- Messages -->
-      <?php if (!empty($_SESSION['success_message'])): ?>
-        <div id="successMsg" class="alert alert-success"><?= $_SESSION['success_message']; ?></div>
-        <?php unset($_SESSION['success_message']); ?>
+      <!-- Error -->
+      <?php if ($formError): ?>
+        <div id="errorBox" class="alert alert-danger text-center">
+          <?= htmlspecialchars($formError) ?>
+        </div>
       <?php endif; ?>
-      <?php if (!empty($_SESSION['fail_message'])): ?>
-        <div id="failMsg" class="alert alert-danger"><?= $_SESSION['fail_message']; ?></div>
-        <?php unset($_SESSION['fail_message']); ?>
-      <?php endif; ?>
-
 
       <!-- Page Content -->
       <div class="app-content-body mt-3">
@@ -179,16 +209,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <!-- Footer -->
     <?php include_once '../Inc/Footer.php'; ?>
-
   </div>
 
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlayscrollbars.browser.es6.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlaysscrollbars.browser.es6.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"></script>
-  <script src="./js/adminlte.js"></script>
 
-  <!-- Auto Remove Messages -->
+  <!-- Auto-hide error -->
+  <script>
+    setTimeout(() => {
+      const box = document.getElementById("errorBox");
+      if (box) {
+        box.style.opacity = "0";
+        setTimeout(() => box.remove(), 500);
+      }
+    }, 3000);
+  </script>
+
+  <!-- Permission card toggle -->
   <script>
     document.querySelectorAll('.permission-card').forEach(card => {
       card.addEventListener('click', function() {
@@ -198,7 +236,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       });
     });
   </script>
-
 </body>
 
 </html>

@@ -18,24 +18,27 @@ if (!isset($_SESSION['user_id'])) {
 
 <head>
   <meta charset="utf-8" />
-  <title>Add User | Sass Inventory System</title>
+  <title>Add New User | Sass Inventory System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" />
 
-  <!-- Mobile + Theme -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="color-scheme" content="light dark" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- Fonts -->
-  <link rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
-    media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" media="print" onload="this.media='all'" />
+
+  <!-- Overlay Scrollbars -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css" />
 
   <!-- Bootstrap Icons -->
-  <link rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
 
-  <!-- AdminLTE (Core Theme) -->
+  <!-- AdminLTE -->
   <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
+
+  <!-- Apexcharts & VectorMap -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/css/jsvectormap.min.css" />
+
 
   <!-- Custom CSS -->
   <style>
@@ -123,22 +126,6 @@ if (isset($_POST['submit'])) {
 
     <!-- Sidebar -->
     <?php include '../Inc/Sidebar.php'; ?>
-
-    <?php
-    $hasPermission = can('view_users');
-    ?>
-
-    <!-- Later in the HTML, right after your includes -->
-    <?php if (!$hasPermission): ?>
-      <div class="container mt-5">
-        <div class="alert alert-danger">
-          You do not have permission to access this page.
-        </div>
-        <a href="../index.php" class="btn btn-primary mt-3">Go Back</a>
-      </div>
-      <?php exit; // stop rendering the rest of the page 
-      ?>
-    <?php endif; ?>
 
     <!-- App Main -->
     <main class="app-main">

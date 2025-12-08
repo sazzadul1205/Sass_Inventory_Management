@@ -1,6 +1,10 @@
 <?php
-session_start();
-include_once __DIR__ . '/../config/db_config.php';
+// Include the conflict-free auth guard
+include_once __DIR__ . '/../config/auth_guard.php';
+
+// Require the user to have 'view_roles' permission
+// Unauthorized users will be redirected to the project root index.php
+requirePermission('add_product', '../index.php');
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -8,15 +12,14 @@ if (!isset($_SESSION['user_id'])) {
   exit;
 }
 ?>
+
 <!doctype html>
 <html lang="en">
 
 <head>
   <meta charset="utf-8" />
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <title>Add Product | Sass Inventory Management System</title>
+  <title>Add New Product | Sass Inventory System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" />
-
   <!-- Mobile + Theme -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="light dark" />
@@ -106,8 +109,10 @@ if (!isset($_SESSION['user_id'])) {
 </head>
 
 <?php
-$conn = connectDB();
 $formError = "";
+
+// Connect to the database
+$conn = connectDB();
 
 // Fetch all categories & suppliers
 $categories = $conn->query("SELECT id, name FROM category ORDER BY name ASC");
@@ -141,10 +146,13 @@ if (isset($_POST['submit'])) {
       $formError = "Failed to add product: " . $stmt->error;
     }
 
+    $conn->close();
     $stmt->close();
   }
 }
 ?>
+
+<!-- Body -->
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
@@ -161,6 +169,7 @@ if (isset($_POST['submit'])) {
       <!-- Page Header -->
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
+          <!-- Page Title -->
           <h3 class="mb-0" style="font-weight: 800;">Add New Product</h3>
         </div>
       </div>
@@ -179,7 +188,9 @@ if (isset($_POST['submit'])) {
             <div class="card-body">
 
               <!-- Header -->
-              <h4 class="mb-4">Add Product Information</h4>
+              <h4 class="mb-4 fw-bold text-secondary border-bottom pb-2">
+                Add Product Information
+              </h4>
 
               <!-- Form -->
               <form method="post">

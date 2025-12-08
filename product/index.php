@@ -14,7 +14,7 @@ if (!isset($_SESSION['user_id'])) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Products | Sass Inventory Management System</title>
+  <title>All Products | Sass Inventory Management System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
 
   <!-- Mobile + Theme -->
@@ -148,9 +148,11 @@ $result = $conn->query($sql);
           <h3 class="mb-0 " style="font-weight: 800;">All Products</h3>
 
           <!-- Add Product Button -->
-          <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
-            <i class="bi bi-plus me-1"></i> Add New Product
-          </a>
+          <?php if (can('add_product')): ?>
+            <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
+              <i class="bi bi-plus me-1"></i> Add New Product
+            </a>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -174,7 +176,7 @@ $result = $conn->query($sql);
             <label for="productSearch" class="form-label fw-semibold mb-1">Search Product</label>
             <input type="text" id="productSearch" class="form-control" placeholder="Type to search...">
           </div>
-          
+
           <!-- Category Filter -->
           <div class="d-flex flex-column" style="min-width: 200px;">
             <label for="categoryFilter" class="form-label fw-semibold mb-1">Filter by Category</label>
@@ -256,12 +258,19 @@ $result = $conn->query($sql);
                   <td><?= !empty($row['updated_at']) ? date('d M Y h:i A', strtotime($row['updated_at'])) : '' ?></td>
                   <td>
                     <div class="d-flex gap-1">
-                      <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-warning btn-sm flex-fill">
-                        <i class="bi bi-pencil-square"></i> Edit
-                      </a>
-                      <a href="delete.php?id=<?= $row['id'] ?>" class="btn btn-danger btn-sm flex-fill" onclick="return confirm('Delete this product?');">
-                        <i class="bi bi-trash"></i> Delete
-                      </a>
+                      <!-- Edit button -->
+                      <?php if (can('edit_product')): ?>
+                        <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-warning btn-sm flex-fill">
+                          <i class="bi bi-pencil-square"></i> Edit
+                        </a>
+                      <?php endif; ?>
+
+                      <!-- Delete button -->
+                      <?php if (can('delete_product')): ?>
+                        <a href="delete.php?id=<?= $row['id'] ?>" class="btn btn-danger btn-sm flex-fill" onclick="return confirm('Delete this product?');">
+                          <i class="bi bi-trash"></i> Delete
+                        </a>
+                      <?php endif; ?>
                     </div>
                   </td>
                 </tr>
@@ -307,90 +316,93 @@ $result = $conn->query($sql);
         }
       });
 
-      // Reset all filters and search with animation
-      $('#resetFilters').on('click', function() {
-        var icon = $(this).find('.reset-icon');
-
-        // Add spin class
-        icon.addClass('spinning');
-
-        // Clear DataTable search
-        $('#productSearch').val('');
-        table.search('').draw();
-
-        // Reset Select2 filters
-        $('#categoryFilter').val('').trigger('change');
-        $('#supplierFilter').val('').trigger('change');
-
-        // Remove spin after 800ms
-        setTimeout(function() {
-          icon.removeClass('spinning');
-        }, 800);
-      });
-
-      // Initialize Select2 for category and supplier filters
-      $('#categoryFilter, #supplierFilter').select2({
-        placeholder: "Select",
-        allowClear: true,
-        width: '100%',
-        dropdownParent: $('body'),
-        // Custom matcher to always show "All" option
-        matcher: function(params, data) {
-          // Always show empty option (value="")
-          if (data.id === "") {
-            return data;
-          }
-
-          // Default matching
-          if ($.trim(params.term) === '') {
-            return data;
-          }
-
-          if (typeof data.text === 'undefined') {
-            return null;
-          }
-
-          if (data.text.toLowerCase().indexOf(params.term.toLowerCase()) > -1) {
-            return data;
-          }
-
-          // Return null if no match
-          return null;
-        }
-      });
-
-      // Filter table by category
-      $('#categoryFilter').on('change', function() {
-        var selectedCategory = $(this).val();
-        if (!selectedCategory) {
-          // Reset filter when "All Categories" is selected
-          table.column(2).search('').draw();
-        } else {
-          table.column(2).search(selectedCategory).draw(); // column 2 = Category
-        }
-      });
-
-      // Filter table by supplier
-      $('#supplierFilter').on('change', function() {
-        var selectedSupplier = $(this).val();
-        if (!selectedSupplier) {
-          // Reset filter when "All Suppliers" is selected
-          table.column(3).search('').draw();
-        } else {
-          table.column(3).search(selectedSupplier).draw(); // column 3 = Supplier
-        }
-      });
-
-      // Search products by name
-      $('#productSearch').on('keyup', function() {
-        table.search(this.value).draw();
-      });
-
       // Remove success/fail messages after 3s
       setTimeout(() => {
         const msg = document.getElementById('successMsg') || document.getElementById('failMsg');
         if (msg) msg.remove();
       }, 3000);
+    });
+  </script>
+
+  <!-- Filter JS -->
+  <script>
+    // Reset all filters and search with animation
+    $('#resetFilters').on('click', function() {
+      var icon = $(this).find('.reset-icon');
+
+      // Add spin class
+      icon.addClass('spinning');
+
+      // Clear DataTable search
+      $('#productSearch').val('');
+      table.search('').draw();
+
+      // Reset Select2 filters
+      $('#categoryFilter').val('').trigger('change');
+      $('#supplierFilter').val('').trigger('change');
+
+      // Remove spin after 800ms
+      setTimeout(function() {
+        icon.removeClass('spinning');
+      }, 800);
+    });
+
+    // Initialize Select2 for category and supplier filters
+    $('#categoryFilter, #supplierFilter').select2({
+      placeholder: "Select",
+      allowClear: true,
+      width: '100%',
+      dropdownParent: $('body'),
+      // Custom matcher to always show "All" option
+      matcher: function(params, data) {
+        // Always show empty option (value="")
+        if (data.id === "") {
+          return data;
+        }
+
+        // Default matching
+        if ($.trim(params.term) === '') {
+          return data;
+        }
+
+        if (typeof data.text === 'undefined') {
+          return null;
+        }
+
+        if (data.text.toLowerCase().indexOf(params.term.toLowerCase()) > -1) {
+          return data;
+        }
+
+        // Return null if no match
+        return null;
+      }
+    });
+
+    // Filter table by category
+    $('#categoryFilter').on('change', function() {
+      var selectedCategory = $(this).val();
+      if (!selectedCategory) {
+        // Reset filter when "All Categories" is selected
+        table.column(2).search('').draw();
+      } else {
+        table.column(2).search(selectedCategory).draw(); // column 2 = Category
+      }
+    });
+
+    // Filter table by supplier
+    $('#supplierFilter').on('change', function() {
+      var selectedSupplier = $(this).val();
+      if (!selectedSupplier) {
+        // Reset filter when "All Suppliers" is selected
+        table.column(3).search('').draw();
+      } else {
+        table.column(3).search(selectedSupplier).draw(); // column 3 = Supplier
+      }
+    });
+
+    // Search products by name
+    $('#productSearch').on('keyup', function() {
+      table.search(this.value).draw();
     });
   </script>
 

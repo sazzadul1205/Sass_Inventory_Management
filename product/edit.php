@@ -1,12 +1,18 @@
 <?php
-session_start();
-include_once __DIR__ . '/../config/db_config.php';
+// Include the conflict-free auth guard
+include_once __DIR__ . '/../config/auth_guard.php';
+
+// Require the user to have 'view_roles' permission
+// Unauthorized users will be redirected to the project root index.php
+requirePermission('edit_product', '../index.php');
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
   exit;
 }
 ?>
+
 <!doctype html>
 <html lang="en">
 
@@ -37,9 +43,6 @@ if (!isset($_SESSION['user_id'])) {
 
   <!-- Custom CSS -->
   <style>
-    /* 
-       General Card & Form Styling
-        */
     .card-custom {
       border-radius: 12px;
       border: 1px solid #e9ecef;
@@ -69,9 +72,8 @@ if (!isset($_SESSION['user_id'])) {
       border-radius: 8px;
     }
 
-    /* 
-       Select2 Custom Styling
-        */
+
+    /* Select2 Custom Styling */
     .select2-container--default .select2-selection--single {
       height: calc(1.5em + 0.75rem + 2px);
       /* match bootstrap input height */
@@ -109,8 +111,10 @@ if (!isset($_SESSION['user_id'])) {
 </head>
 
 <?php
-$conn = connectDB();
 $formError = "";
+
+// Connect to the database
+$conn = connectDB();
 
 // Check if product ID is provided
 if (!isset($_GET['id']) || empty($_GET['id'])) {
@@ -159,10 +163,13 @@ if (isset($_POST['submit'])) {
       $formError = "Error: " . $stmt->error;
     }
 
+    $conn->close();
     $stmt->close();
   }
 }
 ?>
+
+<!-- Body -->
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
@@ -197,7 +204,9 @@ if (isset($_POST['submit'])) {
             <div class="card-body">
 
               <!-- Header -->
-              <h4 class="mb-4">Update Product Information</h4>
+              <h4 class="mb-4 fw-bold text-secondary border-bottom pb-2">
+                Update Product Information
+              </h4>
 
               <!-- Form -->
               <form method="post">
@@ -283,9 +292,14 @@ if (isset($_POST['submit'])) {
     <?php include_once '../Inc/Footer.php'; ?>
   </div>
 
-  <!-- JS Dependencies -->
+  <!-- JQuery -->
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlaysscrollbars.browser.es6.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"></script>
+
+  <!-- Select2 Dependencies -->
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
   <!-- Select2 Initialization -->

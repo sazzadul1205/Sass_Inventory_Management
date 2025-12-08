@@ -55,5 +55,5 @@ if ($deleteStmt) {
 
 $conn->close();
 
-header("Location: supplier/index.php");
+header("Location: index.php");
 exit;

@@ -73,8 +73,10 @@ if (!isset($_SESSION['user_id'])) {
 
 
 <?php
-$conn = connectDB();
 $formError = "";
+
+// Connect to the database
+$conn = connectDB();
 
 // Check for supplier ID
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
@@ -120,14 +122,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
       $formError = "Failed to update supplier: " . $stmt->error;
     }
-
-    $stmt->close();
   } else {
     $formError = "Supplier name is required.";
   }
+  $conn->close();
+  $stmt->close();
 }
-
-$conn->close();
 ?>
 
 
@@ -162,7 +162,11 @@ $conn->close();
         <div class="container-fluid">
           <div class="card shadow-sm rounded-3">
             <div class="card-body">
-              <h4 class="mb-4">Update Supplier Information</h4>
+
+              <!-- Header -->
+              <h4 class="mb-4 fw-bold text-secondary border-bottom pb-2">
+                Update Supplier Information
+              </h4>
 
               <!-- Form -->
               <form method="POST" action="">

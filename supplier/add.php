@@ -147,7 +147,9 @@ if (isset($_POST['submit'])) {
             <div class="card-body p-4">
 
               <!-- Header -->
-              <h4 class="mb-4">Add Supplier Information</h4>
+              <h4 class="mb-4 fw-bold text-secondary border-bottom pb-2">
+                Add Supplier Information
+              </h4>
 
               <!-- Form -->
               <form method="post" autocomplete="on">

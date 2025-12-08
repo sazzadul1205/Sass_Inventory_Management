@@ -1,6 +1,11 @@
 <?php
-session_start();
-include_once __DIR__ . '/../config/db_config.php';
+// Include the conflict-free auth guard
+include_once __DIR__ . '/../config/auth_guard.php';
+
+// Require the user to have 'view_roles' permission
+// Unauthorized users will be redirected to the project root index.php
+requirePermission('add_purchase', '../index.php');
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
@@ -14,7 +19,7 @@ if (!isset($_SESSION['user_id'])) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Add Purchase | Sass Inventory Management System</title>
+  <title>Add New Purchase | Sass Inventory Management System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
 
   <!-- Mobile + Theme -->
@@ -285,7 +290,9 @@ if (isset($_POST['submit'])) {
             <div class="card-body">
 
               <!-- Header -->
-              <h4 class="mb-4">Add Purchase Information</h4>
+              <h4 class="mb-4 fw-bold text-secondary border-bottom pb-2">
+                Add Purchase Information
+              </h4>
 
               <!-- Form -->
               <form method="post" id="purchaseForm">
@@ -389,8 +396,8 @@ if (isset($_POST['submit'])) {
   </div>
 
   <!-- JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"></script>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"></script>
 
   <!-- Select2 JS -->
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -634,6 +641,15 @@ if (isset($_POST['submit'])) {
 
       // Initial total calculation
       updateTotalAmount();
+
+      // Auto-hide error message
+      setTimeout(() => {
+        const box = document.getElementById("errorBox");
+        if (box) {
+          box.style.opacity = "0";
+          setTimeout(() => box.remove(), 500);
+        }
+      }, 3000);
     });
   </script>
 

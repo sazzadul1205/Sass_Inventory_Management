@@ -1,8 +1,12 @@
 <?php
-session_start();
-include_once __DIR__ . '/../config/db_config.php';
+// Include the conflict-free auth guard
+include_once __DIR__ . '/../config/auth_guard.php';
 
-// --- Check if user is logged in ---
+// Require the user to have 'view_roles' permission
+// Unauthorized users will be redirected to the project root index.php
+requirePermission('view_receipt', '../index.php');
+
+// Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
   exit;
@@ -116,7 +120,7 @@ $stmt->close();
 
 // --- Calculate totals ---
 $totalQty = 0;
-$totalAmount = 0; 
+$totalAmount = 0;
 foreach ($purchaseItems as $item) {
   $totalQty += $item['quantity'];
   $totalAmount += $item['purchase_price'];

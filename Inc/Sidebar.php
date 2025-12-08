@@ -185,7 +185,7 @@ $sidebarMenu = [
         'title' => 'All Purchases',
         'url' => 'purchase/index.php',
         'icon' => 'bi bi-list-ul',
-        'permission' => 'view_purchases'
+        'permission' => 'view_all_purchases'
       ],
       [
         'title' => 'My Purchases',

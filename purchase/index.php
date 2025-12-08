@@ -1,6 +1,11 @@
 <?php
-session_start();
-include_once __DIR__ . '/../config/db_config.php';
+// Include the conflict-free auth guard
+include_once __DIR__ . '/../config/auth_guard.php';
+
+// Require the user to have 'view_roles' permission
+// Unauthorized users will be redirected to the project root index.php
+requirePermission('view_all_purchases', '../index.php');
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
@@ -14,7 +19,7 @@ if (!isset($_SESSION['user_id'])) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Purchases | Sass Inventory Management System</title>
+  <title>All Product Purchases | Sass Inventory Management System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
 
   <!-- Mobile + Theme -->
@@ -78,9 +83,11 @@ $result = $conn->query($sql);
           <h3 class="mb-0 " style="font-weight: 800;">All Purchases</h3>
 
           <!-- Add User Button -->
-          <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
-            <i class="bi bi-plus me-1"></i> Add New Purchase
-          </a>
+          <?php if (can('add_purchase')): ?>
+            <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
+              <i class="bi bi-plus me-1"></i> Add New Purchase
+            </a>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -112,6 +119,7 @@ $result = $conn->query($sql);
                     <th>View Recept</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   <?php while ($row = $result->fetch_assoc()): ?>
                     <tr>
@@ -123,10 +131,12 @@ $result = $conn->query($sql);
                       <td><?= htmlspecialchars(number_format($row['purchase_price'], 2) ?? '-') ?></td>
                       <td><?= !empty($row['purchase_date']) ? date('d M Y', strtotime($row['purchase_date'])) : '-' ?></td>
                       <td>
-                        <?php if (!empty($row['receipt_id'])): ?>
-                          <a href="receipt.php?id=<?= $row['receipt_id'] ?>" class="btn btn-sm btn-primary w-100">
-                            <i class="bi bi-receipt"></i> Receipt
-                          </a>
+                        <?php if (can('view_receipt')): ?>
+                          <?php if (!empty($row['receipt_id'])): ?>
+                            <a href="receipt.php?id=<?= $row['receipt_id'] ?>" class="btn btn-sm btn-primary w-100">
+                              <i class="bi bi-receipt"></i> Receipt
+                            </a>
+                          <?php endif; ?>
                         <?php endif; ?>
                       </td>
                     </tr>

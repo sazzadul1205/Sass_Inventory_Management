@@ -1,7 +1,11 @@
 <?php
-session_start();
-include_once __DIR__ . '/../config/db_config.php';
-$userId = $_SESSION['user_id'];
+// Include the conflict-free auth guard
+include_once __DIR__ . '/../config/auth_guard.php';
+
+// Require the user to have 'view_roles' permission
+// Unauthorized users will be redirected to the project root index.php
+requirePermission('view_my_purchase_receipts', '../index.php');
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
@@ -55,14 +59,12 @@ if (!isset($_SESSION['user_id'])) {
 <?php
 $conn = connectDB();
 
-$sql = "SELECT r.id, r.receipt_number, r.type, r.total_amount, r.created_at,
-               (SELECT COUNT(*) FROM purchase_details pd WHERE pd.receipt_id = r.id) AS num_products
-        FROM receipt r
-        WHERE r.type = 'purchase' AND r.created_by = ?
-        ORDER BY r.id DESC";
+$userId = $_SESSION['user_id'];
 
-$stmt = $conn->prepare($sql);
-$stmt->bind_param('i', $userId);  // now matches the placeholder
+// Count products correctly based on type
+$sqlPurchase = "SELECT * FROM purchase_receipts_view WHERE created_by = ? ORDER BY id DESC";
+$stmt = $conn->prepare($sqlPurchase);
+$stmt->bind_param("i", $userId);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -87,9 +89,11 @@ $result = $stmt->get_result();
           <h3 class="mb-0 " style="font-weight: 800;">All Receipts</h3>
 
           <!-- Add User Button -->
-          <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
-            <i class="bi bi-plus me-1"></i> Add New Purchase
-          </a>
+          <?php if (can('add_purchase')): ?>
+            <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
+              <i class="bi bi-plus me-1"></i> Add New Purchase
+            </a>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -130,9 +134,11 @@ $result = $stmt->get_result();
                       <td><?= number_format($row['total_amount'], 2) ?></td>
                       <td><?= date('d M Y h:i A', strtotime($row['created_at'])) ?></td>
                       <td>
-                        <a href="receipt.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-primary w-100">
-                          <i class="bi bi-receipt"></i> View
-                        </a>
+                        <?php if (can('view_receipt')): ?>
+                          <a href="receipt.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-primary w-100">
+                            <i class="bi bi-receipt"></i> View
+                          </a>
+                        <?php endif; ?>
                       </td>
                     </tr>
                   <?php endwhile; ?>

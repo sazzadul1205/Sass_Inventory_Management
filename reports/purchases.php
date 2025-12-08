@@ -1,20 +1,18 @@
 <?php
-session_start();
-include_once __DIR__ . '/../config/db_config.php';
+// Include the conflict-free auth guard
+include_once __DIR__ . '/../config/auth_guard.php';
+
+// Require the user to have 'view_roles' permission
+// Unauthorized users will be redirected to the project root index.php
+requirePermission('view_purchase_report', '../index.php');
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
   exit;
 }
-
-$conn = connectDB();
-
-// Fetch purchase data from view_purchase_report
-$sql = "SELECT * FROM view_purchase_report";
-$result = $conn->query($sql);
-$purchases = $result->fetch_all(MYSQLI_ASSOC);
 ?>
+
 
 <!doctype html>
 <html lang="en">
@@ -120,16 +118,33 @@ $purchases = $result->fetch_all(MYSQLI_ASSOC);
   </style>
 </head>
 
+<?php
+$conn = connectDB();
+
+// Fetch purchase data from view_purchase_report
+$sql = "SELECT * FROM view_purchase_report";
+$result = $conn->query($sql);
+$purchases = $result->fetch_all(MYSQLI_ASSOC);
+?>
+
+<!-- Body -->
+
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
+
+    <!-- Navbar -->
     <?php include_once '../Inc/Navbar.php'; ?>
+
+    <!-- Sidebar -->
     <?php include_once '../Inc/Sidebar.php'; ?>
 
+    <!-- Main -->
     <main class="app-main">
 
       <!-- Page Header -->
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
+          <!-- Page Title -->
           <h3 class="mb-0" style="font-weight: 800;">Purchase Report</h3>
         </div>
       </div>
@@ -208,6 +223,7 @@ $purchases = $result->fetch_all(MYSQLI_ASSOC);
                   <th>Purchased By</th>
                 </tr>
               </thead>
+
               <tbody>
                 <?php foreach ($purchases as $index => $row): ?>
                   <tr>

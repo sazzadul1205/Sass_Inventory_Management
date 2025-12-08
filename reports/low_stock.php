@@ -1,22 +1,16 @@
 <?php
-session_start();
-include_once __DIR__ . '/../config/db_config.php';
+// Include the conflict-free auth guard
+include_once __DIR__ . '/../config/auth_guard.php';
+
+// Require the user to have 'view_roles' permission
+// Unauthorized users will be redirected to the project root index.php
+requirePermission('view_all_receipts', '../index.php');
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
   exit;
 }
-
-// Connect to DB
-$conn = connectDB();
-
-// Fetch stock data
-$sql = "SELECT * FROM stock_report ORDER BY current_stock ASC";
-
-$result = $conn->query($sql);
-$products = $result->fetch_all(MYSQLI_ASSOC);
-
 ?>
 
 <!doctype html>
@@ -49,6 +43,20 @@ $products = $result->fetch_all(MYSQLI_ASSOC);
   <link rel="stylesheet"
     href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
 </head>
+
+<?php
+
+// Connect to DB
+$conn = connectDB();
+
+// Fetch stock data
+$sql = "SELECT * FROM stock_report ORDER BY current_stock ASC";
+
+$result = $conn->query($sql);
+$products = $result->fetch_all(MYSQLI_ASSOC);
+?>
+
+<!-- Body -->
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
@@ -93,6 +101,7 @@ $products = $result->fetch_all(MYSQLI_ASSOC);
                     <th>Inventory Value</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   <?php
                   $rowIndex = 1;

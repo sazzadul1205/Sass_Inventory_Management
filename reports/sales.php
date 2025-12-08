@@ -1,19 +1,16 @@
 <?php
-session_start();
-include_once __DIR__ . '/../config/db_config.php';
+// Include the conflict-free auth guard
+include_once __DIR__ . '/../config/auth_guard.php';
+
+// Require the user to have 'view_roles' permission
+// Unauthorized users will be redirected to the project root index.php
+requirePermission('view_sales_report', '../index.php');
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
   exit;
 }
-
-$conn = connectDB();
-
-// Fetch sales data from the view
-$sql = "SELECT * FROM view_sales_report";
-$result = $conn->query($sql);
-$sales = $result->fetch_all(MYSQLI_ASSOC);
 ?>
 
 <!doctype html>
@@ -120,16 +117,31 @@ $sales = $result->fetch_all(MYSQLI_ASSOC);
   </style>
 </head>
 
+<?php
+
+$conn = connectDB();
+
+// Fetch sales data from the view
+$sql = "SELECT * FROM view_sales_report";
+$result = $conn->query($sql);
+$sales = $result->fetch_all(MYSQLI_ASSOC);
+
+?>
+
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
+    <!-- Navbar -->
     <?php include_once '../Inc/Navbar.php'; ?>
+
+    <!-- Sidebar -->
     <?php include_once '../Inc/Sidebar.php'; ?>
 
+    <!-- Main -->
     <main class="app-main">
-
       <!-- Page Header -->
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
+          <!-- Page Title -->
           <h3 class="mb-0" style="font-weight: 800;">Sales Report</h3>
         </div>
       </div>
@@ -206,6 +218,7 @@ $sales = $result->fetch_all(MYSQLI_ASSOC);
                   <th>Sold By</th>
                 </tr>
               </thead>
+
               <tbody>
                 <?php foreach ($sales as $index => $row): ?>
                   <tr>
@@ -213,11 +226,9 @@ $sales = $result->fetch_all(MYSQLI_ASSOC);
                     <td><?= htmlspecialchars($row['product_name']) ?></td>
                     <td><?= $row['qty_sold'] ?></td>
                     <td><?= number_format($row['unit_price'], 2) ?></td>
-                    <td><?= number_format($row['total_revenue'], 2) ?></td>
+                    <td><?= number_format($row['total_sale'], 2) ?></td>
                     <td><?= $row['sale_date'] ?></td>
-                    <td class="text-truncate" style="max-width:120px;"
-                      data-bs-toggle="tooltip" data-bs-placement="top"
-                      title="<?= htmlspecialchars($row['receipt_number']) ?>">
+                    <td class="text-truncate" style="max-width:120px;" data-bs-toggle="tooltip" data-bs-placement="top" title="<?= htmlspecialchars($row['receipt_number']) ?>">
                       <?= htmlspecialchars($row['receipt_number']) ?>
                     </td>
                     <td><?= htmlspecialchars($row['sold_by']) ?></td>
@@ -389,7 +400,7 @@ $sales = $result->fetch_all(MYSQLI_ASSOC);
       const salesData = <?php echo json_encode(array_map(function ($s) {
                           return [
                             'date' => $s['sale_date'],
-                            'total' => (float)$s['total_revenue'] // Use correct total_revenue
+                            'total' => (float)$s['total_sale'] // Use correct total_sale
                           ];
                         }, $sales)); ?>;
 

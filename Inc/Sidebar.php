@@ -269,14 +269,14 @@ $sidebarMenu = [
 
   [
     'title' => 'All Receipts',
-    'icon' => 'bi bi-receipt', 
+    'icon' => 'bi bi-receipt',
     'url' => 'receipts/index.php',
     'permission' => 'view_all_receipts'
   ],
 
   [
     'title' => 'All My Receipts',
-    'icon' => 'bi bi-person-badge', 
+    'icon' => 'bi bi-person-badge',
     'url' => 'receipts/my-receipts.php',
     'permission' => 'view_all_my_receipts'
   ],

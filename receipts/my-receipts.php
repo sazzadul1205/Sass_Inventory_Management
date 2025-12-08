@@ -58,28 +58,27 @@ if (!isset($_SESSION['user_id'])) {
 
 <?php
 $conn = connectDB();
+$userId = $_SESSION['user_id']; // current logged-in user
 
 $sqlAll = "SELECT 
-            r.id, 
-            r.receipt_number, 
-            r.type, 
-            r.total_amount, 
-            r.created_at,
-            u.username AS created_by_name,
-            CASE
-                WHEN r.type = 'sale' THEN (SELECT COUNT(*) FROM sale s WHERE s.receipt_id = r.id)
-                WHEN r.type = 'purchase' THEN (SELECT COUNT(*) FROM purchase p WHERE p.receipt_id = r.id)
-                ELSE 0
-            END AS num_products
+              r.id, 
+              r.receipt_number, 
+              r.type, 
+              r.total_amount, 
+              r.created_at,
+              CASE
+                  WHEN r.type = 'sale' THEN (SELECT COUNT(*) FROM sale s WHERE s.receipt_id = r.id)
+                  WHEN r.type = 'purchase' THEN (SELECT COUNT(*) FROM purchase p WHERE p.receipt_id = r.id)
+                  ELSE 0
+              END AS num_products
            FROM receipt r
-           LEFT JOIN user u ON r.created_by = u.id
+           WHERE r.created_by = ?
            ORDER BY r.id DESC";
 
 $stmt = $conn->prepare($sqlAll);
+$stmt->bind_param("i", $userId);
 $stmt->execute();
 $result = $stmt->get_result();
-
-
 ?>
 
 <!-- Body -->
@@ -98,7 +97,7 @@ $result = $stmt->get_result();
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
           <!-- Page Title -->
-          <h3 class="mb-0 " style="font-weight: 800;">All Receipts</h3>
+          <h3 class="mb-0 " style="font-weight: 800;">All My Receipts</h3>
         </div>
       </div>
 
@@ -126,7 +125,6 @@ $result = $stmt->get_result();
                     <th># of Products</th>
                     <th>Total Amount</th>
                     <th>Created At</th>
-                    <th>Created By</th>
                     <th>View Receipt</th>
                   </tr>
                 </thead>
@@ -139,7 +137,6 @@ $result = $stmt->get_result();
                       <td><?= $row['num_products'] ?></td>
                       <td><?= number_format($row['total_amount'], 2) ?></td>
                       <td><?= date('d M Y h:i A', strtotime($row['created_at'])) ?></td>
-                      <td><?= htmlspecialchars($row['created_by_name']) ?></td>
                       <td>
                         <?php if (can('view_receipt')): ?>
                           <a href="receipt.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-primary w-100">

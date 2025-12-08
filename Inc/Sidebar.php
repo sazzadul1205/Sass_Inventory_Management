@@ -269,10 +269,18 @@ $sidebarMenu = [
 
   [
     'title' => 'All Receipts',
-    'icon' => 'bi bi-box-arrow-right',
+    'icon' => 'bi bi-receipt', 
     'url' => 'receipts/index.php',
     'permission' => 'view_all_receipts'
   ],
+
+  [
+    'title' => 'All My Receipts',
+    'icon' => 'bi bi-person-badge', 
+    'url' => 'receipts/my-receipts.php',
+    'permission' => 'view_all_my_receipts'
+  ],
+
 
   // Reports Section
   [

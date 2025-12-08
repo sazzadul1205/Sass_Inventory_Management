@@ -4,7 +4,7 @@ include_once __DIR__ . '/../config/auth_guard.php';
 
 // Require the user to have 'view_roles' permission
 // Unauthorized users will be redirected to the project root index.php
-requirePermission('view_roles', '../index.php');
+requirePermission('view_users', '../index.php');
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -87,7 +87,6 @@ $result = $conn->query($sql);
 
           <!-- Add User Button -->
           <?php if (can('add_user')): ?>
-            <!-- Add User Button -->
             <a href="add_user.php" class="btn btn-sm btn-primary px-3 py-2" style="font-size: medium;">
               <i class="bi bi-plus me-1"></i> Add New User
             </a>
@@ -181,7 +180,6 @@ $result = $conn->query($sql);
               </table>
             </div>
           <?php endif; ?>
-
         </div>
       </div>
     </main>

@@ -128,10 +128,6 @@ if (isset($_POST['submit'])) {
             </div>
             <button type="submit" name="submit" class="btn btn-primary px-4">Sign In</button>
           </div>
-
-          <div class="text-center">
-            <a href="#" class="text-decoration-none">Forgot Password?</a>
-          </div>
         </form>
 
       </div>

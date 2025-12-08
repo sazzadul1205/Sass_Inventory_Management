@@ -1,6 +1,11 @@
 <?php
-session_start();
-include_once __DIR__ . '/../config/db_config.php';
+// Include the conflict-free auth guard
+include_once __DIR__ . '/../config/auth_guard.php';
+
+// Require the user to have 'view_roles' permission
+// Unauthorized users will be redirected to the project root index.php
+requirePermission('add_category', '../index.php');
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
@@ -13,25 +18,24 @@ if (!isset($_SESSION['user_id'])) {
 
 <head>
   <meta charset="utf-8" />
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <title> Add Category | Sass Inventory System</title>
+  <title>Add New Category | Sass Inventory System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" />
 
   <!-- Mobile + Theme -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="color-scheme" content="light dark" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- Fonts -->
-  <link rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
-    media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" media="print" onload="this.media='all'" />
+
+  <!-- Overlay Scrollbars -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css" />
 
   <!-- Bootstrap Icons -->
-  <link rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
 
-  <!-- AdminLTE (Core Theme) -->
+  <!-- AdminLTE -->
   <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
+
 
   <!-- Custom CSS -->
   <style>
@@ -140,7 +144,9 @@ if (isset($_POST['submit'])) {
             <div class="card-body p-4">
 
               <!-- Header -->
-              <h4 class="mb-4">Add Category Information</h4>
+              <h4 class="mb-4 fw-bold text-secondary border-bottom pb-2">
+                Add Category Information
+              </h4>
 
               <!-- Form -->
               <form method="post" autocomplete="on">
@@ -178,7 +184,7 @@ if (isset($_POST['submit'])) {
                 <!-- Buttons -->
                 <div class="mt-4 d-flex gap-2">
                   <button type="submit" name="submit" class="btn btn-primary px-4 py-2">
-                    <i class="bi bi-check2-circle"></i> Save Category
+                    <i class="bi bi-check2-circle"></i> Add Category
                   </button>
                   <a href="index.php" class="btn btn-secondary px-4 py-2">
                     <i class="bi bi-x-circle"></i> Cancel

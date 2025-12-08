@@ -4,7 +4,7 @@ include_once __DIR__ . '/../config/auth_guard.php';
 
 // Require the user to have 'view_roles' permission
 // Unauthorized users will be redirected to the project root index.php
-requirePermission('view_roles', '../index.php');
+requirePermission('add_user', '../index.php');
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -21,6 +21,7 @@ if (!isset($_SESSION['user_id'])) {
   <title>Add New User | Sass Inventory System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" />
 
+  <!-- Mobile + Theme -->
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- Fonts -->
@@ -34,11 +35,6 @@ if (!isset($_SESSION['user_id'])) {
 
   <!-- AdminLTE -->
   <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
-
-  <!-- Apexcharts & VectorMap -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/css/jsvectormap.min.css" />
-
 
   <!-- Custom CSS -->
   <style>
@@ -79,6 +75,8 @@ $formError = "";
 
 // Fetch roles
 $conn = connectDB();
+
+// Fetch roles
 $rolesResult = $conn->query("SELECT * FROM role ORDER BY role_name ASC");
 
 // Handle form submit

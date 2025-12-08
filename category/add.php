@@ -104,6 +104,7 @@ if (isset($_POST['submit'])) {
       $formError = "Failed to add category: " . $stmt->error;
     }
 
+    $conn->close();
     $stmt->close();
   }
 }

@@ -1,6 +1,11 @@
 <?php
-session_start();
-include_once __DIR__ . '/../config/db_config.php';
+// Include the conflict-free auth guard
+include_once __DIR__ . '/../config/auth_guard.php';
+
+// Require the user to have 'view_roles' permission
+// Unauthorized users will be redirected to the project root index.php
+requirePermission('view_suppliers', '../index.php');
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
@@ -13,7 +18,8 @@ if (!isset($_SESSION['user_id'])) {
 
 <head>
   <meta charset="utf-8">
-  <title>Suppliers | Sass Inventory Management System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Suppliers | Sass Inventory Management System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
 
   <!-- Mobile + Theme -->
@@ -79,9 +85,11 @@ $result = $conn->query($sql);
           <h3 class="mb-0 " style="font-weight: 800;">All Suppliers</h3>
 
           <!-- Add User Button -->
-          <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
-            <i class="bi bi-plus me-1"></i> Add New Supplier
-          </a>
+          <?php if (can('add_supplier')): ?>
+            <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
+              <i class="bi bi-plus me-1"></i> Add New Supplier
+            </a>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -111,6 +119,7 @@ $result = $conn->query($sql);
                   <th>Actions</th>
                 </tr>
               </thead>
+
               <tbody>
                 <?php while ($row = $result->fetch_assoc()): ?>
                   <tr>
@@ -122,13 +131,20 @@ $result = $conn->query($sql);
                     <td><?= !empty($row['updated_at']) ? date('d M Y h:i A', strtotime($row['updated_at'])) : '' ?></td>
                     <td>
                       <div class="d-flex gap-1">
-                        <a href="edit.php?id=<?= urlencode($row['id']) ?>" class="btn btn-warning btn-sm flex-fill">
-                          <i class="bi bi-pencil-square"></i> Edit
-                        </a>
-                        <a href="delete.php?id=<?= urlencode($row['id']) ?>" class="btn btn-danger btn-sm flex-fill"
-                          onclick="return confirm('Are you sure you want to delete this supplier?');">
-                          <i class="bi bi-trash"></i> Delete
-                        </a>
+                        <!-- Edit button -->
+                        <?php if (can('edit_supplier')): ?>
+                          <a href="edit.php?id=<?= urlencode($row['id']) ?>" class="btn btn-warning btn-sm flex-fill">
+                            <i class="bi bi-pencil-square"></i> Edit
+                          </a>
+                        <?php endif; ?>
+
+                        <!-- Delete button -->
+                        <?php if (can('delete_supplier')): ?>
+                          <a href="delete.php?id=<?= urlencode($row['id']) ?>" class="btn btn-danger btn-sm flex-fill"
+                            onclick="return confirm('Are you sure you want to delete this supplier?');">
+                            <i class="bi bi-trash"></i> Delete
+                          </a>
+                        <?php endif; ?>
                       </div>
                     </td>
                   </tr>

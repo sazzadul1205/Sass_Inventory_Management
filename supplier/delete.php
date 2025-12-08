@@ -1,6 +1,10 @@
 <?php
-session_start();
-include_once __DIR__ . '/../config/db_config.php';
+// Include the conflict-free auth guard
+include_once __DIR__ . '/../config/auth_guard.php';
+
+// Require the user to have 'delete_user' permission
+// Unauthorized users will be redirected to index.php
+requirePermission('delete_supplier', '../index.php');
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -51,5 +55,5 @@ if ($deleteStmt) {
 
 $conn->close();
 
-header("Location: index.php");
+header("Location: supplier/index.php");
 exit;

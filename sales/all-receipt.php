@@ -1,7 +1,11 @@
 <?php
-session_start();
-include_once __DIR__ . '/../config/db_config.php';
-$userId = $_SESSION['user_id'];
+// Include the conflict-free auth guard
+include_once __DIR__ . '/../config/auth_guard.php';
+
+// Require the user to have 'view_roles' permission
+// Unauthorized users will be redirected to the project root index.php
+requirePermission('view_all_sales_receipts', '../index.php');
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
@@ -9,13 +13,14 @@ if (!isset($_SESSION['user_id'])) {
 }
 ?>
 
+
 <!doctype html>
 <html lang="en">
 
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>All Receipts | Sass Inventory Management System</title>
+  <title>All Product Sales Receipts | Sass Inventory Management System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
 
   <!-- Mobile + Theme -->
@@ -56,14 +61,8 @@ if (!isset($_SESSION['user_id'])) {
 $conn = connectDB();
 
 // Count products correctly based on type
-$sqlSale = "SELECT r.id, r.receipt_number, r.type, r.total_amount, r.created_at,
-                   (SELECT COUNT(*) FROM sale s WHERE s.receipt_id = r.id) AS num_products
-            FROM receipt r
-            WHERE r.created_by = ? AND r.type = 'sale'
-            ORDER BY r.id DESC";
-
+$sqlSale = "SELECT * FROM sales_receipts_view ORDER BY id DESC";
 $stmt = $conn->prepare($sqlSale);
-$stmt->bind_param("i", $userId);
 $stmt->execute();
 $result = $stmt->get_result();
 ?>
@@ -87,9 +86,11 @@ $result = $stmt->get_result();
           <h3 class="mb-0 " style="font-weight: 800;">All Sale Receipts</h3>
 
           <!-- Add User Button -->
-          <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
-            <i class="bi bi-plus me-1"></i> Add New Sale
-          </a>
+          <?php if (can('add_sales')): ?>
+            <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
+              <i class="bi bi-plus me-1"></i> Add New Sale
+            </a>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -130,9 +131,11 @@ $result = $stmt->get_result();
                       <td><?= number_format($row['total_amount'], 2) ?></td>
                       <td><?= date('d M Y h:i A', strtotime($row['created_at'])) ?></td>
                       <td>
-                        <a href="receipt.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-primary w-100">
-                          <i class="bi bi-receipt"></i> View
-                        </a>
+                        <?php if (can('view_receipt')): ?>
+                          <a href="receipt.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-primary w-100">
+                            <i class="bi bi-receipt"></i> View
+                          </a>
+                        <?php endif; ?>
                       </td>
                     </tr>
                   <?php endwhile; ?>

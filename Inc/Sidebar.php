@@ -231,7 +231,7 @@ $sidebarMenu = [
         'title' => 'All Sales',
         'url' => 'sales/index.php',
         'icon' => 'bi bi-list-ul',
-        'permission' => 'view_sales'
+        'permission' => 'view_all_sales'
       ],
       [
         'title' => 'My Sales',

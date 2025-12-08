@@ -1,7 +1,11 @@
 <?php
-session_start();
-include_once __DIR__ . '/../config/db_config.php';
-$userId = $_SESSION['user_id'];
+// Include the conflict-free auth guard
+include_once __DIR__ . '/../config/auth_guard.php';
+
+// Require the user to have 'view_roles' permission
+// Unauthorized users will be redirected to the project root index.php
+requirePermission('view_my_sales', '../index.php');
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
@@ -55,6 +59,8 @@ if (!isset($_SESSION['user_id'])) {
 <?php
 $conn = connectDB();
 
+$userId = $_SESSION['user_id'];
+
 // Fetch all product_with_details
 $sql = "SELECT * 
         FROM sale_details
@@ -79,12 +85,14 @@ $result = $conn->query($sql);
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
           <!-- Page Title -->
-          <h3 class="mb-0 " style="font-weight: 800;">My Purchases</h3>
+          <h3 class="mb-0 " style="font-weight: 800;">My Sales</h3>
 
           <!-- Add User Button -->
-          <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
-            <i class="bi bi-plus me-1"></i> Add New Purchase
-          </a>
+          <?php if (can('add_sale')): ?>
+            <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
+              <i class="bi bi-plus me-1"></i> Add New Sales
+            </a>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -126,10 +134,12 @@ $result = $conn->query($sql);
                       <td><?= !empty($row['sale_date']) ? date('d M Y', strtotime($row['sale_date'])) : '-' ?></td>
                       <td><?= htmlspecialchars($row['sold_by_name'] ?? '-') ?></td>
                       <td>
-                        <?php if (!empty($row['receipt_id'])): ?>
-                          <a href="receipt.php?id=<?= $row['receipt_id'] ?>" class="btn btn-sm btn-primary w-100">
-                            <i class="bi bi-receipt"></i> Receipt
-                          </a>
+                        <?php if (can('view_receipt')): ?>
+                          <?php if (!empty($row['receipt_id'])): ?>
+                            <a href="receipt.php?id=<?= $row['receipt_id'] ?>" class="btn btn-sm btn-primary w-100">
+                              <i class="bi bi-receipt"></i> Receipt
+                            </a>
+                          <?php endif; ?>
                         <?php endif; ?>
                       </td>
                     </tr>

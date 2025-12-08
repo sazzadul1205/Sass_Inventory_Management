@@ -88,9 +88,11 @@ $result = $conn->query($sql);
           <h3 class="mb-0 " style="font-weight: 800;">My Purchases</h3>
 
           <!-- Add User Button -->
-          <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
-            <i class="bi bi-plus me-1"></i> Add New Purchase
-          </a>
+          <?php if (can('add_purchases')): ?>
+            <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
+              <i class="bi bi-plus me-1"></i> Add New Purchase
+            </a>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -131,10 +133,12 @@ $result = $conn->query($sql);
                       <td><?= htmlspecialchars(number_format($row['purchase_price'], 2) ?? '-') ?></td>
                       <td><?= !empty($row['purchase_date']) ? date('d M Y', strtotime($row['purchase_date'])) : '-' ?></td>
                       <td>
-                        <?php if (!empty($row['receipt_id'])): ?>
-                          <a href="receipt.php?id=<?= $row['receipt_id'] ?>" class="btn btn-sm btn-primary w-100">
-                            <i class="bi bi-receipt"></i> Receipt
-                          </a>
+                        <?php if (can('view_receipt')): ?>
+                          <?php if (!empty($row['receipt_id'])): ?>
+                            <a href="receipt.php?id=<?= $row['receipt_id'] ?>" class="btn btn-sm btn-primary w-100">
+                              <i class="bi bi-receipt"></i> Receipt
+                            </a>
+                          <?php endif; ?>
                         <?php endif; ?>
                       </td>
                     </tr>

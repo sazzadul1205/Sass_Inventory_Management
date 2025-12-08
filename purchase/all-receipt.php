@@ -19,7 +19,7 @@ if (!isset($_SESSION['user_id'])) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>All Receipts | Sass Inventory Management System</title>
+  <title>All Product Purchase Receipts | Sass Inventory Management System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
 
   <!-- Mobile + Theme -->
@@ -63,7 +63,6 @@ $userId = $_SESSION['user_id'];
 
 // Count products correctly based on type
 $sqlPurchase = "SELECT * FROM purchase_receipts_view ORDER BY id DESC";
-
 $stmt = $conn->prepare($sqlPurchase);
 $stmt->execute();
 $result = $stmt->get_result();

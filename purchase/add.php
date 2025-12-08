@@ -137,35 +137,36 @@ $products = $conn->query("
  SELECT p.id, p.name, p.price, p.quantity_in_stock, s.id AS supplier_id, s.name AS supplier_name
  FROM product p
  LEFT JOIN supplier s ON p.supplier_id = s.id
+  WHERE p.quantity_in_stock > 0
  ORDER BY p.name ASC
 ");
 
 // Check if the purchase form was submitted
 if (isset($_POST['submit'])) {
   // Retrieve submitted arrays from the form
-  $quantities = $_POST['quantity'] ?? [];
-  $productIds = $_POST['product_id'] ?? [];
-  $purchasePrice = $_POST['purchase_price'] ?? [];
+  $purchasedBy =     $_SESSION['user_id'] ?? 0;
+  $quantities =    $_POST['quantity'] ?? [];
+  $productIds =    $_POST['product_id'] ?? [];
   $purchaseDates = $_POST['purchase_date'] ?? [];
-  $createdBy = $_SESSION['user_id'] ?? 0; // Logged-in user ID
+  $purchasePrice = $_POST['purchase_price'] ?? [];
 
-  // Generate a unique 32-character receipt number: YYYYMMDD + user_id + random hash
-  $today = date('Ymd'); // e.g., 20251205
-  $randomHash = substr(md5(uniqid('', true)), 0, 32 - strlen($today . $createdBy)); // Random part
-  $receiptNumber = $today . $createdBy . $randomHash;
+  // Generate a unique receipt number
+  $today = date('Ymd');
+  $randomHash = substr(md5(uniqid('', true)), 0, 32 - strlen($today . $purchasedBy));
+  $receiptNumber = $today . $purchasedBy . $randomHash;
 
   // If no products were selected, show an error
   if (empty($productIds)) {
     $formError = "Please select at least one product.";
   } else {
-    $allData = []; // Will store all validated purchase items
+    $allData = [];
 
     // Loop through all selected products
     foreach ($productIds as $i => $prodId) {
-      $prodId = intval($prodId); // Ensure product ID is an integer
-      $qty = intval($quantities[$i]); // Convert quantity to integer
-      $price = floatval(str_replace(',', '', $purchasePrice[$i])); // Convert price to float
-      $purchaseDate = !empty($purchaseDates[$i]) ? $purchaseDates[$i] : date('Y-m-d'); // Default to today if not set
+      $prodId = intval($prodId);
+      $qty = intval($quantities[$i]);
+      $price = floatval(str_replace(',', '', $purchasePrice[$i]));
+      $purchaseDate = !empty($purchaseDates[$i]) ? $purchaseDates[$i] : date('Y-m-d');
 
       // Skip invalid rows (quantity or price <= 0)
       if ($qty <= 0 || $price <= 0) continue;
@@ -196,18 +197,18 @@ if (isset($_POST['submit'])) {
       // Begin database transaction to ensure all-or-nothing
       $conn->begin_transaction();
       try {
-        // --- Insert into 'receipt' table ---
+        // Insert into 'receipt' table
         $stmtReceipt = $conn->prepare("
                     INSERT INTO receipt 
                     (receipt_number, type, total_amount, created_by, created_at, updated_at) 
                     VALUES (?, 'purchase', ?, ?, NOW(), NOW())
                 ");
-        $stmtReceipt->bind_param("sdi", $receiptNumber, $totalAmount, $createdBy);
+        $stmtReceipt->bind_param("sdi", $receiptNumber, $totalAmount, $purchasedBy);
         $stmtReceipt->execute();
-        $receiptId = $stmtReceipt->insert_id; // Get generated receipt ID
+        $receiptId = $stmtReceipt->insert_id;
         $stmtReceipt->close();
 
-        // --- Insert each product into 'purchase' table ---
+        // Insert each product into 'purchase' table
         $stmtPurchase = $conn->prepare("
         INSERT INTO purchase 
         (receipt_id, product_id, supplier_id, quantity, purchase_price, purchase_date, purchased_by, created_at, updated_at) 
@@ -225,9 +226,10 @@ if (isset($_POST['submit'])) {
             $item['quantity'],
             $item['purchase_price'],
             $item['purchase_date'],
-            $createdBy  // <-- THIS IS THE NEW PART
+            $purchasedBy
           );
 
+          // Execute
           $stmtPurchase->execute();
 
           // --- Update stock ---
@@ -239,9 +241,8 @@ if (isset($_POST['submit'])) {
           ");
         }
 
-        $stmtPurchase->close();
-
         // Commit transaction if all inserts/updates succeeded
+        $stmtPurchase->close();
         $conn->commit();
 
         // Redirect to the receipt page
@@ -255,8 +256,9 @@ if (isset($_POST['submit'])) {
     }
   }
 }
-
 ?>
+
+<!-- Body -->
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
@@ -392,6 +394,7 @@ if (isset($_POST['submit'])) {
       </div>
     </main>
 
+    <!-- Footer -->
     <?php include_once '../Inc/Footer.php'; ?>
   </div>
 

@@ -1,6 +1,11 @@
 <?php
-session_start();
-include_once __DIR__ . '/../config/db_config.php';
+// Include the conflict-free auth guard
+include_once __DIR__ . '/../config/auth_guard.php';
+
+// Require the user to have 'view_roles' permission
+// Unauthorized users will be redirected to the project root index.php
+requirePermission('add_sale', '../index.php');
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
@@ -14,7 +19,7 @@ if (!isset($_SESSION['user_id'])) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Add Sell | Sass Inventory Management System</title>
+  <title>Add New Sell | Sass Inventory Management System</title>
   <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" type="image/x-icon">
 
   <!-- Mobile + Theme -->
@@ -138,30 +143,34 @@ $products = $conn->query("
 
 // Check if the sell form was submitted
 if (isset($_POST['submit'])) {
+  $soldBy =     $_SESSION['user_id'] ?? 0;
   $quantities = $_POST['quantity'] ?? [];
   $productIds = $_POST['product_id'] ?? [];
-  $salePrices = $_POST['purchase_price'] ?? []; // same input, just renamed logically
-  $saleDates = $_POST['purchase_date'] ?? [];
-  $soldBy = $_SESSION['user_id'] ?? 0;
+  $saleDates =  $_POST['purchase_date'] ?? [];
+  $salePrices = $_POST['purchase_price'] ?? [];
 
   // Generate unique receipt number for sale
   $today = date('Ymd');
   $randomHash = substr(md5(uniqid('', true)), 0, 32 - strlen($today . $soldBy));
   $receiptNumber = $today . $soldBy . $randomHash;
 
+  // If no products were selected, show an error
   if (empty($productIds)) {
     $formError = "Please select at least one product.";
   } else {
     $allData = [];
 
+    // Loop through all selected products
     foreach ($productIds as $i => $prodId) {
       $prodId = intval($prodId);
       $qty = intval($quantities[$i]);
       $price = floatval(str_replace(',', '', $salePrices[$i]));
       $saleDate = !empty($saleDates[$i]) ? $saleDates[$i] : date('Y-m-d');
 
+      // Skip invalid rows (quantity or price <= 0)
       if ($qty <= 0 || $price <= 0) continue;
 
+      // Fetch supplier info and product name from the database
       $productRow = $conn->query("SELECT quantity_in_stock, name FROM product WHERE id = $prodId")->fetch_assoc();
       $stock = $productRow['quantity_in_stock'] ?? 0;
       $productName = $productRow['name'] ?? 'Unknown';
@@ -169,6 +178,7 @@ if (isset($_POST['submit'])) {
       // Skip if not enough stock
       if ($qty > $stock) continue;
 
+      // Add this product to the array of all sale items
       $allData[] = [
         'product_id' => $prodId,
         'product_name' => $productName,
@@ -178,11 +188,14 @@ if (isset($_POST['submit'])) {
       ];
     }
 
+    // If no valid products were found, show an error
     if (empty($allData)) {
       $formError = "No valid products selected or quantity exceeds stock.";
     } else {
+      // Get total sale amount from the frontend (calculated by JS)
       $totalAmount = isset($_POST['total_amount']) ? floatval($_POST['total_amount']) : 0;
 
+      // Begin database transaction to ensure all-or-nothing
       $conn->begin_transaction();
       try {
         // Insert into receipt table
@@ -198,12 +211,14 @@ if (isset($_POST['submit'])) {
 
         // Insert into sale table
         $stmtSale = $conn->prepare("
-                    INSERT INTO sale 
-                    (product_id, quantity, sale_price, sale_date, created_at, updated_at, receipt_id, sold_by)
-                    VALUES (?, ?, ?, ?, NOW(), NOW(), ?, ?)
-                ");
+        INSERT INTO sale 
+        (product_id, quantity, sale_price, sale_date, created_at, updated_at, receipt_id, sold_by)
+        VALUES (?, ?, ?, ?, NOW(), NOW(), ?, ?)
+        ");
 
         foreach ($allData as $item) {
+
+          // Bind parameters
           $stmtSale->bind_param(
             "iidsii",
             $item['product_id'],
@@ -218,13 +233,14 @@ if (isset($_POST['submit'])) {
 
           // Update stock (subtract sold quantity)
           $conn->query("
-                        UPDATE product 
-                        SET quantity_in_stock = quantity_in_stock - {$item['quantity']},
-                            updated_at = NOW()
-                        WHERE id = {$item['product_id']}
-                    ");
+          UPDATE product 
+          SET quantity_in_stock = quantity_in_stock - {$item['quantity']},
+              updated_at = NOW()
+          WHERE id = {$item['product_id']}
+          ");
         }
 
+        // Commit transaction
         $stmtSale->close();
         $conn->commit();
 
@@ -232,15 +248,16 @@ if (isset($_POST['submit'])) {
         header("Location: receipt.php?id=" . $receiptId);
         exit;
       } catch (Exception $e) {
+        // Rollback`
         $conn->rollback();
         $formError = "Error saving sale: " . $e->getMessage();
       }
     }
   }
 }
-
-
 ?>
+
+<!-- Body -->
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
@@ -274,7 +291,9 @@ if (isset($_POST['submit'])) {
             <div class="card-body">
 
               <!-- Header -->
-              <h4 class="mb-4">Add Sell Information</h4>
+              <h4 class="mb-4 fw-bold text-secondary border-bottom pb-2">
+                Add Sell Information
+              </h4>
 
               <!-- Form -->
               <form method="post" id="sellForm">
@@ -373,6 +392,7 @@ if (isset($_POST['submit'])) {
       </div>
     </main>
 
+    <!-- Footer -->
     <?php include_once '../Inc/Footer.php'; ?>
   </div>
 
@@ -403,7 +423,6 @@ if (isset($_POST['submit'])) {
         }).format(num);
       }
 
-      // Update product info display (default price, stock, supplier, difference)
       // Update product info display (default price, stock, supplier, difference)
       function updateProductInfo($row) {
         const quantity = parseInt($row.find('input[name="quantity[]"]').val()) || 1;

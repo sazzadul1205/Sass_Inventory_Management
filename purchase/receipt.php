@@ -121,6 +121,7 @@ $stmt->close();
 // --- Calculate totals ---
 $totalQty = 0;
 $totalAmount = 0;
+
 foreach ($purchaseItems as $item) {
   $totalQty += $item['quantity'];
   $totalAmount += $item['purchase_price'];

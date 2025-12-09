@@ -1,6 +1,4 @@
 <?php
-session_start();
-
 // Ensure user is logged in
 if (!isset($_SESSION['user_id'])) {
   die("User not logged in.");

@@ -24,11 +24,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['changes'])) {
         list($role_id, $perm_id) = explode('-', $key);
 
         //  BLOCK updates to admin (role 1)
-        // if ((int)$role_id === 1) {
-        //     $_SESSION['fail_message'] = "Admin permissions cannot be updated!";
-        //     echo json_encode(["status" => "fail"]);
-        //     exit;
-        // }
+        if ((int)$role_id === 1) {
+            $_SESSION['fail_message'] = "Admin permissions cannot be updated!";
+            echo json_encode(["status" => "fail"]);
+            exit;
+        }
 
         if ($value == 1) {
             $stmt = $conn->prepare("INSERT IGNORE INTO role_permission (role_id, permission_id) VALUES (?, ?)");

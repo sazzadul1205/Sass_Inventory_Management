@@ -25,7 +25,6 @@ $sidebarMenu = [
     'title' => 'Dashboard',
     'icon' => 'bi bi-speedometer2',
     'url' => 'index.php',
-    'permission' => 'view_dashboard'
   ],
 
   // Authentication Section

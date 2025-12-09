@@ -57,8 +57,9 @@ if (!isset($_SESSION['user_id'])) {
       position: sticky;
       left: 0;
       background: #fff;
-      z-index: 3;
+      z-index: 50 !important;
     }
+
 
     /* Admin cells cursor */
     .admin-cell:hover {
@@ -76,6 +77,10 @@ if (!isset($_SESSION['user_id'])) {
     .permission-cell.changed {
       background-color: #fff3cd;
       transition: background-color 0.3s;
+    }
+
+    thead th.sticky-left {
+      z-index: 60 !important;
     }
   </style>
 </head>
@@ -140,23 +145,29 @@ while ($row = $result->fetch_assoc()) {
         <?php unset($_SESSION['fail_message']); ?>
       <?php endif; ?>
 
-
-      <!-- Toolbar -->
-      <div class="table-toolbar p-3 mb-3 rounded shadow-sm bg-white d-flex flex-wrap align-items-end gap-3">
-        <!-- Product Search -->
-        <div class="d-flex flex-column flex-grow-1" style="min-width: 200px;">
-          <label for="permissionSearch" class="form-label fw-semibold mb-1">Search Product</label>
-          <input type="text" id="permissionSearch" class="form-control" placeholder="Type to search...">
-        </div>
-      </div>
-
-
       <!-- App Content -->
       <div class="app-content-body mt-3">
         <div class="container-fluid">
 
+          <!-- Toolbar -->
+          <div class="table-toolbar p-3 mb-3 rounded shadow-sm bg-white d-flex flex-wrap align-items-end gap-3">
+            <!-- Permission Search -->
+            <div class="d-flex flex-column flex-grow-1" style="min-width: 200px;">
+              <label
+                for="permissionSearch"
+                class="form-label fw-semibold mb-1">
+                Search Permission
+              </label>
+              <input
+                type="text"
+                id="permissionSearch"
+                class="form-control"
+                placeholder="Type to search Permission ...">
+            </div>
+          </div>
+
           <!-- Table -->
-          <div class="table-responsive" style="max-height:500px; overflow:auto;">
+          <div class="table-responsive" style="max-height: 500px; overflow-y: auto; overflow-x: auto; white-space: nowrap;">
             <table class="table table-bordered table-hover">
 
               <!-- Table Header -->
@@ -234,7 +245,7 @@ while ($row = $result->fetch_assoc()) {
         const roleId = parseInt($(this).data("role"));
         const permId = parseInt($(this).data("permission"));
 
-        // if (roleId === adminRoleId) return;
+        if (roleId === adminRoleId) return;
 
         const key = `${roleId}-${permId}`;
         const icon = $(this).find("i");

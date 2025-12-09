@@ -163,6 +163,50 @@ $dashboardCards = [
     "permission" => "view_my_sales"
   ],
 
+  // Total Suppliers
+  [
+    "title" => "Total Suppliers",
+    "icon" => "bi bi-truck fs-2",
+    "bg" => "bg-info",
+    "query" => "SELECT COUNT(*) AS value FROM supplier",
+    "link" => "./supplier/index.php",
+    "format" => "number",
+    "permission" => "view_suppliers"
+  ],
+
+  // Total Categories
+  [
+    "title" => "Total Categories",
+    "icon" => "bi bi-tags fs-2",
+    "bg" => "bg-primary",
+    "query" => "SELECT COUNT(*) AS value FROM category",
+    "link" => "./category/index.php",
+    "format" => "number",
+    "permission" => "view_categories"
+  ],
+
+  // My Sales Receipts
+  [
+    "title" => "My Sales Receipts",
+    "icon" => "bi bi-person-lines-fill fs-2",
+    "bg" => "bg-success",
+    "query" => "SELECT COUNT(*) AS value FROM receipt WHERE created_by  = '{$_SESSION['user_id']}' AND type = 'sale'",
+    "link" => "./sales/my-receipts.php",
+    "format" => "number",
+    "permission" => "view_my_sales_receipts"
+  ],
+
+  // My Purchase Receipts
+  [
+    "title" => "My Purchase Receipts",
+    "icon" => "bi bi-person-lines-fill fs-2",
+    "bg" => "bg-warning",
+    "query" => "SELECT COUNT(*) AS value FROM receipt WHERE created_by  = '{$_SESSION['user_id']}' AND type = 'purchase'",
+    "link" => "./purchase/my-receipts.php",
+    "format" => "number",
+    "permission" => "view_my_purchase_receipts"
+  ],
+
 ];
 
 // Fetch purchase quantity grouped by date
@@ -184,6 +228,19 @@ while ($row = $result->fetch_assoc()) {
   $dates[] = $row['date'];
   $quantities[] = (int)$row['total_quantity'];
 }
+
+$roleName = "Unknown Role";
+
+if (isset($_SESSION['role_id'])) {
+  $rid = intval($_SESSION['role_id']);
+  $sql = "SELECT role_name FROM role WHERE id = $rid LIMIT 1";
+  $res = $conn->query($sql);
+
+  if ($res && $res->num_rows > 0) {
+    $row = $res->fetch_assoc();
+    $roleName = $row['role_name'];
+  }
+}
 ?>
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
@@ -199,10 +256,13 @@ while ($row = $result->fetch_assoc()) {
 
       <!-- Header -->
       <h3 class="my-3 text-center fw-bold position-relative d-inline-block mx-auto">
-        Admin Dashboard
+        <?php echo htmlspecialchars($roleName); ?> Dashboard
+
         <span class="d-block mx-auto mt-1"
-          style="width: 60px; height: 3px; background-color: #0d6efd; border-radius: 2px;"></span>
+          style="width: 60px; height: 3px; background-color: #0d6efd; border-radius: 2px;">
+        </span>
       </h3>
+
 
       <!-- Content -->
       <div class="content-header pt-1">
@@ -246,21 +306,70 @@ while ($row = $result->fetch_assoc()) {
         </div>
       </div>
 
-      <div class="container-fluid px-4">
-        <?php include_once './Inc/Admin/all_purchase_quantity.php'; ?>
-      </div>
+      <!-- Top Navbar -->
+      <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top shadow-sm mb-4">
+        <div class="container-fluid px-4">
+          <a class="navbar-brand fw-bold" href="#">Dashboard Charts</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#chartNavbar" aria-controls="chartNavbar" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
 
-      <div class="container-fluid px-4">
-        <?php include_once './Inc/Admin/my_purchase_quantity.php'; ?>
-      </div>
+          <div class="collapse navbar-collapse" id="chartNavbar">
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+              <?php if (hasPermission("view_all_purchases")): ?>
+                <li class="nav-item">
+                  <a class="nav-link" href="#allPurchase">All Purchase</a>
+                </li>
+              <?php endif; ?>
 
-      <div class="container-fluid px-4">
-        <?php include_once './Inc/Admin/all_sale_quantity.php'; ?>
-      </div>
+              <?php if (hasPermission("view_my_purchases")): ?>
+                <li class="nav-item">
+                  <a class="nav-link" href="#myPurchase">My Purchase</a>
+                </li>
+              <?php endif; ?>
 
-      <div class="container-fluid px-4">
-        <?php include_once './Inc/Admin/my_sale_quantity.php'; ?>
-      </div>
+              <?php if (hasPermission("view_all_sales")): ?>
+                <li class="nav-item">
+                  <a class="nav-link" href="#allSale">All Sale</a>
+                </li>
+              <?php endif; ?>
+
+              <?php if (hasPermission("view_my_sales")): ?>
+                <li class="nav-item">
+                  <a class="nav-link" href="#mySale">My Sale</a>
+                </li>
+              <?php endif; ?>
+
+            </ul>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Chart Sections -->
+      <?php if (hasPermission("view_all_purchases")): ?>
+        <div class="container-fluid px-4" id="allPurchase">
+          <?php include_once './Inc/Admin/all_purchase_quantity.php'; ?>
+        </div>
+      <?php endif; ?>
+
+      <?php if (hasPermission("view_my_purchases")): ?>
+        <div class="container-fluid px-4" id="myPurchase">
+          <?php include_once './Inc/Admin/my_purchase_quantity.php'; ?>
+        </div>
+      <?php endif; ?>
+
+      <?php if (hasPermission("view_all_sales")): ?>
+        <div class="container-fluid px-4" id="allSale">
+          <?php include_once './Inc/Admin/all_sale_quantity.php'; ?>
+        </div>
+      <?php endif; ?>
+
+      <?php if (hasPermission("view_my_sales")): ?>
+        <div class="container-fluid px-4" id="mySale">
+          <?php include_once './Inc/Admin/my_sale_quantity.php'; ?>
+        </div>
+      <?php endif; ?>
+
     </main>
 
     <!-- Footer -->

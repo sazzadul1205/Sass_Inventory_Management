@@ -189,6 +189,23 @@ $conn->close();
                 value="<?= htmlspecialchars($roleNameFromDB) ?>">
             </div>
 
+            <!-- Toolbar -->
+            <div class="table-toolbar p-3 mb-3 rounded shadow-sm bg-white d-flex flex-wrap align-items-end gap-3">
+              <!-- Product Permission Search -->
+              <div class="d-flex flex-column flex-grow-1" style="min-width: 200px;">
+                <label
+                  for="productSearch"
+                  class="form-label fw-semibold mb-1">
+                  Search Permission
+                </label>
+                <input
+                  type="text"
+                  id="productSearch"
+                  class="form-control"
+                  placeholder="Type to search...">
+              </div>
+            </div>
+
             <!-- Permissions -->
             <div class="mb-3">
               <label class="form-label" style="font-weight: 700;">Assign Permissions</label>
@@ -249,6 +266,24 @@ $conn->close();
         setTimeout(() => box.remove(), 500);
       }
     }, 3000);
+  </script>
+
+  <script>
+    // Permission Search
+    document.getElementById("productSearch").addEventListener("keyup", function() {
+      const term = this.value.toLowerCase().trim();
+
+      document.querySelectorAll(".permission-card").forEach(card => {
+        const name = card.textContent.toLowerCase();
+
+        // Show if matches, hide if not
+        if (name.includes(term)) {
+          card.parentElement.style.display = "block";
+        } else {
+          card.parentElement.style.display = "none";
+        }
+      });
+    });
   </script>
 </body>
 

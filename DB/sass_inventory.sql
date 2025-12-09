@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 07, 2025 at 07:06 PM
+-- Generation Time: Dec 09, 2025 at 02:28 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -216,6 +216,9 @@ INSERT INTO `permission` (`id`, `permission_name`) VALUES
 (36, 'add_sale'),
 (16, 'add_supplier'),
 (4, 'add_user'),
+(45, 'delete_category'),
+(47, 'delete_product'),
+(46, 'delete_supplier'),
 (43, 'delete_user'),
 (13, 'edit_category'),
 (21, 'edit_product'),
@@ -223,8 +226,11 @@ INSERT INTO `permission` (`id`, `permission_name`) VALUES
 (17, 'edit_supplier'),
 (5, 'edit_user'),
 (44, 'update_permissions'),
+(51, 'view_all_my_receipts'),
+(24, 'view_all_purchases'),
 (26, 'view_all_purchase_receipts'),
 (37, 'view_all_receipts'),
+(31, 'view_all_sales'),
 (33, 'view_all_sales_receipts'),
 (2, 'view_authentication_menu'),
 (11, 'view_categories'),
@@ -238,13 +244,12 @@ INSERT INTO `permission` (`id`, `permission_name`) VALUES
 (9, 'view_permissions'),
 (19, 'view_products'),
 (18, 'view_products_menu'),
-(24, 'view_purchases'),
 (23, 'view_purchases_menu'),
 (28, 'view_purchase_receipt'),
 (42, 'view_purchase_report'),
+(48, 'view_receipt'),
 (38, 'view_reports_menu'),
 (6, 'view_roles'),
-(31, 'view_sales'),
 (30, 'view_sales_menu'),
 (35, 'view_sales_receipt'),
 (41, 'view_sales_report'),
@@ -287,14 +292,14 @@ INSERT INTO `product` (`id`, `name`, `category_id`, `supplier_id`, `price`, `qua
 (9, 'Men\'s Leather Jacket', 5, 3, 199.99, 0, '2025-12-05 04:03:58', '2025-12-05 14:29:00'),
 (10, 'Bluetooth Headphones', 2, 4, 89.99, 0, '2025-12-05 04:03:58', '2025-12-05 08:21:40'),
 (11, 'Refurbished iPhone 13', 1, 1, 599.99, 0, '2025-12-05 04:04:06', '2025-12-05 14:01:09'),
-(12, 'Used Samsung Galaxy S21', 1, 3, 499.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
+(12, 'Used Samsung Galaxy S21', 1, 3, 499.99, 120, '2025-12-05 04:04:06', '2025-12-08 05:05:43'),
 (13, 'Refurbished MacBook Pro 2019', 2, 4, 999.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
 (14, 'Second-hand HP Printer', 2, 5, 79.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
 (15, 'Pre-owned Office Desk', 4, 6, 89.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
 (16, 'Used Notebook (Single)', 3, 7, 2.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
 (17, 'Refurbished Running Shoes', 6, 8, 49.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
 (18, 'Second-hand LEGO City Set', 7, 1, 39.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
-(19, 'Used Men\'s Jeans', 5, 3, 29.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
+(19, 'Used Men\'s Jeans', 5, 3, 29.99, 1000, '2025-12-05 04:04:06', '2025-12-08 05:05:43'),
 (20, 'Pre-owned Bluetooth Speaker', 2, 4, 34.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
 (21, 'Refurbished iPad Air', 2, 5, 399.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
 (22, 'Used Wireless Keyboard', 2, 6, 15.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
@@ -368,7 +373,9 @@ INSERT INTO `purchase` (`id`, `product_id`, `supplier_id`, `quantity`, `purchase
 (2, 8, 1, 1000, 50000.00, '2025-12-05', '2025-12-05 12:03:34', '2025-12-05 12:03:34', 1, 1),
 (3, 9, 3, 100, 20000.00, '2025-12-05', '2025-12-05 12:03:34', '2025-12-05 12:03:34', 1, 1),
 (4, 11, 1, 40, 20000.00, '2025-12-05', '2025-12-05 12:03:34', '2025-12-05 12:03:34', 1, 1),
-(5, 5, 6, 1000, 200000.00, '2025-12-05', '2025-12-05 12:20:04', '2025-12-05 12:20:04', 2, 1);
+(5, 5, 6, 1000, 200000.00, '2025-12-05', '2025-12-05 12:20:04', '2025-12-05 12:20:04', 2, 1),
+(6, 12, 3, 120, 50000.00, '2025-12-08', '2025-12-08 05:05:43', '2025-12-08 05:05:43', 6, 1),
+(7, 19, 3, 1000, 30000.00, '2025-12-08', '2025-12-08 05:05:43', '2025-12-08 05:05:43', 6, 1);
 
 -- --------------------------------------------------------
 
@@ -388,6 +395,23 @@ CREATE TABLE `purchase_details` (
 ,`receipt_id` int(11)
 ,`purchased_by` int(11)
 ,`purchased_by_name` varchar(100)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Stand-in structure for view `purchase_receipts_view`
+-- (See below for the actual view)
+--
+CREATE TABLE `purchase_receipts_view` (
+`id` int(11)
+,`receipt_number` varchar(50)
+,`type` enum('purchase','sale')
+,`total_amount` decimal(12,2)
+,`created_at` timestamp
+,`created_by` int(11)
+,`created_by_name` varchar(100)
+,`num_products` bigint(21)
 );
 
 -- --------------------------------------------------------
@@ -415,7 +439,8 @@ INSERT INTO `receipt` (`id`, `receipt_number`, `type`, `total_amount`, `created_
 (2, '2025120518a1ab8bec5b3e3daf6fd184', 'purchase', 200000.00, 1, '2025-12-05 12:20:04', '2025-12-05 12:20:04'),
 (3, '2025120517be3a36c25ab9ca3974ce8a', 'sale', 40000.50, 1, '2025-12-05 14:01:09', '2025-12-05 14:01:09'),
 (4, '20251205199287b7ae04f7eb907990f9', 'sale', 20000.00, 1, '2025-12-05 14:29:00', '2025-12-05 14:29:00'),
-(5, '20251205105545f3d8fc6cc31f5ed509', 'sale', 500000.00, 1, '2025-12-05 16:13:17', '2025-12-05 16:13:17');
+(5, '20251205105545f3d8fc6cc31f5ed509', 'sale', 500000.00, 1, '2025-12-05 16:13:17', '2025-12-05 16:13:17'),
+(6, '202512081d5f4380e18fe8fe1d38a33c', 'purchase', 80000.00, 1, '2025-12-08 05:05:43', '2025-12-08 05:05:43');
 
 -- --------------------------------------------------------
 
@@ -435,7 +460,8 @@ CREATE TABLE `role` (
 INSERT INTO `role` (`id`, `role_name`) VALUES
 (1, 'Admin'),
 (2, 'Employee'),
-(3, 'Manager');
+(3, 'Manager'),
+(8, 'Observer');
 
 -- --------------------------------------------------------
 
@@ -497,6 +523,11 @@ INSERT INTO `role_permission` (`role_id`, `permission_id`) VALUES
 (1, 42),
 (1, 43),
 (1, 44),
+(1, 45),
+(1, 46),
+(1, 47),
+(1, 48),
+(1, 51),
 (2, 7),
 (2, 12),
 (2, 19),
@@ -516,7 +547,9 @@ INSERT INTO `role_permission` (`role_id`, `permission_id`) VALUES
 (3, 28),
 (3, 32),
 (3, 33),
-(3, 36);
+(3, 36),
+(8, 18),
+(8, 19);
 
 -- --------------------------------------------------------
 
@@ -559,6 +592,23 @@ INSERT INTO `sale` (`id`, `product_id`, `quantity`, `sale_price`, `sale_date`, `
 (2, 11, 40, 30000.00, '0000-00-00', '2025-12-05 14:01:09', '2025-12-05 14:01:09', 3, 1),
 (3, 9, 50, 20000.00, '2025-12-05', '2025-12-05 14:29:00', '2025-12-05 14:29:00', 4, 1),
 (4, 5, 1000, 500000.00, '2025-12-05', '2025-12-05 16:13:17', '2025-12-05 16:13:17', 5, 1);
+
+-- --------------------------------------------------------
+
+--
+-- Stand-in structure for view `sales_receipts_view`
+-- (See below for the actual view)
+--
+CREATE TABLE `sales_receipts_view` (
+`id` int(11)
+,`receipt_number` varchar(50)
+,`type` enum('purchase','sale')
+,`total_amount` decimal(12,2)
+,`created_at` timestamp
+,`created_by` int(11)
+,`created_by_name` varchar(100)
+,`num_products` bigint(21)
+);
 
 -- --------------------------------------------------------
 
@@ -647,9 +697,9 @@ INSERT INTO `user` (`id`, `username`, `password`, `email`, `role_id`, `created_a
 (2, 'Sazzadul Employee', '4405078d2226307785c00984bb847b6d', 'employee@gmail.com', 2, '2025-12-01 06:01:46', '2025-12-01 06:01:46'),
 (3, 'Test', '25f9e794323b453885f5181f1b624d0b', 'Test@gmail.com', 2, '2025-12-01 20:20:25', '2025-12-07 02:10:42'),
 (7, 'Teest3', '17e310318a1e207509c0f0cd8042063b', 'Test3@gmail.com', 2, '2025-12-01 20:30:41', '2025-12-01 20:30:41'),
-(9, 'sedafs', '8cca08722e4108babcb9218e5bb14a2d', 'asfswf@gmail.com', 2, '2025-12-01 20:32:52', '2025-12-01 20:32:52'),
-(10, 'fasfsfsdfvasd', '9dedbcec383f739207577016d7c387b3', 'faswefssdfvsa@gmail.com', 2, '2025-12-01 20:34:41', '2025-12-01 20:34:41'),
-(12, 'Test221', '356308d897f6d2f67e9f83730a9ec258', 'vaja@mailinator.com', 2, '2025-12-04 01:27:28', '2025-12-04 01:27:28');
+(9, 'sedafs', '8cca08722e4108babcb9218e5bb14a2d', 'asfswf@gmail.com', 8, '2025-12-01 20:32:52', '2025-12-07 23:18:33'),
+(12, 'Test221', '356308d897f6d2f67e9f83730a9ec258', 'vaja@mailinator.com', 2, '2025-12-04 01:27:28', '2025-12-04 01:27:28'),
+(16, 'SazzadulFFYUJ', 'e807f1fcf82d132f9bb018ca6738a19f', '123@gmail.com', 2, '2025-12-08 04:22:17', '2025-12-08 04:22:17');
 
 -- --------------------------------------------------------
 
@@ -696,12 +746,11 @@ CREATE TABLE `view_purchase_report` (
 -- (See below for the actual view)
 --
 CREATE TABLE `view_sales_report` (
-`id` int(11)
+`sale_id` int(11)
 ,`product_name` varchar(100)
-,`supplier_name` varchar(100)
 ,`qty_sold` int(11)
 ,`unit_price` decimal(11,2)
-,`total_revenue` decimal(10,2)
+,`total_sale` decimal(10,2)
 ,`sale_date` date
 ,`receipt_number` varchar(50)
 ,`sold_by` varchar(100)
@@ -728,11 +777,29 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 -- --------------------------------------------------------
 
 --
+-- Structure for view `purchase_receipts_view`
+--
+DROP TABLE IF EXISTS `purchase_receipts_view`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `purchase_receipts_view`  AS SELECT `r`.`id` AS `id`, `r`.`receipt_number` AS `receipt_number`, `r`.`type` AS `type`, `r`.`total_amount` AS `total_amount`, `r`.`created_at` AS `created_at`, `r`.`created_by` AS `created_by`, `u`.`username` AS `created_by_name`, (select count(0) from `purchase` `p` where `p`.`receipt_id` = `r`.`id`) AS `num_products` FROM (`receipt` `r` join `user` `u` on(`r`.`created_by` = `u`.`id`)) WHERE `r`.`type` = 'purchase' ;
+
+-- --------------------------------------------------------
+
+--
 -- Structure for view `role_permission_matrix`
 --
 DROP TABLE IF EXISTS `role_permission_matrix`;
 
 CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `role_permission_matrix`  AS SELECT `r`.`id` AS `role_id`, `r`.`role_name` AS `role_name`, `p`.`id` AS `permission_id`, `p`.`permission_name` AS `permission_name`, CASE WHEN `rp`.`role_id` is not null THEN 1 ELSE 0 END AS `assigned` FROM ((`permission` `p` join `role` `r`) left join `role_permission` `rp` on(`rp`.`role_id` = `r`.`id` and `rp`.`permission_id` = `p`.`id`)) ORDER BY `p`.`id` ASC, `r`.`id` ASC ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure for view `sales_receipts_view`
+--
+DROP TABLE IF EXISTS `sales_receipts_view`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `sales_receipts_view`  AS SELECT `r`.`id` AS `id`, `r`.`receipt_number` AS `receipt_number`, `r`.`type` AS `type`, `r`.`total_amount` AS `total_amount`, `r`.`created_at` AS `created_at`, `r`.`created_by` AS `created_by`, `u`.`username` AS `created_by_name`, (select count(0) from `sale` `s` where `s`.`receipt_id` = `r`.`id`) AS `num_products` FROM (`receipt` `r` join `user` `u` on(`r`.`created_by` = `u`.`id`)) WHERE `r`.`type` = 'sale' ORDER BY `r`.`id` DESC ;
 
 -- --------------------------------------------------------
 
@@ -777,7 +844,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `view_sales_report`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `view_sales_report`  AS SELECT `sa`.`id` AS `id`, `p`.`name` AS `product_name`, `s`.`name` AS `supplier_name`, `sa`.`quantity` AS `qty_sold`, round(`sa`.`sale_price` / `sa`.`quantity`,2) AS `unit_price`, `sa`.`sale_price` AS `total_revenue`, `sa`.`sale_date` AS `sale_date`, `r`.`receipt_number` AS `receipt_number`, `u`.`username` AS `sold_by` FROM ((((`sale` `sa` left join `product` `p` on(`sa`.`product_id` = `p`.`id`)) left join `supplier` `s` on(`p`.`supplier_id` = `s`.`id`)) left join `receipt` `r` on(`sa`.`receipt_id` = `r`.`id`)) left join `user` `u` on(`sa`.`sold_by` = `u`.`id`)) ORDER BY `sa`.`sale_date` ASC ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `view_sales_report`  AS SELECT `s`.`id` AS `sale_id`, `p`.`name` AS `product_name`, `s`.`quantity` AS `qty_sold`, round(`s`.`sale_price` / `s`.`quantity`,2) AS `unit_price`, `s`.`sale_price` AS `total_sale`, `s`.`sale_date` AS `sale_date`, `r`.`receipt_number` AS `receipt_number`, `u`.`username` AS `sold_by` FROM (((`sale` `s` left join `product` `p` on(`s`.`product_id` = `p`.`id`)) left join `receipt` `r` on(`s`.`receipt_id` = `r`.`id`)) left join `user` `u` on(`s`.`sold_by` = `u`.`id`)) ORDER BY `s`.`sale_date` ASC ;
 
 --
 -- Indexes for dumped tables
@@ -884,7 +951,7 @@ ALTER TABLE `category`
 -- AUTO_INCREMENT for table `permission`
 --
 ALTER TABLE `permission`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
 
 --
 -- AUTO_INCREMENT for table `product`
@@ -902,19 +969,19 @@ ALTER TABLE `product_request`
 -- AUTO_INCREMENT for table `purchase`
 --
 ALTER TABLE `purchase`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `receipt`
 --
 ALTER TABLE `receipt`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `role`
 --
 ALTER TABLE `role`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `sale`
@@ -932,7 +999,7 @@ ALTER TABLE `supplier`
 -- AUTO_INCREMENT for table `user`
 --
 ALTER TABLE `user`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- Constraints for dumped tables

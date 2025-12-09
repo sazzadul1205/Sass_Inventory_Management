@@ -325,7 +325,7 @@ $sidebarMenu = [
 // Returns the current relative path from project root
 function getCurrentRelativePath()
 {
-  $current = $_SERVER['PHP_SELF']; // e.g. /Sass_Inventory_Management/category/index.php
+  $current = $_SERVER['PHP_SELF']; 
   $parts = explode('/', trim($current, '/'));
   $projectRoot = '/' . $parts[0] . '/';
   return str_replace($projectRoot, '', $current);
@@ -363,13 +363,17 @@ function isActivePage($url)
 </style>
 
 
+<!-- Sidebar -->
 <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+
+  <!-- Sidebar Header -->
   <div class="sidebar-brand">
     <a href="<?= $Project_URL; ?>index.php" class="brand-link">
       <img src="<?= $Project_URL; ?>assets/Dashboard/Website_logo.png" alt="Logo">
     </a>
   </div>
 
+  <!-- Sidebar Menu -->
   <div class="sidebar-wrapper">
     <nav>
       <ul class="nav sidebar-menu flex-column" id="sidebarAccordion">

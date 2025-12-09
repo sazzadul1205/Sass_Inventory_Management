@@ -1,11 +1,10 @@
 <?php
-
 // ---- SAFE SESSION START ----
 if (session_status() === PHP_SESSION_NONE) {
   session_start();
 }
 
-// ---- SAFE DB CONFIG LOADING ----
+// ---- LOAD DB CONFIG ----
 if (!defined('DB_CONFIG_LOADED')) {
   define('DB_CONFIG_LOADED', true);
   include_once __DIR__ . '/db_config.php';
@@ -37,7 +36,7 @@ function loadRolePermissions($role_id)
   return $permissions;
 }
 
-// ---- DENY ACCESS FUNCTION WITH CUSTOM REDIRECT ----
+// ---- DENY ACCESS FUNCTION ----
 function denyAccess($redirectUrl = null)
 {
   $_SESSION['fail_message'] = "You don't have permission to access this page.";
@@ -45,14 +44,12 @@ function denyAccess($redirectUrl = null)
   if ($redirectUrl) {
     header("Location: $redirectUrl");
   } else {
-    // default deny page
     header("Location: ../error/403.php");
   }
-
   exit();
 }
 
-// ---- REQUIRE PERMISSION FUNCTION WITH OPTIONAL REDIRECT ----
+// ---- REQUIRE SPECIFIC PERMISSION ----
 function requirePermission($permission, $redirectUrl = null)
 {
   // Not logged in
@@ -67,7 +64,7 @@ function requirePermission($permission, $redirectUrl = null)
     denyAccess($redirectUrl);
   }
 
-  // Cache permissions in session to avoid repeated DB queries
+  // Cache permissions
   if (!isset($_SESSION['cached_permissions'])) {
     $_SESSION['cached_permissions'] = loadRolePermissions($_SESSION['role_id']);
   }
@@ -75,4 +72,13 @@ function requirePermission($permission, $redirectUrl = null)
   if (!in_array($permission, $_SESSION['cached_permissions'])) {
     denyAccess($redirectUrl);
   }
+}
+
+// ---- HELPER: CHECK IF USER HAS PERMISSION ----
+function hasPermission($permission)
+{
+  if (!isset($_SESSION['cached_permissions'])) {
+    $_SESSION['cached_permissions'] = loadRolePermissions($_SESSION['role_id']);
+  }
+  return in_array($permission, $_SESSION['cached_permissions']);
 }

@@ -1,0 +1,10 @@
+| Main Type   | Subtypes / Examples                               | Purpose / Notes                             |
+| ----------- | ------------------------------------------------- | ------------------------------------------- |
+| Unit        | Light, Medium, Heavy, Special, Hero/Commander     | Attack, defend, special effects             |
+| Action      | Offensive, Defensive/Support, Utility, Event      | Affect units, life points, supply           |
+| Structure   | Bunker, Tower, Shield Generator                   | Protect LP, deal auto damage, support units |
+| Resource    | Supply / Energy cards                             | Increase supply or resource pool            |
+| Trap / Mine | Landmine, EMP Mine                                | Surprise attacks, jamming                   |
+| Upgrade     | Weapon/Armor/Equipment                            | Enhance units or structures                 |
+| Environment | Terrain/Field effects                             | Affect battlefield globally                 |
+| Keywords    | Radio, Jam, Cooldown, Shield, Ranged, Auto-Repair | Special mechanics                           |

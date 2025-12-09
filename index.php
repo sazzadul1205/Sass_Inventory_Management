@@ -49,10 +49,21 @@ $conn = connectDB();
   <div class="app-wrapper">
     <!-- Header -->
     <?php include_once './Inc/Navbar.php'; ?>
+
     <!-- Sidebar -->
     <?php include_once './Inc/Sidebar.php'; ?>
 
+    <!-- Main -->
     <main class="app-main">
+
+      <!-- Header -->
+      <h3 class="my-3 text-center fw-bold position-relative d-inline-block mx-auto">
+        Admin Dashboard
+        <span class="d-block mx-auto mt-1"
+          style="width: 60px; height: 3px; background-color: #0d6efd; border-radius: 2px;"></span>
+      </h3>
+
+
       <?php
       // Dashboard cards
       $dashboardCards = [
@@ -84,7 +95,7 @@ $conn = connectDB();
           "permission" => "view_stock_overview"
         ],
         [
-          "title" => "Total Purchased Quantity",
+          "title" => "Total Purchased Qua",
           "icon" => "bi bi-cart-plus fs-2",
           "bg" => "bg-secondary",
           "query" => "SELECT SUM(quantity) AS value FROM purchase",
@@ -93,7 +104,7 @@ $conn = connectDB();
           "permission" => "view_all_purchases"
         ],
         [
-          "title" => "Total Sold Quantity",
+          "title" => "Total Sold Qua",
           "icon" => "bi bi-cart-check fs-2",
           "bg" => "bg-danger",
           "query" => "SELECT SUM(quantity) AS value FROM sale",
@@ -149,28 +160,33 @@ $conn = connectDB();
           "permission" => "view_my_sales"
         ],
         [
-          "title" => "My Pending Requests",
-          "icon" => "bi bi-clock fs-2",
-          "bg" => "bg-secondary",
-          "query" => "SELECT COUNT(*) AS value FROM requests WHERE requested_by = '{$_SESSION['user_id']}' AND status = 'pending'",
-          "link" => "./requests/my_pending.php",
-          "format" => "number",
-          "permission" => "view_my_requests"
+          "title" => "My Purchase Amount",
+          "icon" => "bi bi-cash-coin fs-2",
+          "bg" => "bg-dark",
+          "query" => "SELECT COALESCE(SUM(purchase_price ), 0) AS value 
+              FROM purchase 
+              WHERE purchased_by = '{$_SESSION['user_id']}'",
+          "link" => "./purchase/my_purchases.php",
+          "format" => "currency",
+          "permission" => "view_my_purchases"
         ],
         [
-          "title" => "My Tasks",
-          "icon" => "bi bi-list-task fs-2",
-          "bg" => "bg-info",
-          "query" => "SELECT COUNT(*) AS value FROM tasks WHERE assigned_to = '{$_SESSION['user_id']}' AND status != 'completed'",
-          "link" => "./tasks/my_tasks.php",
-          "format" => "number",
-          "permission" => "view_my_tasks"
+          "title" => "My Sales Amount",
+          "icon" => "bi bi-currency-dollar fs-2",
+          "bg" => "bg-success",
+          "query" => "SELECT COALESCE(SUM(sale_price), 0) AS value 
+              FROM sale 
+              WHERE sold_by = '{$_SESSION['user_id']}'",
+          "link" => "./sales/my_sales.php",
+          "format" => "currency",
+          "permission" => "view_my_sales"
         ],
+
       ];
 
       ?>
 
-      <div class="content-header pt-5">
+      <div class="content-header pt-1">
         <div class="container-fluid px-4">
           <div class="row">
             <?php foreach ($dashboardCards as $card):
@@ -186,7 +202,7 @@ $conn = connectDB();
                   <div class="card-body d-flex align-items-center">
                     <div class="card-body-icon me-3"><i class="<?= $card['icon'] ?> fs-2"></i></div>
                     <div>
-                      <div class="h5"><?= $card['title'] ?></div>
+                      <div class="h5" style="font-weight: 600; font-size: medium;"><?= $card['title'] ?></div>
                       <div class="fw-bold fs-5"><?= $value ?></div>
                     </div>
                   </div>

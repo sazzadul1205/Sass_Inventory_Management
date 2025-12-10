@@ -263,6 +263,16 @@ if (isset($_SESSION['role_id'])) {
         </span>
       </h3>
 
+      <!-- Success/Fail Messages -->
+      <?php if (!empty($_SESSION['success_message'])): ?>
+        <div id="successMsg" class="alert alert-success mt-3"><?= $_SESSION['success_message'] ?></div>
+        <?php unset($_SESSION['success_message']); ?>
+      <?php endif; ?>
+      <?php if (!empty($_SESSION['fail_message'])): ?>
+        <div id="failMsg" class="alert alert-danger mt-3"><?= $_SESSION['fail_message'] ?></div>
+        <?php unset($_SESSION['fail_message']); ?>
+      <?php endif; ?>
+
 
       <!-- Content -->
       <div class="content-header pt-1">

@@ -25,7 +25,7 @@ DELIMITER $$
 --
 -- Procedures
 --
-CREATE DEFINER=`root`@`localhost` PROCEDURE `create_purchase_receipt` (IN `p_created_by` INT, IN `p_items_json` JSON, OUT `p_receipt_id` INT)   BEGIN
+CREATE PROCEDURE `create_purchase_receipt` (IN `p_created_by` INT, IN `p_items_json` JSON, OUT `p_receipt_id` INT)   BEGIN
     DECLARE v_idx INT DEFAULT 0;
     DECLARE v_len INT DEFAULT 0;
     DECLARE v_prod_id INT;
@@ -104,7 +104,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `create_purchase_receipt` (IN `p_cre
     COMMIT;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `update_role_with_permissions` (IN `p_role_id` INT, IN `p_role_name` VARCHAR(255), IN `p_permissions` VARCHAR(255))   BEGIN
+CREATE PROCEDURE `update_role_with_permissions` (IN `p_role_id` INT, IN `p_role_name` VARCHAR(255), IN `p_permissions` VARCHAR(255))   BEGIN
     DECLARE
         perm_id INT ; DECLARE pos INT DEFAULT 1 ; DECLARE next_pos INT ; DECLARE val VARCHAR(10) ;
     START TRANSACTION
@@ -763,7 +763,7 @@ CREATE TABLE `view_sales_report` (
 --
 DROP TABLE IF EXISTS `product_with_details`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `product_with_details`  AS SELECT `p`.`id` AS `id`, `p`.`name` AS `name`, `p`.`category_id` AS `category_id`, `p`.`supplier_id` AS `supplier_id`, `p`.`price` AS `price`, `p`.`quantity_in_stock` AS `quantity_in_stock`, `p`.`created_at` AS `created_at`, `p`.`updated_at` AS `updated_at`, `c`.`name` AS `category_name`, `s`.`name` AS `supplier_name` FROM ((`product` `p` left join `category` `c` on(`p`.`category_id` = `c`.`id`)) left join `supplier` `s` on(`p`.`supplier_id` = `s`.`id`)) ;
+CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `product_with_details`  AS SELECT `p`.`id` AS `id`, `p`.`name` AS `name`, `p`.`category_id` AS `category_id`, `p`.`supplier_id` AS `supplier_id`, `p`.`price` AS `price`, `p`.`quantity_in_stock` AS `quantity_in_stock`, `p`.`created_at` AS `created_at`, `p`.`updated_at` AS `updated_at`, `c`.`name` AS `category_name`, `s`.`name` AS `supplier_name` FROM ((`product` `p` left join `category` `c` on(`p`.`category_id` = `c`.`id`)) left join `supplier` `s` on(`p`.`supplier_id` = `s`.`id`)) ;
 
 -- --------------------------------------------------------
 
@@ -772,7 +772,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `purchase_details`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `purchase_details`  AS SELECT `p`.`id` AS `id`, `p`.`product_id` AS `product_id`, `pr`.`name` AS `product_name`, `p`.`supplier_id` AS `supplier_id`, `s`.`name` AS `supplier_name`, `p`.`quantity` AS `quantity`, `p`.`purchase_price` AS `purchase_price`, `p`.`purchase_date` AS `purchase_date`, `p`.`receipt_id` AS `receipt_id`, `p`.`purchased_by` AS `purchased_by`, `u`.`username` AS `purchased_by_name` FROM (((`purchase` `p` left join `product` `pr` on(`p`.`product_id` = `pr`.`id`)) left join `supplier` `s` on(`p`.`supplier_id` = `s`.`id`)) left join `user` `u` on(`p`.`purchased_by` = `u`.`id`)) ORDER BY `p`.`id` DESC ;
+CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `purchase_details`  AS SELECT `p`.`id` AS `id`, `p`.`product_id` AS `product_id`, `pr`.`name` AS `product_name`, `p`.`supplier_id` AS `supplier_id`, `s`.`name` AS `supplier_name`, `p`.`quantity` AS `quantity`, `p`.`purchase_price` AS `purchase_price`, `p`.`purchase_date` AS `purchase_date`, `p`.`receipt_id` AS `receipt_id`, `p`.`purchased_by` AS `purchased_by`, `u`.`username` AS `purchased_by_name` FROM (((`purchase` `p` left join `product` `pr` on(`p`.`product_id` = `pr`.`id`)) left join `supplier` `s` on(`p`.`supplier_id` = `s`.`id`)) left join `user` `u` on(`p`.`purchased_by` = `u`.`id`)) ORDER BY `p`.`id` DESC ;
 
 -- --------------------------------------------------------
 
@@ -781,7 +781,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `purchase_receipts_view`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `purchase_receipts_view`  AS SELECT `r`.`id` AS `id`, `r`.`receipt_number` AS `receipt_number`, `r`.`type` AS `type`, `r`.`total_amount` AS `total_amount`, `r`.`created_at` AS `created_at`, `r`.`created_by` AS `created_by`, `u`.`username` AS `created_by_name`, (select count(0) from `purchase` `p` where `p`.`receipt_id` = `r`.`id`) AS `num_products` FROM (`receipt` `r` join `user` `u` on(`r`.`created_by` = `u`.`id`)) WHERE `r`.`type` = 'purchase' ;
+CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `purchase_receipts_view`  AS SELECT `r`.`id` AS `id`, `r`.`receipt_number` AS `receipt_number`, `r`.`type` AS `type`, `r`.`total_amount` AS `total_amount`, `r`.`created_at` AS `created_at`, `r`.`created_by` AS `created_by`, `u`.`username` AS `created_by_name`, (select count(0) from `purchase` `p` where `p`.`receipt_id` = `r`.`id`) AS `num_products` FROM (`receipt` `r` join `user` `u` on(`r`.`created_by` = `u`.`id`)) WHERE `r`.`type` = 'purchase' ;
 
 -- --------------------------------------------------------
 
@@ -790,7 +790,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `role_permission_matrix`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `role_permission_matrix`  AS SELECT `r`.`id` AS `role_id`, `r`.`role_name` AS `role_name`, `p`.`id` AS `permission_id`, `p`.`permission_name` AS `permission_name`, CASE WHEN `rp`.`role_id` is not null THEN 1 ELSE 0 END AS `assigned` FROM ((`permission` `p` join `role` `r`) left join `role_permission` `rp` on(`rp`.`role_id` = `r`.`id` and `rp`.`permission_id` = `p`.`id`)) ORDER BY `p`.`id` ASC, `r`.`id` ASC ;
+CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `role_permission_matrix`  AS SELECT `r`.`id` AS `role_id`, `r`.`role_name` AS `role_name`, `p`.`id` AS `permission_id`, `p`.`permission_name` AS `permission_name`, CASE WHEN `rp`.`role_id` is not null THEN 1 ELSE 0 END AS `assigned` FROM ((`permission` `p` join `role` `r`) left join `role_permission` `rp` on(`rp`.`role_id` = `r`.`id` and `rp`.`permission_id` = `p`.`id`)) ORDER BY `p`.`id` ASC, `r`.`id` ASC ;
 
 -- --------------------------------------------------------
 
@@ -799,7 +799,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `sales_receipts_view`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `sales_receipts_view`  AS SELECT `r`.`id` AS `id`, `r`.`receipt_number` AS `receipt_number`, `r`.`type` AS `type`, `r`.`total_amount` AS `total_amount`, `r`.`created_at` AS `created_at`, `r`.`created_by` AS `created_by`, `u`.`username` AS `created_by_name`, (select count(0) from `sale` `s` where `s`.`receipt_id` = `r`.`id`) AS `num_products` FROM (`receipt` `r` join `user` `u` on(`r`.`created_by` = `u`.`id`)) WHERE `r`.`type` = 'sale' ORDER BY `r`.`id` DESC ;
+CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `sales_receipts_view`  AS SELECT `r`.`id` AS `id`, `r`.`receipt_number` AS `receipt_number`, `r`.`type` AS `type`, `r`.`total_amount` AS `total_amount`, `r`.`created_at` AS `created_at`, `r`.`created_by` AS `created_by`, `u`.`username` AS `created_by_name`, (select count(0) from `sale` `s` where `s`.`receipt_id` = `r`.`id`) AS `num_products` FROM (`receipt` `r` join `user` `u` on(`r`.`created_by` = `u`.`id`)) WHERE `r`.`type` = 'sale' ORDER BY `r`.`id` DESC ;
 
 -- --------------------------------------------------------
 
@@ -808,7 +808,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `sale_details`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `sale_details`  AS SELECT `s`.`id` AS `id`, `s`.`product_id` AS `product_id`, `p`.`name` AS `product_name`, `s`.`quantity` AS `quantity`, `s`.`sale_price` AS `sale_price`, `s`.`sale_date` AS `sale_date`, `s`.`receipt_id` AS `receipt_id`, `s`.`sold_by` AS `sold_by`, `u`.`username` AS `sold_by_name` FROM ((`sale` `s` left join `user` `u` on(`s`.`sold_by` = `u`.`id`)) left join `product` `p` on(`s`.`product_id` = `p`.`id`)) ;
+CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `sale_details`  AS SELECT `s`.`id` AS `id`, `s`.`product_id` AS `product_id`, `p`.`name` AS `product_name`, `s`.`quantity` AS `quantity`, `s`.`sale_price` AS `sale_price`, `s`.`sale_date` AS `sale_date`, `s`.`receipt_id` AS `receipt_id`, `s`.`sold_by` AS `sold_by`, `u`.`username` AS `sold_by_name` FROM ((`sale` `s` left join `user` `u` on(`s`.`sold_by` = `u`.`id`)) left join `product` `p` on(`s`.`product_id` = `p`.`id`)) ;
 
 -- --------------------------------------------------------
 
@@ -817,7 +817,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `stock_report`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `stock_report`  AS SELECT `pr`.`id` AS `id`, `pr`.`name` AS `product_name`, `pr`.`price` AS `purchase_price`, `pr`.`quantity_in_stock` AS `current_stock`, `s`.`name` AS `supplier_name`, ifnull(sum(`p`.`quantity`),0) AS `total_purchased_qty`, ifnull(sum(`sa`.`quantity`),0) AS `total_sold_qty` FROM (((`product` `pr` left join `purchase` `p` on(`pr`.`id` = `p`.`product_id`)) left join `sale` `sa` on(`pr`.`id` = `sa`.`product_id`)) left join `supplier` `s` on(`pr`.`supplier_id` = `s`.`id`)) GROUP BY `pr`.`id`, `pr`.`name`, `pr`.`price`, `pr`.`quantity_in_stock`, `s`.`name` ORDER BY `pr`.`name` ASC ;
+CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `stock_report`  AS SELECT `pr`.`id` AS `id`, `pr`.`name` AS `product_name`, `pr`.`price` AS `purchase_price`, `pr`.`quantity_in_stock` AS `current_stock`, `s`.`name` AS `supplier_name`, ifnull(sum(`p`.`quantity`),0) AS `total_purchased_qty`, ifnull(sum(`sa`.`quantity`),0) AS `total_sold_qty` FROM (((`product` `pr` left join `purchase` `p` on(`pr`.`id` = `p`.`product_id`)) left join `sale` `sa` on(`pr`.`id` = `sa`.`product_id`)) left join `supplier` `s` on(`pr`.`supplier_id` = `s`.`id`)) GROUP BY `pr`.`id`, `pr`.`name`, `pr`.`price`, `pr`.`quantity_in_stock`, `s`.`name` ORDER BY `pr`.`name` ASC ;
 
 -- --------------------------------------------------------
 
@@ -826,7 +826,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `view_product_movement`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `view_product_movement`  AS SELECT `combined_movements`.`movement_id` AS `movement_id`, `combined_movements`.`product_id` AS `product_id`, `combined_movements`.`product_name` AS `product_name`, `combined_movements`.`movement_type` AS `movement_type`, `combined_movements`.`qty_in` AS `qty_in`, `combined_movements`.`qty_out` AS `qty_out`, `combined_movements`.`movement_date` AS `movement_date`, `combined_movements`.`receipt_id` AS `receipt_id`, `combined_movements`.`user_name` AS `user_name`, `combined_movements`.`receipt_number` AS `receipt_number`, `combined_movements`.`supplier_name` AS `supplier_name` FROM (select `sa`.`id` AS `movement_id`,`p`.`id` AS `product_id`,`p`.`name` AS `product_name`,'sale' AS `movement_type`,0 AS `qty_in`,`sa`.`quantity` AS `qty_out`,`sa`.`sale_date` AS `movement_date`,`sa`.`receipt_id` AS `receipt_id`,`u`.`username` AS `user_name`,`r`.`receipt_number` AS `receipt_number`,'-' AS `supplier_name` from (((`sale` `sa` left join `product` `p` on(`sa`.`product_id` = `p`.`id`)) left join `user` `u` on(`sa`.`sold_by` = `u`.`id`)) left join `receipt` `r` on(`sa`.`receipt_id` = `r`.`id`)) union all select `pu`.`id` AS `movement_id`,`p`.`id` AS `product_id`,`p`.`name` AS `product_name`,'purchase' AS `movement_type`,`pu`.`quantity` AS `qty_in`,0 AS `qty_out`,`pu`.`purchase_date` AS `movement_date`,`pu`.`receipt_id` AS `receipt_id`,`u`.`username` AS `user_name`,`r`.`receipt_number` AS `receipt_number`,`s`.`name` AS `supplier_name` from ((((`purchase` `pu` left join `product` `p` on(`pu`.`product_id` = `p`.`id`)) left join `user` `u` on(`pu`.`purchased_by` = `u`.`id`)) left join `receipt` `r` on(`pu`.`receipt_id` = `r`.`id`)) left join `supplier` `s` on(`p`.`supplier_id` = `s`.`id`))) AS `combined_movements` ;
+CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `view_product_movement`  AS SELECT `combined_movements`.`movement_id` AS `movement_id`, `combined_movements`.`product_id` AS `product_id`, `combined_movements`.`product_name` AS `product_name`, `combined_movements`.`movement_type` AS `movement_type`, `combined_movements`.`qty_in` AS `qty_in`, `combined_movements`.`qty_out` AS `qty_out`, `combined_movements`.`movement_date` AS `movement_date`, `combined_movements`.`receipt_id` AS `receipt_id`, `combined_movements`.`user_name` AS `user_name`, `combined_movements`.`receipt_number` AS `receipt_number`, `combined_movements`.`supplier_name` AS `supplier_name` FROM (select `sa`.`id` AS `movement_id`,`p`.`id` AS `product_id`,`p`.`name` AS `product_name`,'sale' AS `movement_type`,0 AS `qty_in`,`sa`.`quantity` AS `qty_out`,`sa`.`sale_date` AS `movement_date`,`sa`.`receipt_id` AS `receipt_id`,`u`.`username` AS `user_name`,`r`.`receipt_number` AS `receipt_number`,'-' AS `supplier_name` from (((`sale` `sa` left join `product` `p` on(`sa`.`product_id` = `p`.`id`)) left join `user` `u` on(`sa`.`sold_by` = `u`.`id`)) left join `receipt` `r` on(`sa`.`receipt_id` = `r`.`id`)) union all select `pu`.`id` AS `movement_id`,`p`.`id` AS `product_id`,`p`.`name` AS `product_name`,'purchase' AS `movement_type`,`pu`.`quantity` AS `qty_in`,0 AS `qty_out`,`pu`.`purchase_date` AS `movement_date`,`pu`.`receipt_id` AS `receipt_id`,`u`.`username` AS `user_name`,`r`.`receipt_number` AS `receipt_number`,`s`.`name` AS `supplier_name` from ((((`purchase` `pu` left join `product` `p` on(`pu`.`product_id` = `p`.`id`)) left join `user` `u` on(`pu`.`purchased_by` = `u`.`id`)) left join `receipt` `r` on(`pu`.`receipt_id` = `r`.`id`)) left join `supplier` `s` on(`p`.`supplier_id` = `s`.`id`))) AS `combined_movements` ;
 
 -- --------------------------------------------------------
 
@@ -835,7 +835,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `view_purchase_report`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `view_purchase_report`  AS SELECT `pu`.`id` AS `id`, `p`.`name` AS `product_name`, `s`.`name` AS `supplier_name`, `pu`.`quantity` AS `qty_purchased`, round(`pu`.`purchase_price` / `pu`.`quantity`,2) AS `unit_price`, `pu`.`purchase_price` AS `total_cost`, `pu`.`purchase_date` AS `purchase_date`, `r`.`receipt_number` AS `receipt_number`, `u`.`username` AS `purchased_by` FROM ((((`purchase` `pu` left join `product` `p` on(`pu`.`product_id` = `p`.`id`)) left join `supplier` `s` on(`pu`.`supplier_id` = `s`.`id`)) left join `receipt` `r` on(`pu`.`receipt_id` = `r`.`id`)) left join `user` `u` on(`pu`.`purchased_by` = `u`.`id`)) ORDER BY `pu`.`purchase_date` ASC ;
+CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `view_purchase_report`  AS SELECT `pu`.`id` AS `id`, `p`.`name` AS `product_name`, `s`.`name` AS `supplier_name`, `pu`.`quantity` AS `qty_purchased`, round(`pu`.`purchase_price` / `pu`.`quantity`,2) AS `unit_price`, `pu`.`purchase_price` AS `total_cost`, `pu`.`purchase_date` AS `purchase_date`, `r`.`receipt_number` AS `receipt_number`, `u`.`username` AS `purchased_by` FROM ((((`purchase` `pu` left join `product` `p` on(`pu`.`product_id` = `p`.`id`)) left join `supplier` `s` on(`pu`.`supplier_id` = `s`.`id`)) left join `receipt` `r` on(`pu`.`receipt_id` = `r`.`id`)) left join `user` `u` on(`pu`.`purchased_by` = `u`.`id`)) ORDER BY `pu`.`purchase_date` ASC ;
 
 -- --------------------------------------------------------
 
@@ -844,7 +844,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `view_sales_report`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `view_sales_report`  AS SELECT `s`.`id` AS `sale_id`, `p`.`name` AS `product_name`, `s`.`quantity` AS `qty_sold`, round(`s`.`sale_price` / `s`.`quantity`,2) AS `unit_price`, `s`.`sale_price` AS `total_sale`, `s`.`sale_date` AS `sale_date`, `r`.`receipt_number` AS `receipt_number`, `u`.`username` AS `sold_by` FROM (((`sale` `s` left join `product` `p` on(`s`.`product_id` = `p`.`id`)) left join `receipt` `r` on(`s`.`receipt_id` = `r`.`id`)) left join `user` `u` on(`s`.`sold_by` = `u`.`id`)) ORDER BY `s`.`sale_date` ASC ;
+CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `view_sales_report`  AS SELECT `s`.`id` AS `sale_id`, `p`.`name` AS `product_name`, `s`.`quantity` AS `qty_sold`, round(`s`.`sale_price` / `s`.`quantity`,2) AS `unit_price`, `s`.`sale_price` AS `total_sale`, `s`.`sale_date` AS `sale_date`, `r`.`receipt_number` AS `receipt_number`, `u`.`username` AS `sold_by` FROM (((`sale` `s` left join `product` `p` on(`s`.`product_id` = `p`.`id`)) left join `receipt` `r` on(`s`.`receipt_id` = `r`.`id`)) left join `user` `u` on(`s`.`sold_by` = `u`.`id`)) ORDER BY `s`.`sale_date` ASC ;
 
 --
 -- Indexes for dumped tables

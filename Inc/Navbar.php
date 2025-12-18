@@ -349,6 +349,23 @@ foreach ($sidebarMenu as $item) {
 if (!$childTitle) $childTitle = "Dashboard";
 ?>
 
+<style>
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        background-color: #9ca3af;
+        /* gray */
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 0.9rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-transform: uppercase;
+    }
+</style>
+
 
 <nav class="app-header navbar navbar-expand bg-body shadow-sm">
     <div class="container-fluid">
@@ -393,51 +410,25 @@ if (!$childTitle) $childTitle = "Dashboard";
                 </a>
             </li>
 
-            <!-- User Dropdown -->
-            <li class="nav-item dropdown user-menu">
-                <a href="#" class="nav-link dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown">
-                    <img
-                        src="<?= $Project_URL ?>assets/User_Placeholder.jpg"
-                        class="user-image rounded-circle shadow-sm me-2"
-                        width="32"
-                        height="32"
-                        alt="User">
-                    <span class="d-none d-md-inline fw-semibold">Sazzadul Islam</span>
-                </a>
+            <!-- User -->
+            <?php
+            $nameParts = explode(' ', trim($_SESSION['username']));
+            $first = strtoupper(substr($nameParts[0], 0, 1));
+            $last = isset($nameParts[1]) ? strtoupper(substr(end($nameParts), 0, 1)) : '';
+            $initials = $first . $last;
+            ?>
 
-                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-lg">
+            <!-- User -->
+            <li class="nav-item dropdown user-menu d-flex align-items-center">
+                <div class="user-avatar me-2">
+                    <?= $initials ?>
+                </div>
 
-                    <!-- User Header -->
-                    <li class="user-header text-bg-primary text-center">
-                        <img
-                            src="<?= $Project_URL ?>assets/User_Placeholder.jpg"
-                            class="rounded-circle shadow-sm mb-2"
-                            width="80"
-                            height="80"
-                            alt="User">
-                        <p class="mb-0">
-                            <strong>Sazzadul Islam</strong> – Web Developer
-                        </p>
-                        <small>Member since Nov 2023</small>
-                    </li>
-
-                    <!-- User Stats -->
-                    <li class="user-body py-2 bg-light">
-                        <div class="row text-center">
-                            <div class="col-4"><a href="#" class="text-decoration-none">Followers</a></div>
-                            <div class="col-4"><a href="#" class="text-decoration-none">Sales</a></div>
-                            <div class="col-4"><a href="#" class="text-decoration-none">Friends</a></div>
-                        </div>
-                    </li>
-
-                    <!-- Footer -->
-                    <li class="user-footer d-flex justify-content-between">
-                        <a href="#" class="btn btn-outline-primary btn-flat">Profile</a>
-                        <a href="#" class="btn btn-outline-danger btn-flat">Sign Out</a>
-                    </li>
-
-                </ul>
+                <span class="d-none d-md-inline fw-semibold">
+                    <?= htmlspecialchars($_SESSION['username']) ?>
+                </span>
             </li>
+
         </ul>
     </div>
 </nav>

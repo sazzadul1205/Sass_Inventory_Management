@@ -29,7 +29,7 @@ $sidebarMenu = [
 
   // Authentication Section
   [
-    'title' => 'Authentication',
+    'title' => 'Manage Users',
     'icon' => 'bi bi-person-badge',
     'permission' => 'view_authentication_menu',
     'submenu' => [
@@ -324,7 +324,7 @@ $sidebarMenu = [
 // Returns the current relative path from project root
 function getCurrentRelativePath()
 {
-  $current = $_SERVER['PHP_SELF']; 
+  $current = $_SERVER['PHP_SELF'];
   $parts = explode('/', trim($current, '/'));
   $projectRoot = '/' . $parts[0] . '/';
   return str_replace($projectRoot, '', $current);

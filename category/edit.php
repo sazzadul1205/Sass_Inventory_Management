@@ -82,15 +82,14 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
   exit;
 }
 
-$category_Id = intval($_GET['id']);
+$categoryId = intval($_GET['id']);
 
 // Fetch category info
 $stmt = $conn->prepare("SELECT * FROM category WHERE id = ?");
-$stmt->bind_param("i", $category_Id);
+$stmt->bind_param("i", $categoryId);
 $stmt->execute();
 $result = $stmt->get_result();
 
-// Check if category exists
 if ($result->num_rows === 0) {
   $_SESSION['fail_message'] = "Category not found!";
   header("Location: index.php");
@@ -100,28 +99,65 @@ if ($result->num_rows === 0) {
 $category = $result->fetch_assoc();
 $stmt->close();
 
+// Fetch subcategories if main category
+$subCategories = [];
+if ($category['parent_id'] === null) {
+  $stmtSub = $conn->prepare("SELECT * FROM category WHERE parent_id = ? ORDER BY id ASC");
+  $stmtSub->bind_param("i", $categoryId);
+  $stmtSub->execute();
+  $subCategories = $stmtSub->get_result()->fetch_all(MYSQLI_ASSOC);
+  $stmtSub->close();
+}
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $name        = trim($_POST['name']);
   $description = trim($_POST['description']);
   $updated_at  = date('Y-m-d H:i:s');
 
-  // Update category
-  if (!empty($name)) {
+  if (empty($name)) {
+    $formError = "Category name cannot be empty!";
+  } else {
+    // Update main category
     $stmt = $conn->prepare("UPDATE category SET name = ?, description = ?, updated_at = ? WHERE id = ?");
     $stmt->bind_param("sssi", $name, $description, $updated_at, $categoryId);
 
     if ($stmt->execute()) {
+
+      // Handle subcategories only if it's a main category
+      if ($category['parent_id'] === null) {
+        $submittedSubs = $_POST['subcategories'] ?? [];
+        foreach ($submittedSubs as $sub) {
+          $subName = trim($sub['name'] ?? '');
+          $subDesc = trim($sub['description'] ?? '');
+          $subId   = isset($sub['id']) ? intval($sub['id']) : null;
+
+          if ($subName === '') continue;
+
+          if ($subId) {
+            // Update existing subcategory
+            $stmtUpdate = $conn->prepare("UPDATE category SET name = ?, description = ?, updated_at = ? WHERE id = ?");
+            $stmtUpdate->bind_param("sssi", $subName, $subDesc, $updated_at, $subId);
+            $stmtUpdate->execute();
+            $stmtUpdate->close();
+          } else {
+            // Insert new subcategory
+            $created_at = date('Y-m-d H:i:s');
+            $stmtInsert = $conn->prepare("INSERT INTO category (name, description, parent_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)");
+            $stmtInsert->bind_param("ssiss", $subName, $subDesc, $categoryId, $created_at, $updated_at);
+            $stmtInsert->execute();
+            $stmtInsert->close();
+          }
+        }
+      }
+
       $_SESSION['success_message'] = "Category '$name' updated successfully!";
       header("Location: index.php");
       exit;
     } else {
       $formError = "Failed to update category: " . $stmt->error;
     }
-
     $stmt->close();
-  } else {
-    $formError = "Category name cannot be empty!";
   }
 }
 
@@ -166,14 +202,11 @@ $conn->close();
               <!-- Form -->
               <form method="POST" action="">
                 <div class="row">
-                  <!-- Category Name -->
                   <div class="col-md-6 mb-3">
                     <label for="name" class="form-label">Category Name</label>
                     <input type="text" class="form-control" id="name" name="name" required
                       value="<?= htmlspecialchars($category['name']) ?>">
                   </div>
-
-                  <!-- Description -->
                   <div class="col-md-6 mb-3">
                     <label for="description" class="form-label">Description</label>
                     <input type="text" class="form-control" id="description" name="description"
@@ -181,17 +214,39 @@ $conn->close();
                   </div>
                 </div>
 
-                <!-- Buttons -->
+                <!-- Subcategories -->
+                <?php if ($category['parent_id'] === null): ?>
+                  <div class="mt-4">
+                    <h5 class="mb-3 fw-bold text-secondary border-bottom pb-2">Subcategories</h5>
+                    <div id="subcategories-wrapper" class="d-flex flex-column gap-2">
+                      <?php foreach ($subCategories as $sub): ?>
+                        <div class="d-flex align-items-center gap-2 subcategory-row">
+                          <input type="hidden" name="subcategories[][id]" value="<?= $sub['id'] ?>">
+                          <input type="text" name="subcategories[][name]" class="form-control" style="flex:0 0 30%" placeholder="Subcategory Name" value="<?= htmlspecialchars($sub['name']) ?>">
+                          <input type="text" name="subcategories[][description]" class="form-control" style="flex:0 0 66%" placeholder="Description" value="<?= htmlspecialchars($sub['description']) ?>">
+                          <button type="button" class="btn btn-danger btn-remove-subcategory flex-shrink-0"><i class="bi bi-dash-lg"></i></button>
+                        </div>
+                      <?php endforeach; ?>
+
+                      <!-- Blank row for new subcategory -->
+                      <div class="d-flex align-items-center gap-2 subcategory-row">
+                        <input type="text" name="subcategories[][name]" class="form-control" style="flex:0 0 30%" placeholder="Subcategory Name">
+                        <input type="text" name="subcategories[][description]" class="form-control" style="flex:0 0 66%" placeholder="Description">
+                        <button type="button" class="btn btn-success btn-add-subcategory flex-shrink-0"><i class="bi bi-plus-lg"></i></button>
+                      </div>
+                    </div>
+                  </div>
+                <?php else: ?>
+                  <div class="alert alert-info mt-3">
+                    This is a subcategory. Subcategories cannot have their own subcategories.
+                  </div>
+                <?php endif; ?>
+
                 <div class="mt-4 d-flex gap-2">
-                  <button type="submit" name="submit" class="btn btn-primary px-4 py-2">
-                    <i class="bi bi-check2-circle"></i> Update Category
-                  </button>
-                  <a href="index.php" class="btn btn-secondary px-4 py-2">
-                    <i class="bi bi-x-circle"></i> Cancel
-                  </a>
+                  <button type="submit" class="btn btn-primary px-4 py-2"><i class="bi bi-check2-circle"></i> Update Category</button>
+                  <a href="index.php" class="btn btn-secondary px-4 py-2"><i class="bi bi-x-circle"></i> Cancel</a>
                 </div>
               </form>
-
             </div>
           </div>
         </div>
@@ -216,6 +271,38 @@ $conn->close();
       }
     }, 3000);
   </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const wrapper = document.getElementById('subcategories-wrapper');
+
+      wrapper.addEventListener('click', e => {
+        if (e.target.closest('.btn-add-subcategory')) {
+          const row = e.target.closest('.subcategory-row');
+          const clone = row.cloneNode(true);
+
+          // Clear input values
+          clone.querySelectorAll('input').forEach(input => {
+            if (input.type !== "hidden") input.value = '';
+          });
+
+          // Switch button to remove
+          const btn = clone.querySelector('.btn-add-subcategory');
+          btn.classList.remove('btn-success', 'btn-add-subcategory');
+          btn.classList.add('btn-danger', 'btn-remove-subcategory');
+          btn.innerHTML = '<i class="bi bi-dash-lg"></i>';
+
+          wrapper.appendChild(clone);
+        }
+
+        if (e.target.closest('.btn-remove-subcategory')) {
+          const row = e.target.closest('.subcategory-row');
+          row.remove();
+        }
+      });
+    });
+  </script>
+
 </body>
 
 </html>

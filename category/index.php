@@ -60,8 +60,8 @@ if (!isset($_SESSION['user_id'])) {
 $conn = connectDB();
 
 // Fetch all categories
-$sql = "SELECT * FROM category ORDER BY id ASC";
-$result = $conn->query($sql);
+$sql = "SELECT * FROM category WHERE parent_id IS NULL ORDER BY id ASC";
+$mainCategories = $conn->query($sql);
 ?>
 
 <!-- Body -->
@@ -107,7 +107,7 @@ $result = $conn->query($sql);
       <!-- Table -->
       <div class="app-content-body mt-3">
         <div class="table-responsive container-fluid">
-          <?php if ($result->num_rows > 0): ?>
+          <?php if ($mainCategories->num_rows > 0): ?>
             <table id="categoriesTable" class="table table-bordered table-hover table-striped align-middle">
               <thead class="table-primary">
                 <tr>
@@ -121,35 +121,74 @@ $result = $conn->query($sql);
               </thead>
 
               <tbody>
-                <?php while ($row = $result->fetch_assoc()): ?>
-                  <tr>
-                    <td><?= htmlspecialchars($row['id']) ?></td>
-                    <td><?= htmlspecialchars($row['name']) ?></td>
-                    <td><?= htmlspecialchars($row['description']) ?></td>
-                    <td><?= !empty($row['created_at']) ? date('d M Y h:i A', strtotime($row['created_at'])) : '' ?></td>
-                    <td><?= !empty($row['updated_at']) ? date('d M Y h:i A', strtotime($row['updated_at'])) : '' ?></td>
-                    <td>
-                      <div class="d-flex gap-1">
-                        <!-- Edit button -->
-                        <?php if (can('edit_category')): ?>
-                          <a href="edit.php?id=<?= urlencode($row['id']) ?>" class="btn btn-warning btn-sm flex-fill">
-                            <i class="bi bi-pencil-square"></i> Edit
-                          </a>
-                        <?php endif; ?>
+                <?php if ($mainCategories->num_rows > 0): ?>
+                  <?php while ($main = $mainCategories->fetch_assoc()): ?>
+                    <!-- Main Category Row -->
+                    <tr class="table-primary">
+                      <td><?= htmlspecialchars($main['id']) ?></td>
+                      <td><?= htmlspecialchars($main['name']) ?></td>
+                      <td><?= htmlspecialchars($main['description']) ?></td>
+                      <td><?= !empty($main['created_at']) ? date('d M Y h:i A', strtotime($main['created_at'])) : '' ?></td>
+                      <td><?= !empty($main['updated_at']) ? date('d M Y h:i A', strtotime($main['updated_at'])) : '' ?></td>
+                      <td>
+                        <div class="d-flex gap-1">
+                          <?php if (can('edit_category')): ?>
+                            <a href="edit.php?id=<?= urlencode($main['id']) ?>" class="btn btn-warning btn-sm flex-fill">
+                              <i class="bi bi-pencil-square"></i> Edit
+                            </a>
+                          <?php endif; ?>
+                          <?php if (can('delete_category')): ?>
+                            <a href="delete.php?id=<?= urlencode($main['id']) ?>" class="btn btn-danger btn-sm flex-fill"
+                              onclick="return confirm('Are you sure you want to delete this category?');">
+                              <i class="bi bi-trash"></i> Delete
+                            </a>
+                          <?php endif; ?>
+                        </div>
+                      </td>
+                    </tr>
 
-                        <!-- Delete button -->
-                        <?php if (can('delete_category')): ?>
-                          <a href="delete.php?id=<?= urlencode($row['id']) ?>"
-                            class="btn btn-danger btn-sm flex-fill"
-                            onclick="return confirm('Are you sure you want to delete this category?');">
-                            <i class="bi bi-trash"></i> Delete
-                          </a>
-                        <?php endif; ?>
-                      </div>
-                    </td>
+                    <?php
+                    // Fetch subcategories for this main category
+                    $stmtSub = $conn->prepare("SELECT * FROM category WHERE parent_id = ? ORDER BY id ASC");
+                    $stmtSub->bind_param("i", $main['id']);
+                    $stmtSub->execute();
+                    $subCategories = $stmtSub->get_result();
+                    ?>
+
+                    <?php while ($sub = $subCategories->fetch_assoc()): ?>
+                      <tr class="table-light">
+                        <td><?= htmlspecialchars($sub['id']) ?></td>
+                        <td>&nbsp;&nbsp;&nbsp;↳ <?= htmlspecialchars($sub['name']) ?></td>
+                        <td><?= htmlspecialchars($sub['description']) ?></td>
+                        <td><?= !empty($sub['created_at']) ? date('d M Y h:i A', strtotime($sub['created_at'])) : '' ?></td>
+                        <td><?= !empty($sub['updated_at']) ? date('d M Y h:i A', strtotime($sub['updated_at'])) : '' ?></td>
+                        <td>
+                          <div class="d-flex gap-1">
+                            <?php if (can('edit_category')): ?>
+                              <a href="edit.php?id=<?= urlencode($sub['id']) ?>" class="btn btn-warning btn-sm flex-fill">
+                                <i class="bi bi-pencil-square"></i> Edit
+                              </a>
+                            <?php endif; ?>
+                            <?php if (can('delete_category')): ?>
+                              <a href="delete.php?id=<?= urlencode($sub['id']) ?>" class="btn btn-danger btn-sm flex-fill"
+                                onclick="return confirm('Are you sure you want to delete this subcategory?');">
+                                <i class="bi bi-trash"></i> Delete
+                              </a>
+                            <?php endif; ?>
+                          </div>
+                        </td>
+                      </tr>
+                    <?php endwhile;
+                    $stmtSub->close(); ?>
+
+                  <?php endwhile; ?>
+                <?php else: ?>
+                  <tr>
+                    <td colspan="6" class="text-center text-muted">No categories found.</td>
                   </tr>
-                <?php endwhile; ?>
+                <?php endif; ?>
               </tbody>
+
             </table>
           <?php else: ?>
             <div class="text-center text-muted py-5">

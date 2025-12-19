@@ -83,7 +83,7 @@ $rolesResult = $conn->query($roleQuery);
 // Form Submit Handler
 if (isset($_POST['submit'])) {
 
-  // Collect and sanitize input
+  // Collect and sanitize main category input
   $name        = trim($_POST['name']);
   $description = trim($_POST['description']);
   $created_at  = date('Y-m-d H:i:s');
@@ -93,21 +93,46 @@ if (isset($_POST['submit'])) {
   if (empty($name)) {
     $formError = "Category name is required.";
   } else {
+    // Insert main category
     $stmt = $conn->prepare("INSERT INTO category (name, description, created_at, updated_at) VALUES (?, ?, ?, ?)");
     $stmt->bind_param("ssss", $name, $description, $created_at, $updated_at);
 
     if ($stmt->execute()) {
-      $_SESSION['success_message'] = "Category added successfully!";
-      header("Location: index.php"); // redirect to category listing
+      // Get ID of newly inserted main category
+      $mainCategoryId = $stmt->insert_id;
+
+      // Handle subcategories if any
+      if (!empty($_POST['subcategories'])) {
+        foreach ($_POST['subcategories'] as $subcat) {
+          $subName = trim($subcat['name']);
+          $subDesc = trim($subcat['description']);
+
+          if (!empty($subName)) {
+            $stmtSub = $conn->prepare(
+              "INSERT INTO category (name, description, parent_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+            );
+            // Use 'sssss' and cast parent_id to string
+            $parentIdStr = (string)$mainCategoryId;
+            $stmtSub->bind_param("sssss", $subName, $subDesc, $parentIdStr, $created_at, $updated_at);
+            $stmtSub->execute();
+            $stmtSub->close();
+          }
+        }
+      }
+
+
+      $_SESSION['success_message'] = "Category and subcategories added successfully!";
+      header("Location: index.php"); // Redirect to category listing
       exit;
     } else {
       $formError = "Failed to add category: " . $stmt->error;
     }
 
-    $conn->close();
     $stmt->close();
+    $conn->close();
   }
 }
+
 ?>
 
 <!-- Body -->
@@ -152,10 +177,10 @@ if (isset($_POST['submit'])) {
               <!-- Form -->
               <form method="post" autocomplete="on">
 
-                <!-- Category Name & Description  -->
-                <div class="row">
-                  <!-- Category Name -->
-                  <div class="col-md-6 mb-3">
+                <!-- Category Name & Description -->
+                <div class="d-flex align-items-center gap-2 mb-3">
+                  <!-- Category Name (30%) -->
+                  <div class="flex-shrink-0" style="flex: 0 0 30%;">
                     <label for="name" class="form-label">Category Name</label>
                     <input
                       type="text"
@@ -166,16 +191,51 @@ if (isset($_POST['submit'])) {
                       required>
                   </div>
 
-                  <!-- Description -->
-                  <div class="col-md-6 mb-3">
+                  <!-- Description (70%) -->
+                  <div style="flex: 0 0 70%;">
                     <label for="description" class="form-label">Description</label>
                     <input
                       type="text"
                       name="description"
                       id="description"
                       class="form-control"
-                      placeholder=" Brief description about the category">
+                      placeholder="Brief description about the category">
                   </div>
+                </div>
+
+                <!-- Subcategories Section -->
+                <div class="mt-4">
+                  <h5 class="mb-3 fw-bold text-secondary border-bottom pb-2">
+                    Subcategories
+                    <small class="text-muted">(Optional)</small>
+                  </h5>
+
+                  <!-- Subcategories Section -->
+                  <div id="subcategories-wrapper" class="d-flex flex-column gap-2">
+                    <div class="d-flex align-items-center gap-2 subcategory-row">
+                      <!-- Subcategory Name (30% width) -->
+                      <input
+                        type="text"
+                        name="subcategories[][name]"
+                        class="form-control"
+                        style="flex: 0 0 30%;"
+                        placeholder="Subcategory Name">
+
+                      <!-- Description (66% width) -->
+                      <input
+                        type="text"
+                        name="subcategories[][description]"
+                        class="form-control"
+                        style="flex: 0 0 66%;"
+                        placeholder="Description">
+
+                      <!-- Add Button -->
+                      <button type="button" class="btn btn-success btn-add-subcategory flex-shrink-0">
+                        <i class="bi bi-plus-lg"></i>
+                      </button>
+                    </div>
+                  </div>
+
                 </div>
 
                 <!-- Hidden timestamps -->
@@ -216,6 +276,36 @@ if (isset($_POST['submit'])) {
       }
     }, 3000);
   </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const wrapper = document.getElementById('subcategories-wrapper');
+
+      wrapper.addEventListener('click', (e) => {
+        if (e.target.closest('.btn-add-subcategory')) {
+          const row = e.target.closest('.subcategory-row');
+          const clone = row.cloneNode(true);
+
+          // Clear input values
+          clone.querySelectorAll('input').forEach(input => input.value = '');
+
+          // Change button to remove button
+          const btn = clone.querySelector('.btn-add-subcategory');
+          btn.classList.remove('btn-success', 'btn-add-subcategory');
+          btn.classList.add('btn-danger', 'btn-remove-subcategory');
+          btn.innerHTML = '<i class="bi bi-dash-lg"></i>';
+
+          wrapper.appendChild(clone);
+        }
+
+        if (e.target.closest('.btn-remove-subcategory')) {
+          const row = e.target.closest('.subcategory-row');
+          row.remove();
+        }
+      });
+    });
+  </script>
+
 
 </body>
 

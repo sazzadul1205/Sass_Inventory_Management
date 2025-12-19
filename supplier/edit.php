@@ -1,49 +1,112 @@
 <?php
-// Include the conflict-free auth guard
 include_once __DIR__ . '/../config/auth_guard.php';
-
-// Require the user to have 'view_roles' permission
-// Unauthorized users will be redirected to the project root index.php
 requirePermission('edit_supplier', '../index.php');
 
-// Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
   exit;
 }
+
+$formError = "";
+$conn = connectDB();
+
+// Check supplier ID
+if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+  $_SESSION['fail_message'] = "Invalid supplier ID!";
+  header("Location: index.php");
+  exit;
+}
+
+$supplier_id = intval($_GET['id']);
+
+// Fetch supplier info
+$stmt = $conn->prepare("SELECT * FROM supplier WHERE id = ?");
+$stmt->bind_param("i", $supplier_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows === 0) {
+  $_SESSION['fail_message'] = "Supplier not found!";
+  header("Location: index.php");
+  exit;
+}
+
+$supplier = $result->fetch_assoc();
+$stmt->close();
+
+// Fetch selected categories for this supplier
+$catResult = $conn->query("SELECT category_id FROM supplier_category WHERE supplier_id = $supplier_id");
+$selectedCategories = [];
+while ($row = $catResult->fetch_assoc()) {
+  $selectedCategories[] = $row['category_id'];
+}
+
+// Handle form submission
+if (isset($_POST['submit'])) {
+  $supplierData = $_POST['supplier'] ?? [];
+  $name = trim($supplierData['name'] ?? '');
+  $phone = trim($supplierData['phone'] ?? '');
+  $email = trim($supplierData['email'] ?? '');
+  $address = trim($supplierData['address'] ?? '');
+  $contact_person = trim($supplierData['contact_person'] ?? '');
+  $type = trim($supplierData['type'] ?? '');
+  $categories = $supplierData['categories'] ?? [];
+  $updated_at = date('Y-m-d H:i:s');
+
+  if (empty($name)) {
+    $formError = "Supplier name is required.";
+  } else {
+    // Update supplier info
+    $stmt = $conn->prepare("UPDATE supplier SET name=?, phone=?, email=?, address=?, contact_person=?, type=?, updated_at=? WHERE id=?");
+    $stmt->bind_param("sssssssi", $name, $phone, $email, $address, $contact_person, $type, $updated_at, $supplier_id);
+
+    if ($stmt->execute()) {
+      // Update categories
+      $conn->query("DELETE FROM supplier_category WHERE supplier_id = $supplier_id");
+      if (!empty($categories)) {
+        $stmt2 = $conn->prepare("INSERT INTO supplier_category (supplier_id, category_id) VALUES (?, ?)");
+        foreach ($categories as $cat_id) {
+          $cat_id = intval($cat_id);
+          $stmt2->bind_param("ii", $supplier_id, $cat_id);
+          $stmt2->execute();
+        }
+        $stmt2->close();
+      }
+
+      $_SESSION['success_message'] = "Supplier '$name' updated successfully!";
+      header("Location: index.php");
+      exit;
+    } else {
+      $formError = "Failed to update supplier: " . $stmt->error;
+    }
+    $stmt->close();
+  }
+}
+
 ?>
 
 <!doctype html>
 <html lang="en">
 
 <head>
-  <meta charset="utf-8" />
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <title>Edit Supplier | Sass Inventory Management System</title>
-  <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png" />
+  <meta charset="utf-8">
+  <title>Edit Supplier | Sass Inventory</title>
+  <link rel="icon" href="<?= $Project_URL ?>assets/inventory.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- Mobile + Theme -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="color-scheme" content="light dark" />
+  <!-- Fonts & Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css">
 
-  <!-- Fonts -->
-  <link rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
-    media="print" onload="this.media='all'" />
+  <!-- Select2 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
-  <!-- Bootstrap Icons -->
-  <link rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
-
-  <!-- AdminLTE (Core Theme) -->
-  <link rel="stylesheet" href="<?= $Project_URL ?>/css/adminlte.css" />
-
-  <!-- Custom CSS -->
   <style>
     .card-custom {
       border-radius: 12px;
       border: 1px solid #e9ecef;
-      transition: 0.2s ease;
+      transition: .2s ease;
     }
 
     .card-custom:hover {
@@ -71,165 +134,118 @@ if (!isset($_SESSION['user_id'])) {
   </style>
 </head>
 
-
-<?php
-$formError = "";
-
-// Connect to the database
-$conn = connectDB();
-
-// Check for supplier ID
-if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-  $_SESSION['fail_message'] = "Invalid supplier ID!";
-  header("Location: index.php");
-  exit;
-}
-
-$supplier_id = intval($_GET['id']);
-
-// Fetch supplier info
-$stmt = $conn->prepare("SELECT * FROM supplier WHERE id = ?");
-$stmt->bind_param("i", $supplier_id);
-$stmt->execute();
-$result = $stmt->get_result();
-
-// Check if supplier exists
-if ($result->num_rows === 0) {
-  $_SESSION['fail_message'] = "Supplier not found!";
-  header("Location: index.php");
-  exit;
-}
-
-$supplier = $result->fetch_assoc();
-$stmt->close();
-
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $name       = trim($_POST['name']);
-  $phone      = trim($_POST['phone']);
-  $email      = trim($_POST['email']);
-  $updated_at = date('Y-m-d H:i:s');
-
-  // Update supplier
-  if (!empty($name)) {
-    $stmt = $conn->prepare("UPDATE supplier SET name = ?, phone = ?, email = ?, updated_at = ? WHERE id = ?");
-    $stmt->bind_param("ssssi", $name, $phone, $email, $updated_at, $supplier_id);
-
-    if ($stmt->execute()) {
-      $_SESSION['success_message'] = "Supplier '$name' updated successfully!";
-      header("Location: index.php");
-      exit;
-    } else {
-      $formError = "Failed to update supplier: " . $stmt->error;
-    }
-  } else {
-    $formError = "Supplier name is required.";
-  }
-  $conn->close();
-  $stmt->close();
-}
-?>
-
-
-<!-- body -->
-
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
   <div class="app-wrapper">
-    <!-- Navbar -->
     <?php include_once '../Inc/Navbar.php'; ?>
-
-    <!--Sidebar-->
     <?php include_once '../Inc/Sidebar.php'; ?>
 
-    <!--App Main-->
     <main class="app-main">
-      <!-- Page Header -->
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
-          <h3 class="mb-0" style="font-weight: 800;">Edit Supplier</h3>
+          <h3 class="mb-0" style="font-weight:800;">Edit Supplier</h3>
         </div>
       </div>
 
-      <!-- Form Error -->
       <?php if (!empty($formError)): ?>
-        <div id="errorBox" class="alert alert-danger text-center">
-          <?= htmlspecialchars($formError) ?>
-        </div>
+        <div id="errorBox" class="alert alert-danger text-center"><?= htmlspecialchars($formError) ?></div>
       <?php endif; ?>
 
-      <!-- App Content Body -->
-      <div class="app-content-body mt-3">
+      <div class="app-content-body mt-4">
         <div class="container-fluid">
-          <div class="card shadow-sm rounded-3">
-            <div class="card-body">
+          <div class="card card-custom shadow-sm">
+            <div class="card-body p-4">
+              <h4 class="mb-4 fw-bold text-secondary border-bottom pb-2">Update Supplier Information</h4>
 
-              <!-- Header -->
-              <h4 class="mb-4 fw-bold text-secondary border-bottom pb-2">
-                Update Supplier Information
-              </h4>
-
-              <!-- Form -->
-              <form method="POST" action="">
+              <form method="post" autocomplete="on">
                 <div class="row">
-                  <!-- Supplier Name -->
                   <div class="col-md-4 mb-3">
-                    <label for="name" class="form-label">Supplier Name *</label>
-                    <input type="text" name="name" id="name" class="form-control"
-                      value="<?= htmlspecialchars($supplier['name']) ?>" required>
+                    <label class="form-label">Supplier Name *</label>
+                    <input type="text" name="supplier[name]" class="form-control" value="<?= htmlspecialchars($supplier['name']) ?>" required>
                   </div>
 
-                  <!-- Phone -->
                   <div class="col-md-4 mb-3">
-                    <label for="phone" class="form-label">Phone</label>
-                    <input type="text" name="phone" id="phone" class="form-control"
-                      value="<?= htmlspecialchars($supplier['phone']) ?>">
+                    <label class="form-label">Phone</label>
+                    <input type="text" name="supplier[phone]" class="form-control" value="<?= htmlspecialchars($supplier['phone']) ?>">
                   </div>
 
-                  <!-- Email -->
                   <div class="col-md-4 mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" name="email" id="email" class="form-control"
-                      value="<?= htmlspecialchars($supplier['email']) ?>">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="supplier[email]" class="form-control" value="<?= htmlspecialchars($supplier['email']) ?>">
+                  </div>
+
+                  <div class="col-md-12 mb-3">
+                    <label class="form-label">Address</label>
+                    <textarea name="supplier[address]" class="form-control" rows="2"><?= htmlspecialchars($supplier['address']) ?></textarea>
+                  </div>
+
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label">Contact Person</label>
+                    <input type="text" name="supplier[contact_person]" class="form-control" value="<?= htmlspecialchars($supplier['contact_person']) ?>">
+                  </div>
+
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label">Supplier Type</label>
+                    <select name="supplier[type]" class="form-select">
+                      <option value="">Select Type</option>
+                      <option value="manufacturer" <?= $supplier['type'] == 'manufacturer' ? 'selected' : '' ?>>Manufacturer</option>
+                      <option value="distributor" <?= $supplier['type'] == 'distributor' ? 'selected' : '' ?>>Distributor</option>
+                      <option value="wholesaler" <?= $supplier['type'] == 'wholesaler' ? 'selected' : '' ?>>Wholesaler</option>
+                      <option value="retailer" <?= $supplier['type'] == 'retailer' ? 'selected' : '' ?>>Retailer</option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Categories</label>
+                    <select name="supplier[categories][]" class="form-select" id="supplier_categories" multiple="multiple">
+                      <?php
+                      $catResult = $conn->query("SELECT id, name FROM category WHERE parent_id IS NULL ORDER BY name ASC");
+                      while ($cat = $catResult->fetch_assoc()) {
+                        $selected = in_array($cat['id'], $selectedCategories) ? 'selected' : '';
+                        echo "<option value=\"{$cat['id']}\" $selected>{$cat['name']}</option>";
+                      }
+                      ?>
+                    </select>
+                    <small class="text-muted">Select one or more categories for this supplier</small>
                   </div>
 
                 </div>
 
-                <!-- Buttons -->
                 <div class="mt-4 d-flex gap-2">
-                  <button type="submit" name="submit" class="btn btn-primary px-4 py-2">
-                    <i class="bi bi-check2-circle"></i> Update Category
-                  </button>
-                  <a href="index.php" class="btn btn-secondary px-4 py-2">
-                    <i class="bi bi-x-circle"></i> Cancel
-                  </a>
+                  <button type="submit" name="submit" class="btn btn-primary px-4 py-2"><i class="bi bi-check2-circle"></i> Update Supplier</button>
+                  <a href="index.php" class="btn btn-secondary px-4 py-2"><i class="bi bi-x-circle"></i> Cancel</a>
                 </div>
               </form>
+
             </div>
           </div>
         </div>
       </div>
-
     </main>
 
-    <!--Footer-->
     <?php include_once '../Inc/Footer.php'; ?>
   </div>
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlaysscrollbars.browser.es6.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"></script>
-
-  <!-- Auto-hide error -->
   <script>
-    setTimeout(() => {
-      const box = document.getElementById("errorBox");
-      if (box) {
-        box.style.opacity = "0";
-        setTimeout(() => box.remove(), 500);
-      }
-    }, 3000);
-  </script>
+    $(document).ready(function() {
+      $('#supplier_categories').select2({
+        placeholder: "Select categories",
+        width: '100%',
+        closeOnSelect: false,
+        allowClear: true
+      });
 
+      setTimeout(() => {
+        const box = document.getElementById("errorBox");
+        if (box) {
+          box.style.opacity = '0';
+          setTimeout(() => box.remove(), 500);
+        }
+      }, 3000);
+    });
+  </script>
 </body>
 
 </html>

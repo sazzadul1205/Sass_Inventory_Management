@@ -1,12 +1,7 @@
 <?php
-// Include the conflict-free auth guard
 include_once __DIR__ . '/../config/auth_guard.php';
-
-// Require the user to have 'delete_user' permission
-// Unauthorized users will be redirected to index.php
 requirePermission('delete_supplier', '../index.php');
 
-// Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
   exit;
@@ -20,12 +15,11 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 }
 
 $supplierId = intval($_GET['id']);
-
 $conn = connectDB();
 
 // Check if supplier is linked to any product
 $checkStmt = $conn->prepare("SELECT COUNT(*) FROM product WHERE supplier_id = ?");
-$checkStmt->bind_param('i', $supplierId);
+$checkStmt->bind_param("i", $supplierId);
 $checkStmt->execute();
 $checkStmt->bind_result($productCount);
 $checkStmt->fetch();
@@ -37,23 +31,23 @@ if ($productCount > 0) {
   exit;
 }
 
-// Step 2: Delete supplier
+// Delete supplier-category relations first
+$conn->query("DELETE FROM supplier_category WHERE supplier_id = $supplierId");
+
+// Delete supplier
 $deleteStmt = $conn->prepare("DELETE FROM supplier WHERE id = ?");
 if ($deleteStmt) {
-  $deleteStmt->bind_param('i', $supplierId);
-
+  $deleteStmt->bind_param("i", $supplierId);
   if ($deleteStmt->execute()) {
     $_SESSION['success_message'] = "Supplier deleted successfully!";
   } else {
-    $_SESSION['fail_message'] = "Failed to delete supplier!";
+    $_SESSION['fail_message'] = "Failed to delete supplier: " . $deleteStmt->error;
   }
-
   $deleteStmt->close();
 } else {
   $_SESSION['fail_message'] = "Failed to prepare delete statement!";
 }
 
 $conn->close();
-
 header("Location: index.php");
 exit;

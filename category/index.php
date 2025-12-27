@@ -104,9 +104,37 @@ $mainCategories = $conn->query($sql);
       <?php endif; ?>
 
 
-      <!-- Table -->
-      <div class="app-content-body mt-3">
-        <div class="table-responsive container-fluid">
+      <!-- Toolbar: Product Search + Category Filter -->
+      <div class="app-content-body mt-3 container-fluid">
+
+        <!-- Toolbar -->
+        <div class="table-toolbar p-3 mb-3 rounded shadow-sm bg-white d-flex flex-wrap align-items-end gap-3">
+
+          <!-- Supplier Search -->
+          <div class="d-flex flex-column flex-grow-1" style="min-width: 200px;">
+            <label for="supplierSearch" class="form-label fw-semibold mb-1">Search Supplier</label>
+            <input type="text" id="supplierSearch" class="form-control" placeholder="Type supplier name...">
+          </div>
+
+          <!-- Toggle: Include/Exclude Categories with Subcategories -->
+          <div class="d-flex flex-column justify-content-end" style="min-width: 200px;">
+            <label class="form-label fw-semibold mb-1">Exclude Categories with Subcategories</label>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="excludeSubCategories">
+            </div>
+          </div>
+
+          <!-- Reset Filters -->
+          <div class="d-flex flex-column align-items-start" style="min-width: 120px;">
+            <label class="form-label mb-1">&nbsp;</label>
+            <button id="resetFilters" class=" btn btn-secondary w-100 d-flex align-items-center justify-content-center gap-2">
+              <i class="bi bi-arrow-counterclockwise reset-icon"></i> Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-responsive">
           <?php if ($mainCategories->num_rows > 0): ?>
             <table id="categoriesTable" class="table table-bordered table-hover table-striped align-middle">
               <thead class="table-primary">
@@ -121,82 +149,84 @@ $mainCategories = $conn->query($sql);
               </thead>
 
               <tbody>
-                <?php if ($mainCategories->num_rows > 0): ?>
-                  <?php while ($main = $mainCategories->fetch_assoc()): ?>
-                    <!-- Main Category Row -->
-                    <tr class="table-primary">
-                      <td><?= htmlspecialchars($main['id']) ?></td>
-                      <td><?= htmlspecialchars($main['name']) ?></td>
-                      <td><?= htmlspecialchars($main['description']) ?></td>
-                      <td><?= !empty($main['created_at']) ? date('d M Y h:i A', strtotime($main['created_at'])) : '' ?></td>
-                      <td><?= !empty($main['updated_at']) ? date('d M Y h:i A', strtotime($main['updated_at'])) : '' ?></td>
+                <?php while ($main = $mainCategories->fetch_assoc()): ?>
+                  <!-- Main Category Row -->
+                  <?php
+                  $mainId = $main['id'];
+                  $stmtSub = $conn->prepare("SELECT * FROM category WHERE parent_id = ? ORDER BY id ASC");
+                  $stmtSub->bind_param("i", $mainId);
+                  $stmtSub->execute();
+                  $subCategories = $stmtSub->get_result();
+                  $hasSub = $subCategories->num_rows > 0;
+                  ?>
+
+                  <tr class="table-primary"
+                    data-id="<?= $mainId ?>"
+                    data-name="<?= htmlspecialchars(strtolower($main['name'])) ?>"
+                    data-hassub="<?= $hasSub ? 1 : 0 ?>">
+                    <td><?= htmlspecialchars($mainId) ?></td>
+                    <td><?= htmlspecialchars($main['name']) ?></td>
+                    <td><?= htmlspecialchars($main['description']) ?></td>
+                    <td><?= !empty($main['created_at']) ? date('d M Y h:i A', strtotime($main['created_at'])) : '' ?></td>
+                    <td><?= !empty($main['updated_at']) ? date('d M Y h:i A', strtotime($main['updated_at'])) : '' ?></td>
+                    <td>
+                      <div class="d-flex gap-1">
+                        <?php if (can('edit_category')): ?>
+                          <a href="edit.php?id=<?= urlencode($mainId) ?>" class="btn btn-warning btn-sm flex-fill">
+                            <i class="bi bi-pencil-square"></i> Edit
+                          </a>
+                        <?php endif; ?>
+                        <?php if (can('delete_category')): ?>
+                          <a href="delete.php?id=<?= urlencode($mainId) ?>" class="btn btn-danger btn-sm flex-fill"
+                            onclick="return confirm('Are you sure you want to delete this category?');">
+                            <i class="bi bi-trash"></i> Delete
+                          </a>
+                        <?php endif; ?>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- Subcategory Rows -->
+                  <?php while ($sub = $subCategories->fetch_assoc()): ?>
+                    <tr class="table-light"
+                      data-id="<?= $sub['id'] ?>"
+                      data-name="<?= htmlspecialchars(strtolower($sub['name'])) ?>"
+                      data-parent="<?= $mainId ?>">
+                      <td><?= htmlspecialchars($sub['id']) ?></td>
+                      <td>&nbsp;&nbsp;&nbsp;↳ <?= htmlspecialchars($sub['name']) ?></td>
+                      <td><?= htmlspecialchars($sub['description']) ?></td>
+                      <td><?= !empty($sub['created_at']) ? date('d M Y h:i A', strtotime($sub['created_at'])) : '' ?></td>
+                      <td><?= !empty($sub['updated_at']) ? date('d M Y h:i A', strtotime($sub['updated_at'])) : '' ?></td>
                       <td>
                         <div class="d-flex gap-1">
                           <?php if (can('edit_category')): ?>
-                            <a href="edit.php?id=<?= urlencode($main['id']) ?>" class="btn btn-warning btn-sm flex-fill">
+                            <a href="edit.php?id=<?= urlencode($sub['id']) ?>" class="btn btn-warning btn-sm flex-fill">
                               <i class="bi bi-pencil-square"></i> Edit
                             </a>
                           <?php endif; ?>
                           <?php if (can('delete_category')): ?>
-                            <a href="delete.php?id=<?= urlencode($main['id']) ?>" class="btn btn-danger btn-sm flex-fill"
-                              onclick="return confirm('Are you sure you want to delete this category?');">
+                            <a href="delete.php?id=<?= urlencode($sub['id']) ?>" class="btn btn-danger btn-sm flex-fill"
+                              onclick="return confirm('Are you sure you want to delete this subcategory?');">
                               <i class="bi bi-trash"></i> Delete
                             </a>
                           <?php endif; ?>
                         </div>
                       </td>
                     </tr>
+                  <?php endwhile;
+                  $stmtSub->close(); ?>
 
-                    <?php
-                    // Fetch subcategories for this main category
-                    $stmtSub = $conn->prepare("SELECT * FROM category WHERE parent_id = ? ORDER BY id ASC");
-                    $stmtSub->bind_param("i", $main['id']);
-                    $stmtSub->execute();
-                    $subCategories = $stmtSub->get_result();
-                    ?>
-
-                    <?php while ($sub = $subCategories->fetch_assoc()): ?>
-                      <tr class="table-light">
-                        <td><?= htmlspecialchars($sub['id']) ?></td>
-                        <td>&nbsp;&nbsp;&nbsp;↳ <?= htmlspecialchars($sub['name']) ?></td>
-                        <td><?= htmlspecialchars($sub['description']) ?></td>
-                        <td><?= !empty($sub['created_at']) ? date('d M Y h:i A', strtotime($sub['created_at'])) : '' ?></td>
-                        <td><?= !empty($sub['updated_at']) ? date('d M Y h:i A', strtotime($sub['updated_at'])) : '' ?></td>
-                        <td>
-                          <div class="d-flex gap-1">
-                            <?php if (can('edit_category')): ?>
-                              <a href="edit.php?id=<?= urlencode($sub['id']) ?>" class="btn btn-warning btn-sm flex-fill">
-                                <i class="bi bi-pencil-square"></i> Edit
-                              </a>
-                            <?php endif; ?>
-                            <?php if (can('delete_category')): ?>
-                              <a href="delete.php?id=<?= urlencode($sub['id']) ?>" class="btn btn-danger btn-sm flex-fill"
-                                onclick="return confirm('Are you sure you want to delete this subcategory?');">
-                                <i class="bi bi-trash"></i> Delete
-                              </a>
-                            <?php endif; ?>
-                          </div>
-                        </td>
-                      </tr>
-                    <?php endwhile;
-                    $stmtSub->close(); ?>
-
-                  <?php endwhile; ?>
-                <?php else: ?>
-                  <tr>
-                    <td colspan="6" class="text-center text-muted">No categories found.</td>
-                  </tr>
-                <?php endif; ?>
+                <?php endwhile; ?>
               </tbody>
-
             </table>
           <?php else: ?>
             <div class="text-center text-muted py-5">
               <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-              <h5>No suppliers found</h5>
+              <h5>No categories found</h5>
             </div>
           <?php endif; ?>
         </div>
+
       </div>
     </main>
 
@@ -224,15 +254,82 @@ $mainCategories = $conn->query($sql);
         ordering: true,
         order: [],
         info: true,
-        autoWidth: false
+        autoWidth: false,
+        dom: '<"top-pagination d-flex justify-content-between mb-2"lp>rt<"bottom-pagination"ip>',
+        language: {
+          search: "" // Remove default search
+        }
       });
     });
 
+    // Remove success/failure message
     setTimeout(() => {
       const msg = document.getElementById('successMsg') || document.getElementById('failMsg');
       if (msg) msg.remove();
     }, 3000);
   </script>
+
+  <!-- Filter JS -->
+  <script>
+    $(document).ready(function() {
+      const $categoryFilter = $('#categoryFilter');
+      const $excludeToggle = $('#excludeSubCategories');
+      const $supplierSearch = $('#supplierSearch');
+      const $tableRows = $('#categoriesTable tbody tr');
+
+      function filterTable() {
+        const searchText = $supplierSearch.val().toLowerCase();
+        const selectedCat = $categoryFilter.val();
+        const excludeSub = $excludeToggle.is(':checked');
+
+        $tableRows.each(function() {
+          const $row = $(this);
+          const name = $row.data('name') || '';
+          const rowId = $row.data('id');
+          const parentId = $row.data('parent') || null;
+
+          // Search filter
+          let matchesSearch = name.includes(searchText);
+
+          // Category filter
+          let matchesCategory = true;
+          if (selectedCat) {
+            if (parentId) {
+              matchesCategory = parentId == selectedCat;
+            } else {
+              matchesCategory = rowId == selectedCat;
+            }
+          }
+
+          // Exclude subcategories
+          let matchesExcludeSub = true;
+          if (excludeSub) {
+            matchesExcludeSub = !$row.hasClass('table-primary') || $row.data('hassub') == 0;
+          }
+
+          if (matchesSearch && matchesCategory && matchesExcludeSub) {
+            $row.show();
+          } else {
+            $row.hide();
+          }
+        });
+      }
+
+      // Trigger filter on change
+      $supplierSearch.on('input', filterTable);
+      $categoryFilter.on('change', filterTable);
+      $excludeToggle.on('change', filterTable);
+
+      // Reset filters
+      $('#resetFilters').on('click', function() {
+        $supplierSearch.val('');
+        $categoryFilter.prop('selectedIndex', 0);
+        $excludeToggle.prop('checked', false);
+        $tableRows.show();
+      });
+    });
+  </script>
+
 
 </body>
 

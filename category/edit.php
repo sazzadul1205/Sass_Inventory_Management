@@ -121,45 +121,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Update main category
     $stmt = $conn->prepare("UPDATE category SET name = ?, description = ?, updated_at = ? WHERE id = ?");
     $stmt->bind_param("sssi", $name, $description, $updated_at, $categoryId);
+    $stmt->execute();
+    $stmt->close();
 
-    if ($stmt->execute()) {
+    // Handle subcategories
+    if ($category['parent_id'] === null) {
+      $submittedSubs = $_POST['subcategories'] ?? [];
 
-      // Handle subcategories only if it's a main category
-      if ($category['parent_id'] === null) {
-        $submittedSubs = $_POST['subcategories'] ?? [];
-        foreach ($submittedSubs as $sub) {
-          $subName = trim($sub['name'] ?? '');
-          $subDesc = trim($sub['description'] ?? '');
-          $subId   = isset($sub['id']) ? intval($sub['id']) : null;
+      foreach ($submittedSubs as $subIdKey => $sub) {
+        $subName = trim($sub['name'] ?? '');
+        $subDesc = trim($sub['description'] ?? '');
+        $subId   = isset($sub['id']) ? intval($sub['id']) : null;
 
-          if ($subName === '') continue;
+        if ($subName === '') continue;
 
-          if ($subId) {
-            // Update existing subcategory
-            $stmtUpdate = $conn->prepare("UPDATE category SET name = ?, description = ?, updated_at = ? WHERE id = ?");
-            $stmtUpdate->bind_param("sssi", $subName, $subDesc, $updated_at, $subId);
-            $stmtUpdate->execute();
-            $stmtUpdate->close();
-          } else {
-            // Insert new subcategory
-            $created_at = date('Y-m-d H:i:s');
-            $stmtInsert = $conn->prepare("INSERT INTO category (name, description, parent_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)");
-            $stmtInsert->bind_param("ssiss", $subName, $subDesc, $categoryId, $created_at, $updated_at);
-            $stmtInsert->execute();
-            $stmtInsert->close();
-          }
+        if ($subId) {
+          // Update existing subcategory
+          $stmtUpdate = $conn->prepare("UPDATE category SET name = ?, description = ?, updated_at = ? WHERE id = ?");
+          $stmtUpdate->bind_param("sssi", $subName, $subDesc, $updated_at, $subId);
+          $stmtUpdate->execute();
+          $stmtUpdate->close();
+        } else {
+          // Insert new subcategory
+          $created_at = date('Y-m-d H:i:s');
+          $stmtInsert = $conn->prepare("INSERT INTO category (name, description, parent_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)");
+          $stmtInsert->bind_param("ssiss", $subName, $subDesc, $categoryId, $created_at, $updated_at);
+          $stmtInsert->execute();
+          $stmtInsert->close();
         }
       }
-
-      $_SESSION['success_message'] = "Category '$name' updated successfully!";
-      header("Location: index.php");
-      exit;
-    } else {
-      $formError = "Failed to update category: " . $stmt->error;
     }
-    $stmt->close();
+
+    $_SESSION['success_message'] = "Category '$name' updated successfully!";
+    header("Location: index.php");
+    exit;
   }
 }
+
 
 $conn->close();
 ?>
@@ -221,17 +219,17 @@ $conn->close();
                     <div id="subcategories-wrapper" class="d-flex flex-column gap-2">
                       <?php foreach ($subCategories as $sub): ?>
                         <div class="d-flex align-items-center gap-2 subcategory-row">
-                          <input type="hidden" name="subcategories[][id]" value="<?= $sub['id'] ?>">
-                          <input type="text" name="subcategories[][name]" class="form-control" style="flex:0 0 30%" placeholder="Subcategory Name" value="<?= htmlspecialchars($sub['name']) ?>">
-                          <input type="text" name="subcategories[][description]" class="form-control" style="flex:0 0 66%" placeholder="Description" value="<?= htmlspecialchars($sub['description']) ?>">
+                          <input type="hidden" name="subcategories[<?= $sub['id'] ?>][id]" value="<?= $sub['id'] ?>">
+                          <input type="text" name="subcategories[<?= $sub['id'] ?>][name]" class="form-control" style="flex:0 0 30%" placeholder="Subcategory Name" value="<?= htmlspecialchars($sub['name']) ?>">
+                          <input type="text" name="subcategories[<?= $sub['id'] ?>][description]" class="form-control" style="flex:0 0 66%" placeholder="Description" value="<?= htmlspecialchars($sub['description']) ?>">
                           <button type="button" class="btn btn-danger btn-remove-subcategory flex-shrink-0"><i class="bi bi-dash-lg"></i></button>
                         </div>
                       <?php endforeach; ?>
 
                       <!-- Blank row for new subcategory -->
-                      <div class="d-flex align-items-center gap-2 subcategory-row">
-                        <input type="text" name="subcategories[][name]" class="form-control" style="flex:0 0 30%" placeholder="Subcategory Name">
-                        <input type="text" name="subcategories[][description]" class="form-control" style="flex:0 0 66%" placeholder="Description">
+                      <div class="d-flex align-items-center gap-2 subcategory-row" data-new-row="1">
+                        <input type="text" name="subcategories[new_0][name]" class="form-control" style="flex:0 0 30%" placeholder="Subcategory Name">
+                        <input type="text" name="subcategories[new_0][description]" class="form-control" style="flex:0 0 66%" placeholder="Description">
                         <button type="button" class="btn btn-success btn-add-subcategory flex-shrink-0"><i class="bi bi-plus-lg"></i></button>
                       </div>
                     </div>
@@ -247,6 +245,7 @@ $conn->close();
                   <a href="index.php" class="btn btn-secondary px-4 py-2"><i class="bi bi-x-circle"></i> Cancel</a>
                 </div>
               </form>
+
             </div>
           </div>
         </div>
@@ -272,11 +271,14 @@ $conn->close();
     }, 3000);
   </script>
 
+  <!-- Add new subcategory -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const wrapper = document.getElementById('subcategories-wrapper');
+      let newSubCounter = 1; // for unique new subcategory keys
 
       wrapper.addEventListener('click', e => {
+        // Add new subcategory row
         if (e.target.closest('.btn-add-subcategory')) {
           const row = e.target.closest('.subcategory-row');
           const clone = row.cloneNode(true);
@@ -285,6 +287,15 @@ $conn->close();
           clone.querySelectorAll('input').forEach(input => {
             if (input.type !== "hidden") input.value = '';
           });
+
+          // Update names for PHP processing
+          clone.querySelectorAll('input').forEach(input => {
+            if (!input.hasAttribute('type') || input.type === 'text') {
+              const field = input.getAttribute('placeholder').toLowerCase().includes('name') ? 'name' : 'description';
+              input.name = `subcategories[new_${newSubCounter}][${field}]`;
+            }
+          });
+          newSubCounter++;
 
           // Switch button to remove
           const btn = clone.querySelector('.btn-add-subcategory');
@@ -295,6 +306,7 @@ $conn->close();
           wrapper.appendChild(clone);
         }
 
+        // Remove subcategory row
         if (e.target.closest('.btn-remove-subcategory')) {
           const row = e.target.closest('.subcategory-row');
           row.remove();
@@ -302,6 +314,7 @@ $conn->close();
       });
     });
   </script>
+
 
 </body>
 

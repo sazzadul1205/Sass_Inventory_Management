@@ -80,57 +80,57 @@ $conn = connectDB();
 $roleQuery = "SELECT * FROM role ORDER BY role_name ASC";
 $rolesResult = $conn->query($roleQuery);
 
-// Form Submit Handler
+// Handle form submission
 if (isset($_POST['submit'])) {
 
-  // Collect and sanitize main category input
-  $name        = trim($_POST['name']);
-  $description = trim($_POST['description']);
-  $created_at  = date('Y-m-d H:i:s');
-  $updated_at  = date('Y-m-d H:i:s');
+    // Collect main category input
+    $name        = trim($_POST['name']);
+    $description = trim($_POST['description']);
+    $created_at  = date('Y-m-d H:i:s');
+    $updated_at  = date('Y-m-d H:i:s');
 
-  // Basic validation
-  if (empty($name)) {
-    $formError = "Category name is required.";
-  } else {
-    // Insert main category
-    $stmt = $conn->prepare("INSERT INTO category (name, description, created_at, updated_at) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("ssss", $name, $description, $created_at, $updated_at);
-
-    if ($stmt->execute()) {
-      // Get ID of newly inserted main category
-      $mainCategoryId = $stmt->insert_id;
-
-      // Handle subcategories if any
-      if (!empty($_POST['subcategories'])) {
-        foreach ($_POST['subcategories'] as $subcat) {
-          $subName = trim($subcat['name']);
-          $subDesc = trim($subcat['description']);
-
-          if (!empty($subName)) {
-            $stmtSub = $conn->prepare(
-              "INSERT INTO category (name, description, parent_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
-            );
-            // Use 'sssss' and cast parent_id to string
-            $parentIdStr = (string)$mainCategoryId;
-            $stmtSub->bind_param("sssss", $subName, $subDesc, $parentIdStr, $created_at, $updated_at);
-            $stmtSub->execute();
-            $stmtSub->close();
-          }
-        }
-      }
-
-
-      $_SESSION['success_message'] = "Category and subcategories added successfully!";
-      header("Location: index.php"); // Redirect to category listing
-      exit;
+    // Basic validation
+    if (empty($name)) {
+        $formError = "Category name is required.";
     } else {
-      $formError = "Failed to add category: " . $stmt->error;
+
+        // Insert main category
+        $stmt = $conn->prepare("INSERT INTO category (name, description, created_at, updated_at) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ssss", $name, $description, $created_at, $updated_at);
+
+        if ($stmt->execute()) {
+            $mainCategoryId = $stmt->insert_id;
+
+            // Handle subcategories if any
+            if (!empty($_POST['subcategories'])) {
+                foreach ($_POST['subcategories'] as $sub) {
+                    $subName = trim($sub['name'] ?? '');
+                    $subDesc = trim($sub['description'] ?? '');
+
+                    if ($subName === '') continue; // skip empty subcategories
+
+                    // Insert subcategory
+                    $stmtSub = $conn->prepare(
+                        "INSERT INTO category (name, description, parent_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+                    );
+                    $stmtSub->bind_param("ssiss", $subName, $subDesc, $mainCategoryId, $created_at, $updated_at);
+                    $stmtSub->execute();
+                    $stmtSub->close();
+                }
+            }
+
+            $_SESSION['success_message'] = "Category and subcategories added successfully!";
+            header("Location: index.php");
+            exit;
+
+        } else {
+            $formError = "Failed to add category: " . $stmt->error;
+        }
+
+        $stmt->close();
     }
 
-    $stmt->close();
     $conn->close();
-  }
 }
 
 ?>
@@ -210,32 +210,15 @@ if (isset($_POST['submit'])) {
                     <small class="text-muted">(Optional)</small>
                   </h5>
 
-                  <!-- Subcategories Section -->
                   <div id="subcategories-wrapper" class="d-flex flex-column gap-2">
-                    <div class="d-flex align-items-center gap-2 subcategory-row">
-                      <!-- Subcategory Name (30% width) -->
-                      <input
-                        type="text"
-                        name="subcategories[][name]"
-                        class="form-control"
-                        style="flex: 0 0 30%;"
-                        placeholder="Subcategory Name">
-
-                      <!-- Description (66% width) -->
-                      <input
-                        type="text"
-                        name="subcategories[][description]"
-                        class="form-control"
-                        style="flex: 0 0 66%;"
-                        placeholder="Description">
-
-                      <!-- Add Button -->
+                    <div class="d-flex align-items-center gap-2 subcategory-row" data-index="0">
+                      <input type="text" name="subcategories[new_0][name]" class="form-control" style="flex: 0 0 30%;" placeholder="Subcategory Name">
+                      <input type="text" name="subcategories[new_0][description]" class="form-control" style="flex: 0 0 66%;" placeholder="Description">
                       <button type="button" class="btn btn-success btn-add-subcategory flex-shrink-0">
                         <i class="bi bi-plus-lg"></i>
                       </button>
                     </div>
                   </div>
-
                 </div>
 
                 <!-- Hidden timestamps -->
@@ -277,19 +260,35 @@ if (isset($_POST['submit'])) {
     }, 3000);
   </script>
 
+  <!-- Add new subcategory -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const wrapper = document.getElementById('subcategories-wrapper');
+      let counter = 1; // unique counter for new subcategories
 
       wrapper.addEventListener('click', (e) => {
-        if (e.target.closest('.btn-add-subcategory')) {
-          const row = e.target.closest('.subcategory-row');
+        const addBtn = e.target.closest('.btn-add-subcategory');
+        const removeBtn = e.target.closest('.btn-remove-subcategory');
+
+        if (addBtn) {
+          const row = addBtn.closest('.subcategory-row');
           const clone = row.cloneNode(true);
 
           // Clear input values
           clone.querySelectorAll('input').forEach(input => input.value = '');
 
-          // Change button to remove button
+          // Update name attributes for PHP
+          clone.dataset.index = counter;
+          clone.querySelectorAll('input').forEach(input => {
+            if (input.placeholder.toLowerCase().includes('name')) {
+              input.name = `subcategories[new_${counter}][name]`;
+            } else {
+              input.name = `subcategories[new_${counter}][description]`;
+            }
+          });
+          counter++;
+
+          // Switch button to remove
           const btn = clone.querySelector('.btn-add-subcategory');
           btn.classList.remove('btn-success', 'btn-add-subcategory');
           btn.classList.add('btn-danger', 'btn-remove-subcategory');
@@ -298,8 +297,8 @@ if (isset($_POST['submit'])) {
           wrapper.appendChild(clone);
         }
 
-        if (e.target.closest('.btn-remove-subcategory')) {
-          const row = e.target.closest('.subcategory-row');
+        if (removeBtn) {
+          const row = removeBtn.closest('.subcategory-row');
           row.remove();
         }
       });

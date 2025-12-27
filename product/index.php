@@ -226,7 +226,6 @@ $result = $conn->query($sql);
             </select>
           </div>
 
-
           <!-- Reset Button -->
           <div class="d-flex flex-column align-items-start" style="min-width: 120px;">
             <label class="form-label mb-1">&nbsp;</label> <!-- Empty label for alignment -->

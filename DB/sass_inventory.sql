@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 09, 2025 at 07:36 AM
+-- Generation Time: Dec 27, 2025 at 06:38 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -162,6 +162,7 @@ DELIMITER ;
 CREATE TABLE `category` (
   `id` int(11) NOT NULL,
   `name` varchar(100) NOT NULL,
+  `parent_id` int(11) DEFAULT NULL,
   `description` text DEFAULT NULL COMMENT 'Optional description',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Auto-update on record change'
@@ -171,27 +172,34 @@ CREATE TABLE `category` (
 -- Dumping data for table `category`
 --
 
-INSERT INTO `category` (`id`, `name`, `description`, `created_at`, `updated_at`) VALUES
-(1, 'Mobile', 'Mobile Phones, Smart Phones, handheld phones', '2025-12-02 06:16:04', '2025-12-02 12:09:41'),
-(2, 'Electronics', 'Devices, gadgets, and accessories', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
-(3, 'Stationery', 'Office and school supplies', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
-(4, 'Furniture', 'Home and office furniture', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
-(5, 'Clothing', 'Apparel for men, women, and kids', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
-(6, 'Footwear', 'Shoes, sandals, and boots', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
-(7, 'Toys', 'Toys and games for children', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
-(8, 'Groceries', 'Daily food and household items', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
-(9, 'Beauty & Personal Care', 'Cosmetics, skincare, and hygiene', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
-(10, 'Books', 'Educational and recreational books', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
-(11, 'Sports', 'Sporting goods and equipment', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
-(12, 'Automotive', 'Car accessories and tools', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
-(13, 'Hardware', 'Tools and construction materials', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
-(14, 'Garden & Outdoors', 'Gardening and outdoor items', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
-(15, 'Pet Supplies', 'Food and accessories for pets', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
-(16, 'Music & Instruments', 'Musical instruments and accessories', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
-(17, 'Jewelry & Watches', 'Accessories and watches', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
-(19, 'Home Appliances', 'Appliances for home use', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
-(20, 'Art & Craft', 'Art supplies and DIY kits', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
-(21, 'Office Electronics', 'Printers, scanners, and office gadgets', '2025-12-02 11:47:57', '2025-12-02 11:47:57');
+INSERT INTO `category` (`id`, `name`, `parent_id`, `description`, `created_at`, `updated_at`) VALUES
+(1, 'Mobile', NULL, 'Mobile Phones, Smart Phones, handheld phones', '2025-12-02 06:16:04', '2025-12-19 01:10:09'),
+(2, 'Electronics', NULL, 'Devices, gadgets, and accessories', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(3, 'Stationery', NULL, 'Office and school supplies', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(4, 'Furniture', NULL, 'Home and office furniture', '2025-12-02 11:47:57', '2025-12-27 10:05:54'),
+(5, 'Clothing', NULL, 'Apparel for men, women, and kids', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(6, 'Footwear', NULL, 'Shoes, sandals, and boots', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(7, 'Toys', NULL, 'Toys and games for children', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(8, 'Groceries', NULL, 'Daily food and household items', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(10, 'Books', NULL, 'Educational and recreational books', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(11, 'Sports', NULL, 'Sporting goods and equipment', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(12, 'Automotive', NULL, 'Car accessories and tools', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(13, 'Hardware', NULL, 'Tools and construction materials', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(14, 'Garden & Outdoors', NULL, 'Gardening and outdoor items', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(15, 'Pet Supplies', NULL, 'Food and accessories for pets', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(16, 'Music & Instruments', NULL, 'Musical instruments and accessories', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(17, 'Jewelry & Watches', NULL, 'Accessories and watches', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(19, 'Home Appliances', NULL, 'Appliances for home use', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(20, 'Art & Craft', NULL, 'Art supplies and DIY kits', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(21, 'Office Electronics', NULL, 'Printers, scanners, and office gadgets', '2025-12-02 11:47:57', '2025-12-02 11:47:57'),
+(23, 'Chocklet', NULL, 'Chocklet Products', '2025-12-19 00:58:09', '2025-12-19 00:58:09'),
+(24, 'Bars', 23, 'afwefwsfwes', '2025-12-19 00:58:09', '2025-12-27 10:09:00'),
+(26, 'Smart Phone', 1, 'daqwFDFEWSA', '2025-12-19 01:10:09', '2025-12-19 01:32:52'),
+(28, 'Chair', 4, 'afeswfawefae', '2025-12-27 10:00:01', '2025-12-27 10:05:54'),
+(29, 'Table', 4, 'ewafawefefewf', '2025-12-27 10:00:01', '2025-12-27 10:05:54'),
+(33, 'FWEFAEWF', NULL, 'FAEFAWEF', '2025-12-27 10:08:52', '2025-12-27 10:08:52'),
+(34, 'afsfes', 33, 'faewsfaewf ewf gaswerg', '2025-12-27 10:08:52', '2025-12-27 10:08:52'),
+(35, 'gawegserg', 33, 'era gerg hrgs', '2025-12-27 10:08:52', '2025-12-27 10:08:52');
 
 -- --------------------------------------------------------
 
@@ -529,6 +537,8 @@ INSERT INTO `role_permission` (`role_id`, `permission_id`) VALUES
 (1, 48),
 (1, 51),
 (2, 7),
+(2, 10),
+(2, 11),
 (2, 12),
 (2, 19),
 (2, 20),
@@ -655,22 +665,57 @@ CREATE TABLE `supplier` (
   `name` varchar(100) NOT NULL,
   `phone` varchar(20) DEFAULT NULL,
   `email` varchar(100) DEFAULT NULL,
+  `address` text DEFAULT NULL,
+  `contact_person` varchar(100) DEFAULT NULL,
+  `type` varchar(50) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Auto-update on record change'
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Used to track product sources. Admin and staff can add/update.';
 
 --
 -- Dumping data for table `supplier`
 --
 
-INSERT INTO `supplier` (`id`, `name`, `phone`, `email`, `created_at`, `updated_at`) VALUES
-(1, 'Talon Buchanan', '+1 (293) 637-4881', 'nytyr@mailinator.com', '2025-12-03 08:05:12', '2025-12-03 09:11:47'),
-(3, 'Hayden Sims', '+1 (709) 873-7028', 'duwuhu@mailinator.com', '2025-12-03 08:09:49', '2025-12-03 08:09:49'),
-(4, 'Octavia Griffin', '+1 (323) 768-7496', 'hamypaxe@mailinator.com', '2025-12-03 08:09:57', '2025-12-03 08:09:57'),
-(5, 'Raphael Guerra', '+1 (876) 388-5466', 'ziluxas@mailinator.com', '2025-12-03 08:10:08', '2025-12-03 08:10:08'),
-(6, 'Idona Hunter', '+1 (349) 757-5266', 'vysyrinyti@mailinator.com', '2025-12-03 08:10:15', '2025-12-03 08:10:15'),
-(7, 'Geraldine Greer', '+1 (486) 521-2676', 'qaqiwi@mailinator.com', '2025-12-03 08:10:48', '2025-12-03 08:10:48'),
-(8, 'Aurora Hardin', '+1 (944) 354-6738', 'vaja@mailinator.com', '2025-12-03 08:50:45', '2025-12-03 08:50:45');
+INSERT INTO `supplier` (`id`, `name`, `phone`, `email`, `address`, `contact_person`, `type`, `created_at`, `updated_at`) VALUES
+(1, 'Henry Acevedo', '+1 (693) 537-4872', 'vijo@mailinator.com', 'Architecto nulla eve', 'Illo ab blanditiis q', 'wholesaler', '2025-12-03 08:05:12', '2025-12-19 06:59:09'),
+(3, 'Hayden Sims', '+1 (709) 873-7028', 'duwuhu@mailinator.com', 'f weaf wefw', 'Md Shafikul Islam ii', 'manufacturer', '2025-12-03 08:09:49', '2025-12-19 03:58:42'),
+(4, 'Octavia Griffin', '+1 (323) 768-7496', 'hamypaxe@mailinator.com', 'f weaf wefw', 'Md Shafikul Islam ii', 'distributor', '2025-12-03 08:09:57', '2025-12-19 06:58:38'),
+(5, 'Maia Keller', '+1 (767) 523-8209', 'judoqozag@mailinator.com', 'Et totam error place', 'Hic minus iusto reru', 'wholesaler', '2025-12-03 08:10:08', '2025-12-19 06:59:14'),
+(6, 'Idona Hunter', '+1 (349) 757-5266', 'vysyrinyti@mailinator.com', NULL, NULL, NULL, '2025-12-03 08:10:15', '2025-12-03 08:10:15'),
+(7, 'Geraldine Greer', '+1 (486) 521-2676', 'qaqiwi@mailinator.com', NULL, NULL, NULL, '2025-12-03 08:10:48', '2025-12-03 08:10:48'),
+(8, 'Aurora Hardin', '+1 (944) 354-6738', 'vaja@mailinator.com', NULL, NULL, NULL, '2025-12-03 08:50:45', '2025-12-03 08:50:45');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `supplier_category`
+--
+
+CREATE TABLE `supplier_category` (
+  `supplier_id` int(11) NOT NULL,
+  `category_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `supplier_category`
+--
+
+INSERT INTO `supplier_category` (`supplier_id`, `category_id`) VALUES
+(1, 1),
+(1, 15),
+(1, 19),
+(1, 21),
+(3, 5),
+(3, 10),
+(3, 12),
+(4, 12),
+(4, 20),
+(5, 2),
+(5, 4),
+(5, 7),
+(5, 10),
+(5, 11),
+(5, 17);
 
 -- --------------------------------------------------------
 
@@ -699,7 +744,8 @@ INSERT INTO `user` (`id`, `username`, `password`, `email`, `role_id`, `created_a
 (7, 'Teest3', '17e310318a1e207509c0f0cd8042063b', 'Test3@gmail.com', 2, '2025-12-01 20:30:41', '2025-12-01 20:30:41'),
 (9, 'sedafs', '8cca08722e4108babcb9218e5bb14a2d', 'asfswf@gmail.com', 8, '2025-12-01 20:32:52', '2025-12-07 23:18:33'),
 (12, 'Test221', '356308d897f6d2f67e9f83730a9ec258', 'vaja@mailinator.com', 2, '2025-12-04 01:27:28', '2025-12-04 01:27:28'),
-(16, 'SazzadulFFYUJ', 'e807f1fcf82d132f9bb018ca6738a19f', '123@gmail.com', 2, '2025-12-08 04:22:17', '2025-12-08 04:22:17');
+(16, 'SazzadulFFYUJ', 'e807f1fcf82d132f9bb018ca6738a19f', '123@gmail.com', 2, '2025-12-08 04:22:17', '2025-12-08 04:22:17'),
+(17, 'Pritom Test User', 'ea3c1823aa5bf4a74356098da02de9b4', 'Psazzadul@gmail.com', 2, '2025-12-09 14:59:31', '2025-12-09 14:59:31');
 
 -- --------------------------------------------------------
 
@@ -855,7 +901,8 @@ CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `view_sales_report`  AS SEL
 --
 ALTER TABLE `category`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `name` (`name`);
+  ADD UNIQUE KEY `name` (`name`),
+  ADD KEY `fk_category_parent` (`parent_id`);
 
 --
 -- Indexes for table `permission`
@@ -930,6 +977,13 @@ ALTER TABLE `supplier`
   ADD UNIQUE KEY `name` (`name`);
 
 --
+-- Indexes for table `supplier_category`
+--
+ALTER TABLE `supplier_category`
+  ADD PRIMARY KEY (`supplier_id`,`category_id`),
+  ADD KEY `fk_category` (`category_id`);
+
+--
 -- Indexes for table `user`
 --
 ALTER TABLE `user`
@@ -945,7 +999,7 @@ ALTER TABLE `user`
 -- AUTO_INCREMENT for table `category`
 --
 ALTER TABLE `category`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
 
 --
 -- AUTO_INCREMENT for table `permission`
@@ -993,17 +1047,23 @@ ALTER TABLE `sale`
 -- AUTO_INCREMENT for table `supplier`
 --
 ALTER TABLE `supplier`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `user`
 --
 ALTER TABLE `user`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `category`
+--
+ALTER TABLE `category`
+  ADD CONSTRAINT `fk_category_parent` FOREIGN KEY (`parent_id`) REFERENCES `category` (`id`);
 
 --
 -- Constraints for table `product`
@@ -1048,6 +1108,13 @@ ALTER TABLE `sale`
   ADD CONSTRAINT `fk_sale_receipt` FOREIGN KEY (`receipt_id`) REFERENCES `receipt` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `sale_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`),
   ADD CONSTRAINT `sale_ibfk_2` FOREIGN KEY (`sold_by`) REFERENCES `user` (`id`);
+
+--
+-- Constraints for table `supplier_category`
+--
+ALTER TABLE `supplier_category`
+  ADD CONSTRAINT `fk_category` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `supplier` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `user`

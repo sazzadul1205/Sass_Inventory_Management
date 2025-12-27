@@ -42,6 +42,9 @@ if (!isset($_SESSION['user_id'])) {
   <link rel="stylesheet"
     href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
 
+  <!-- select2 -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
   <!-- Custom CSS -->
   <style>
     .btn-warning:hover {
@@ -52,6 +55,45 @@ if (!isset($_SESSION['user_id'])) {
     .btn-danger:hover {
       background-color: #bb2d3b !important;
       border-color: #b02a37 !important;
+    }
+  </style>
+
+  <!-- Your custom Select2 CSS -->
+  <style>
+    .select2-container--default .select2-selection--single {
+      background-color: #fff;
+      color: #000;
+      border: 1px solid #ced4da;
+      border-radius: 0.25rem;
+      height: calc(1.5em + 0.75rem + 2px);
+      line-height: 1.5;
+      padding: 0.375rem 0.75rem;
+      box-sizing: border-box;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+      color: #000;
+      line-height: 1.5;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow b {
+      border-color: #000 transparent transparent transparent;
+    }
+
+    .select2-container--default .select2-dropdown {
+      background-color: #fff;
+      color: #000;
+    }
+
+    .select2-container--default .select2-results__option {
+      color: #000;
+    }
+
+    .select2-container--default .select2-search--dropdown .select2-search__field {
+      background-color: #fff;
+      color: #000;
+      height: auto;
+      line-height: 1.5;
     }
   </style>
 </head>
@@ -118,9 +160,67 @@ $result = $conn->query($sql);
         <?php unset($_SESSION['fail_message']); ?>
       <?php endif; ?>
 
-      <!-- Table -->
-      <div class="app-content-body mt-3">
-        <div class="table-responsive container-fluid">
+      <!-- Toolbar: Product Search + Category Filter -->
+      <div class="app-content-body mt-3 container-fluid">
+
+        <!-- Toolbar -->
+        <div class="table-toolbar p-3 mb-3 rounded shadow-sm bg-white d-flex flex-wrap align-items-end gap-3">
+          <!-- Product Search -->
+          <div class="d-flex flex-column flex-grow-1" style="min-width: 200px;">
+            <label for="productSearch" class="form-label fw-semibold mb-1">Search Product</label>
+            <input type="text" id="productSearch" class="form-control" placeholder="Type to search...">
+          </div>
+
+          <!-- Type Filter -->
+          <div class="d-flex flex-column" style="min-width: 150px;">
+            <label for="typeFilter" class="form-label fw-semibold mb-1">Type</label>
+            <select id="typeFilter" class="form-select">
+              <option value="">All Types</option>
+              <?php
+              // Fetch unique types
+              $typeResult = $conn->query("SELECT DISTINCT type FROM supplier ORDER BY type ASC");
+              while ($typeRow = $typeResult->fetch_assoc()):
+                if (!empty($typeRow['type'])):
+              ?>
+                  <option value="<?= htmlspecialchars($typeRow['type']) ?>"><?= ucfirst(htmlspecialchars($typeRow['type'])) ?></option>
+              <?php
+                endif;
+              endwhile;
+              ?>
+            </select>
+          </div>
+
+          <!-- Category Filter -->
+          <div class="d-flex flex-column" style="min-width: 200px;">
+            <label for="categoryFilter" class="form-label fw-semibold mb-1">Filter by Category</label>
+            <select id="categoryFilter" class="form-select">
+              <option value="">All Categories</option>
+              <?php
+              $catResult = $conn->query("
+              SELECT c.name 
+              FROM category c
+              JOIN supplier_category sc ON sc.category_id = c.id
+              GROUP BY c.name
+              ORDER BY c.name ASC
+              ");
+              while ($cat = $catResult->fetch_assoc()) {
+                echo "<option value=\"{$cat['name']}\">{$cat['name']}</option>";
+              }
+              ?>
+            </select>
+          </div>
+
+          <!-- Reset Button -->
+          <div class="d-flex flex-column align-items-start" style="min-width: 120px;">
+            <label class="form-label mb-1">&nbsp;</label> <!-- Empty label for alignment -->
+            <button id="resetFilters" class="btn btn-secondary w-100 d-flex align-items-center justify-content-center gap-2">
+              <i class="bi bi-arrow-counterclockwise reset-icon"></i> Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-responsive">
           <?php if ($result->num_rows > 0): ?>
             <table id="suppliersTable" class="table table-bordered table-striped table-hover align-middle">
               <thead class="table-primary">
@@ -148,6 +248,8 @@ $result = $conn->query($sql);
                         ? ucfirst(htmlspecialchars($row['type']))
                         : '<span class="text-muted">—</span>' ?>
                     </td>
+
+                    <!-- Categories -->
                     <td>
                       <?php if (!empty($row['categories'])): ?>
                         <?php foreach (explode(',', $row['categories']) as $cat): ?>
@@ -157,6 +259,8 @@ $result = $conn->query($sql);
                         <span class="text-muted">—</span>
                       <?php endif; ?>
                     </td>
+
+                    <!-- Created -->
                     <td><?= date('d M Y', strtotime($row['created_at'])) ?></td>
 
                     <!-- Actions -->
@@ -301,24 +405,68 @@ $result = $conn->query($sql);
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
-  <!-- Custom JS -->
+  <!-- Select2 -->
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
   <script>
     $(document).ready(function() {
-      $('#suppliersTable').DataTable({
+      // Initialize Select2 for categories
+      $('#categoryFilter').select2({
+        placeholder: "Select Category",
+        allowClear: true,
+        width: '100%'
+      });
+
+      // Initialize DataTable
+      const table = $('#suppliersTable').DataTable({
         paging: true,
         pageLength: 10,
         lengthChange: true,
         ordering: true,
         order: [],
         info: true,
-        autoWidth: false
+        autoWidth: false,
+        dom: '<"top-pagination d-flex justify-content-between mb-2"lp>rt<"bottom-pagination"ip>',
+        language: {
+          search: ""
+        }
+      });
+
+      // Custom search for Name, Phone, Email, Type, Category
+      $.fn.dataTable.ext.search.push(function(settings, data) {
+        const searchTerm = $('#productSearch').val().toLowerCase();
+        const typeTerm = $('#typeFilter').val().toLowerCase();
+        const categoryTerm = $('#categoryFilter').val().toLowerCase();
+
+        const name = data[1].toLowerCase(); // Name column
+        const phone = data[2].toLowerCase(); // Phone column
+        const email = data[3].toLowerCase(); // Email column
+        const type = data[4].toLowerCase(); // Type column
+        const categoriesRaw = data[5].toLowerCase(); // Comma-separated string like "Cat1, Cat2, Cat3"
+
+        const categories = categoriesRaw.split(',').map(c => c.trim()); // Split & trim
+
+        const matchesSearch = name.includes(searchTerm) || phone.includes(searchTerm) || email.includes(searchTerm);
+        const matchesType = typeTerm === "" || type === typeTerm;
+        const matchesCategory = categoryTerm === "" || categories.includes(categoryTerm);
+
+        return matchesSearch && matchesType && matchesCategory;
+      });
+
+
+      // Trigger table redraw on search input or filter change
+      $('#productSearch, #typeFilter, #categoryFilter').on('keyup change', function() {
+        table.draw();
+      });
+
+      // Reset button
+      $('#resetFilters').on('click', function() {
+        $('#productSearch').val('');
+        $('#typeFilter').val('');
+        $('#categoryFilter').val(null).trigger('change'); // Reset Select2
+        table.draw();
       });
     });
-
-    setTimeout(() => {
-      const msg = document.getElementById('successMsg') || document.getElementById('failMsg');
-      if (msg) msg.remove();
-    }, 3000);
   </script>
 
   <!-- View Supplier -->

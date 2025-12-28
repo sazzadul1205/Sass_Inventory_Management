@@ -1,5 +1,5 @@
-<!-- db_config.php -->
 <?php
+// db_config.php
 
 // Database configuration
 $DB_HOST = "localhost";

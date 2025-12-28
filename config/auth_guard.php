@@ -1,5 +1,6 @@
-<!-- auth_guard.php -->
 <?php
+// auth_guard.php
+
 // ---- SAFE SESSION START ----
 if (session_status() === PHP_SESSION_NONE) {
   session_start();

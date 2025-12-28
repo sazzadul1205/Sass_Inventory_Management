@@ -418,7 +418,6 @@ if (isset($_POST['submit'])) {
     <!-- Footer -->
     <?php include_once '../Inc/Footer.php'; ?>
   </div>
-
   <!-- JS Dependencies -->
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
@@ -426,11 +425,10 @@ if (isset($_POST['submit'])) {
   <!-- Select2 -->
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-  <!-- Select2 Initialization -->
   <script>
     $(document).ready(function() {
-      // Initialize Select2 for Category and Supplier
-      $('#categorySelect, #supplierSelect').select2({
+      // Initialize Select2 for Category, Subcategory, and Supplier
+      $('#categorySelect, #subCategorySelect, #supplierSelect').select2({
         placeholder: "Select",
         allowClear: true,
         width: '100%',
@@ -444,43 +442,17 @@ if (isset($_POST['submit'])) {
           setTimeout(() => box.remove(), 500);
         }
       }, 3000);
-    });
-  </script>
 
-  <!-- Category & Sub Category -->
-  <script>
-    $(document).ready(function() {
-      // Initialize Select2 only on Category and Supplier
-      $('#categorySelect, #supplierSelect').select2({
-        placeholder: "Select",
-        allowClear: true,
-        width: '100%',
-      });
-
-      // Auto-hide error messages
-      setTimeout(() => {
-        const box = $("#errorBox");
-        if (box.length) {
-          box.css('opacity', 0);
-          setTimeout(() => box.remove(), 500);
-        }
-      }, 3000);
-
-      // Category → Sub Category logic (plain select)
-      $('#categorySelect').on('change', function() {
-        const categoryId = $(this).val();
+      // Category → Subcategory logic
+      function loadSubcategories(categoryId, selectedSubId = null) {
         const $subSelect = $('#subCategorySelect');
-
-        // Reset
-        $subSelect.empty();
-        $subSelect.prop('disabled', true);
+        $subSelect.empty().prop('disabled', true);
 
         if (!categoryId) {
           $subSelect.append('<option value="">Select Category First</option>');
           return;
         }
 
-        // Fetch subcategories
         $.ajax({
           url: 'fetch_subcategories.php',
           method: 'GET',
@@ -492,89 +464,90 @@ if (isset($_POST['submit'])) {
             $subSelect.empty();
 
             if (!Array.isArray(data) || data.length === 0) {
-              $subSelect.append('<option value="">No Sub Categories Available</option>');
+              $subSelect.append('<option value="">No Subcategories Available</option>');
               $subSelect.prop('disabled', true);
               return;
             }
 
-            $subSelect.append('<option value="">-- Select Sub Category --</option>');
-
+            $subSelect.append('<option value="">-- Select Subcategory --</option>');
             data.forEach(function(sub) {
-              $subSelect.append(`<option value="${sub.id}">${sub.name}</option>`);
+              const selected = selectedSubId == sub.id ? 'selected' : '';
+              $subSelect.append(`<option value="${sub.id}" ${selected}>${sub.name}</option>`);
             });
 
-            $subSelect.prop('disabled', false);
+            $subSelect.prop('disabled', false).trigger('change');
           },
           error: function() {
-            $subSelect.empty().append('<option value="">Error loading sub categories</option>');
+            $subSelect.empty().append('<option value="">Error loading subcategories</option>');
             $subSelect.prop('disabled', true);
           }
         });
-      });
-    });
-  </script>
+      }
 
-  <script>
-    const imageInput = document.getElementById('imageInput');
-    const imagePreview = document.getElementById('imagePreview');
+      // Initial load of subcategory if product already has one
+      const initialCategoryId = $('#categorySelect').val();
+      const initialSubId = "<?= $product['subcategory_id'] ?? '' ?>";
+      if (initialCategoryId) {
+        loadSubcategories(initialCategoryId, initialSubId);
+      }
 
-    imageInput.addEventListener('change', function() {
-      const file = this.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          imagePreview.src = e.target.result;
+      $('#categorySelect').on('change', function() {
+        const categoryId = $(this).val();
+        loadSubcategories(categoryId);
+
+        // Also reload suppliers by category
+        const $supplierSelect = $('#supplierSelect');
+        $supplierSelect.empty();
+
+        if (!categoryId) {
+          $supplierSelect.append(new Option("Choose a supplier", ""));
+          $supplierSelect.prop('disabled', true).trigger('change');
+          return;
         }
-        reader.readAsDataURL(file);
-      } else {
-        // If no file, revert to placeholder
-        imagePreview.src = "https://via.placeholder.com/150x150?text=Preview";
-      }
-    });
-  </script>
 
-  <script>
-    $('#categorySelect').on('change', function() {
-      const categoryId = $(this).val();
-      const $supplierSelect = $('#supplierSelect');
-
-      // Clear current options
-      $supplierSelect.empty();
-
-      if (!categoryId) {
-        $supplierSelect.append(new Option("Choose a supplier", ""));
-        $supplierSelect.prop('disabled', true);
-        $supplierSelect.trigger('change'); // refresh Select2
-        return;
-      }
-
-      // Fetch suppliers from server
-      $.ajax({
-        url: 'get_suppliers_by_category.php',
-        method: 'GET',
-        data: {
-          category_id: categoryId
-        },
-        dataType: 'json',
-        success: function(data) {
-          $supplierSelect.prop('disabled', false);
-
-          if (!Array.isArray(data) || data.length === 0) {
-            $supplierSelect.append(new Option("No suppliers available", ""));
-          } else {
-            $supplierSelect.append(new Option("-- Select Supplier --", ""));
-            data.forEach(function(supplier) {
-              $supplierSelect.append(new Option(supplier.name, supplier.id));
-            });
+        $.ajax({
+          url: 'get_suppliers_by_category.php',
+          method: 'GET',
+          data: {
+            category_id: categoryId
+          },
+          dataType: 'json',
+          success: function(data) {
+            $supplierSelect.prop('disabled', false);
+            if (!Array.isArray(data) || data.length === 0) {
+              $supplierSelect.append(new Option("No suppliers available", ""));
+            } else {
+              $supplierSelect.append(new Option("-- Select Supplier --", ""));
+              data.forEach(function(supplier) {
+                const selected = supplier.id == "<?= $product['supplier_id'] ?? '' ?>" ? 'selected' : '';
+                $supplierSelect.append(`<option value="${supplier.id}" ${selected}>${supplier.name}</option>`);
+              });
+            }
+            $supplierSelect.trigger('change');
+          },
+          error: function() {
+            $supplierSelect.empty().append(new Option("Error loading suppliers", ""));
+            $supplierSelect.prop('disabled', true).trigger('change');
           }
+        });
+      });
 
-          // **Refresh Select2 so it shows the updated options**
-          $supplierSelect.trigger('change');
-        },
-        error: function() {
-          $supplierSelect.empty().append(new Option("Error loading suppliers", ""));
-          $supplierSelect.prop('disabled', true);
-          $supplierSelect.trigger('change');
+      // Image preview
+      const imageInput = document.getElementById('imageInput');
+      const imagePreview = document.getElementById('imagePreview');
+      const currentImage = "<?= $product && !empty($product['image']) ? $Project_URL . 'assets/products/' . $product['image'] : 'https://via.placeholder.com/150x150?text=Preview' ?>";
+      imagePreview.src = currentImage;
+
+      imageInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            imagePreview.src = e.target.result;
+          }
+          reader.readAsDataURL(file);
+        } else {
+          imagePreview.src = currentImage;
         }
       });
     });

@@ -123,7 +123,7 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
   exit;
 }
 
-// Fetch suppliers & categories
+// Fetch categories & suppliers
 $categories = $conn->query("SELECT id, name FROM category ORDER BY name ASC");
 $suppliers  = $conn->query("SELECT id, name FROM supplier ORDER BY name ASC");
 
@@ -138,22 +138,70 @@ if ($productId) {
   $product = $stmt->get_result()->fetch_assoc();
   $stmt->close();
 }
+?>
 
-// Handle form submission
+<?php
 if (isset($_POST['submit'])) {
-  $name        = trim($_POST['name']);
-  $category_id = !empty($_POST['category_id']) ? intval($_POST['category_id']) : null;
-  $supplier_id = !empty($_POST['supplier_id']) ? intval($_POST['supplier_id']) : null;
-  $price       = !empty($_POST['price']) ? floatval($_POST['price']) : null;
-  $quantity    = isset($_POST['quantity_in_stock']) ? intval($_POST['quantity_in_stock']) : 0;
-  $updated_at  = date('Y-m-d H:i:s');
+  $name            = trim($_POST['name']);
+  $sku             = trim($_POST['sku']);
+  $status          = $_POST['status'] ?? 'inactive';
+  $category_id     = !empty($_POST['category_id']) ? intval($_POST['category_id']) : null;
+  $subcategory_id  = !empty($_POST['subcategory_id']) ? intval($_POST['subcategory_id']) : null;
+  $supplier_id     = !empty($_POST['supplier_id']) ? intval($_POST['supplier_id']) : null;
+  $cost_price      = !empty($_POST['minimum_price']) ? floatval($_POST['minimum_price']) : 0;
+  $selling_price   = !empty($_POST['mrp']) ? floatval($_POST['mrp']) : 0;
+  $vat             = !empty($_POST['vat']) ? floatval($_POST['vat']) : 0;
+  $low_stock_limit = !empty($_POST['stock_limit']) ? intval($_POST['stock_limit']) : null;
+  $description     = $_POST['description'] ?? '';
+  $updated_at      = date('Y-m-d H:i:s');
 
-  if (empty($name)) {
-    $formError = "Product name is required.";
-  } else {
-    $query = "UPDATE product SET name=?, category_id=?, supplier_id=?, price=?, quantity_in_stock=?, updated_at=? WHERE id=?";
+  // Handle Image Upload
+  $imageFileName = $product['image'] ?? null;
+  if (!empty($_FILES['image']['name'])) {
+    $fileTmpPath = $_FILES['image']['tmp_name'];
+    $fileName    = $_FILES['image']['name'];
+    $fileExt     = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+    $allowedExts = ['jpg', 'jpeg', 'png'];
+
+    if (in_array($fileExt, $allowedExts)) {
+      $imageFileName = uniqid('prod_', true) . '.' . $fileExt;
+      $destPath = __DIR__ . '/../assets/products/' . $imageFileName;
+      if (!move_uploaded_file($fileTmpPath, $destPath)) {
+        $formError = "Failed to upload image.";
+      }
+    } else {
+      $formError = "Invalid image format. Only JPG, JPEG, PNG allowed.";
+    }
+  }
+
+  // Validate required fields
+  if (empty($name)) $formError = "Product name is required.";
+
+  // Update product if no errors
+  if (empty($formError)) {
+    $query = "UPDATE product SET 
+                    name=?, sku=?, status=?, category_id=?, subcategory_id=?, supplier_id=?, 
+                    cost_price=?, selling_price=?, vat=?, price=?, low_stock_limit=?, description=?, image=?, updated_at=?
+                  WHERE id=?";
     $stmt = $conn->prepare($query);
-    $stmt->bind_param("siidisi", $name, $category_id, $supplier_id, $price, $quantity, $updated_at, $productId);
+    $stmt->bind_param(
+      "sssiiiddddiissi",
+      $name,
+      $sku,
+      $status,
+      $category_id,
+      $subcategory_id,
+      $supplier_id,
+      $cost_price,
+      $selling_price,
+      $vat,
+      $selling_price,
+      $low_stock_limit,
+      $description,
+      $imageFileName,
+      $updated_at,
+      $productId
+    );
 
     if ($stmt->execute()) {
       $_SESSION['success_message'] = "Product updated successfully!";
@@ -163,7 +211,6 @@ if (isset($_POST['submit'])) {
       $formError = "Error: " . $stmt->error;
     }
 
-    $conn->close();
     $stmt->close();
   }
 }
@@ -208,34 +255,38 @@ if (isset($_POST['submit'])) {
                 Update Product Information
               </h4>
 
-              <!-- Form -->
-              <form method="post">
+              <form method="post" enctype="multipart/form-data">
 
-                <!-- Product Name & Price -->
+                <!-- Product Name, SKU & Status -->
                 <div class="row mb-4">
-                  <div class="col-md-6 mb-3">
+                  <div class="col-md-4 mb-3">
                     <label class="form-label">Product Name *</label>
-                    <input type="text" name="name" class="form-control"
-                      placeholder="e.g., Samsung Monitor" required
+                    <input type="text" name="name" class="form-control" placeholder="Type the product name" maxlength="255" required
                       value="<?= $product ? htmlspecialchars($product['name']) : '' ?>">
                   </div>
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Price</label>
-                    <input type="number" step="0.01" name="price" class="form-control"
-                      placeholder="e.g., 15000"
-                      value="<?= $product ? $product['price'] : '' ?>">
+
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label">Product Code (SKU) *</label>
+                    <input type="text" name="sku" class="form-control" placeholder="Unique code for this product" maxlength="50" required
+                      value="<?= $product ? htmlspecialchars($product['sku']) : '' ?>">
+                  </div>
+
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label">Availability</label>
+                    <select name="status" class="form-select">
+                      <option value="active" <?= ($product && $product['status'] === 'active') ? 'selected' : '' ?>>Available</option>
+                      <option value="inactive" <?= ($product && $product['status'] === 'inactive') ? 'selected' : '' ?>>Not Available</option>
+                    </select>
                   </div>
                 </div>
 
-                <!-- Associations -->
-                <div class="row">
-                  <!-- Category -->
-                  <div class="col-md-6 mb-3">
+                <!-- Category, Subcategory & Supplier -->
+                <div class="row mb-4">
+                  <div class="col-md-4 mb-3">
                     <label class="form-label">Category</label>
                     <select name="category_id" id="categorySelect" class="form-select">
-                      <option value="">-- All Categories --</option>
+                      <option value="">Choose a category</option>
                       <?php
-                      // Reset pointer to first row
                       $categories->data_seek(0);
                       while ($cat = $categories->fetch_assoc()): ?>
                         <option value="<?= $cat['id'] ?>" <?= ($product && $product['category_id'] == $cat['id']) ? 'selected' : '' ?>>
@@ -245,11 +296,20 @@ if (isset($_POST['submit'])) {
                     </select>
                   </div>
 
-                  <!-- Supplier -->
-                  <div class="col-md-6 mb-3">
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label">Subcategory</label>
+                    <select name="subcategory_id" id="subCategorySelect" class="form-select" <?= empty($product['subcategory_id']) ? 'disabled' : '' ?>>
+                      <option value="">Select a category first</option>
+                      <?php if ($product && !empty($product['subcategory_id'])): ?>
+                        <option value="<?= $product['subcategory_id'] ?>" selected>Current Subcategory</option>
+                      <?php endif; ?>
+                    </select>
+                  </div>
+
+                  <div class="col-md-4 mb-3">
                     <label class="form-label">Supplier</label>
                     <select name="supplier_id" id="supplierSelect" class="form-select">
-                      <option value="">-- All Suppliers --</option>
+                      <option value="">Choose a supplier</option>
                       <?php
                       $suppliers->data_seek(0);
                       while ($sup = $suppliers->fetch_assoc()): ?>
@@ -261,18 +321,60 @@ if (isset($_POST['submit'])) {
                   </div>
                 </div>
 
-                <!-- Stock Section -->
-                <div class="form-section-title">Stock</div>
+                <!-- Pricing -->
                 <div class="row mb-4">
-                  <div class="col-md-6">
-                    <label class="form-label">Quantity in Stock</label>
-                    <input type="text" class="form-control"
-                      value="<?= $product ? intval($product['quantity_in_stock']) : 0 ?>" disabled>
-                    <small class="text-muted">Stock updates automatically through Purchase entries.</small>
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label">Cost Price (Purchase Price) *</label>
+                    <input type="number" name="minimum_price" class="form-control" placeholder="Enter purchase price" min="0.01" step="0.01"
+                      value="<?= $product ? $product['cost_price'] : '' ?>" required>
+                  </div>
+
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label">Selling Price (MRP) *</label>
+                    <input type="number" name="mrp" class="form-control" placeholder="Enter selling price" min="0.01" step="0.01"
+                      value="<?= $product ? $product['selling_price'] : '' ?>" required>
+                  </div>
+
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label">VAT (%) *</label>
+                    <input type="number" name="vat" class="form-control" placeholder="Enter VAT percentage" min="0" max="100" step="0.01"
+                      value="<?= $product ? $product['vat'] : 0 ?>" required>
                   </div>
                 </div>
 
-                <!-- Buttons -->
+                <!-- Stock -->
+                <div class="row mb-4">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Current Stock</label>
+                    <input type="text" class="form-control" value="<?= $product ? intval($product['quantity_in_stock']) : 0 ?>" disabled>
+                  </div>
+
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Low Stock Alert</label>
+                    <input type="number" name="stock_limit" class="form-control" placeholder="Minimum stock to alert" min="0"
+                      value="<?= $product ? intval($product['low_stock_limit']) : '' ?>">
+                  </div>
+                </div>
+
+                <!-- Description & Image -->
+                <div class="row mb-4">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Product Description</label>
+                    <textarea name="description" class="form-control" rows="4" placeholder="Write a simple description"><?= $product ? htmlspecialchars($product['description']) : '' ?></textarea>
+                  </div>
+
+                  <div class="col-md-3 mb-3">
+                    <label class="form-label">Product Image</label>
+                    <input type="file" name="image" id="imageInput" class="form-control" accept="image/*">
+                  </div>
+
+                  <div class="col-md-3 mb-3 d-flex align-items-center justify-content-center">
+                    <img id="imagePreview" src="<?= $product && !empty($product['image']) ? $Project_URL . 'assets/products/' . $product['image'] : 'https://via.placeholder.com/150x150?text=Preview' ?>"
+                      alt="Image Preview" class="img-fluid rounded shadow-sm" style="max-height: 150px;">
+                  </div>
+                </div>
+
+                <!-- Submit -->
                 <div class="mt-4 d-flex gap-2">
                   <button type="submit" name="submit" class="btn btn-primary px-4 py-2">
                     <i class="bi bi-check2-circle"></i> Save Product
@@ -283,6 +385,7 @@ if (isset($_POST['submit'])) {
                 </div>
 
               </form>
+
             </div>
           </div>
         </div>

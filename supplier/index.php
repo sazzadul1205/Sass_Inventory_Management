@@ -190,25 +190,25 @@ $result = $conn->query($sql);
             </select>
           </div>
 
-          <!-- Category Filter -->
-          <div class="d-flex flex-column" style="min-width: 200px;">
-            <label for="categoryFilter" class="form-label fw-semibold mb-1">Filter by Category</label>
+          <!-- Category (Select2) -->
+          <div class="d-flex flex-column" style="min-width:200px;">
+            <label class="form-label fw-semibold mb-1">Category</label>
             <select id="categoryFilter" class="form-select">
-              <option value="">All Categories</option>
+              <option value="">All</option>
               <?php
-              $catResult = $conn->query("
-              SELECT c.name 
-              FROM category c
-              JOIN supplier_category sc ON sc.category_id = c.id
-              GROUP BY c.name
-              ORDER BY c.name ASC
-              ");
-              while ($cat = $catResult->fetch_assoc()) {
-                echo "<option value=\"{$cat['name']}\">{$cat['name']}</option>";
+              $cats = $conn->query("
+        SELECT DISTINCT c.name
+        FROM category c
+        JOIN supplier_category sc ON sc.category_id = c.id
+        ORDER BY c.name
+      ");
+              while ($c = $cats->fetch_assoc()) {
+                echo "<option value='{$c['name']}'>{$c['name']}</option>";
               }
               ?>
             </select>
           </div>
+
 
           <!-- Reset Button -->
           <div class="d-flex flex-column align-items-start" style="min-width: 120px;">
@@ -251,7 +251,7 @@ $result = $conn->query($sql);
 
                     <!-- Categories -->
                     <td>
-                      <?php if (!empty($row['categories'])): ?>
+                      <?php if ($row['categories']): ?>
                         <?php foreach (explode(',', $row['categories']) as $cat): ?>
                           <span class="badge bg-secondary me-1"><?= trim($cat) ?></span>
                         <?php endforeach; ?>
@@ -410,64 +410,71 @@ $result = $conn->query($sql);
 
   <script>
     $(document).ready(function() {
-      // Initialize Select2 for categories
+
+      // Select2
       $('#categoryFilter').select2({
-        placeholder: "Select Category",
+        placeholder: "Select category",
         allowClear: true,
         width: '100%'
       });
 
-      // Initialize DataTable
+      // DataTable
       const table = $('#suppliersTable').DataTable({
         paging: true,
-        pageLength: 10,
-        lengthChange: true,
         ordering: true,
         order: [],
-        info: true,
-        autoWidth: false,
-        dom: '<"top-pagination d-flex justify-content-between mb-2"lp>rt<"bottom-pagination"ip>',
-        language: {
-          search: ""
-        }
+        dom: 'lrtip'
       });
 
-      // Custom search for Name, Phone, Email, Type, Category
-      $.fn.dataTable.ext.search.push(function(settings, data) {
-        const searchTerm = $('#productSearch').val().toLowerCase();
-        const typeTerm = $('#typeFilter').val().toLowerCase();
-        const categoryTerm = $('#categoryFilter').val().toLowerCase();
+      // 🔥 CUSTOM FILTER (HTML-SAFE)
+      $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
 
-        const name = data[1].toLowerCase(); // Name column
-        const phone = data[2].toLowerCase(); // Phone column
-        const email = data[3].toLowerCase(); // Email column
-        const type = data[4].toLowerCase(); // Type column
-        const categoriesRaw = data[5].toLowerCase(); // Comma-separated string like "Cat1, Cat2, Cat3"
+        const search = $('#productSearch').val().toLowerCase();
+        const type = $('#typeFilter').val().toLowerCase();
+        const category = ($('#categoryFilter').val() || '').toLowerCase();
 
-        const categories = categoriesRaw.split(',').map(c => c.trim()); // Split & trim
+        const name = data[1].toLowerCase();
+        const phone = data[2].toLowerCase();
+        const email = data[3].toLowerCase();
+        const rowType = data[4].toLowerCase();
 
-        const matchesSearch = name.includes(searchTerm) || phone.includes(searchTerm) || email.includes(searchTerm);
-        const matchesType = typeTerm === "" || type === typeTerm;
-        const matchesCategory = categoryTerm === "" || categories.includes(categoryTerm);
+        // ✅ READ BADGES DIRECTLY FROM DOM
+        const row = $('#suppliersTable').DataTable().row(dataIndex).node();
+        const categories = [];
 
-        return matchesSearch && matchesType && matchesCategory;
+        $(row).find('td:eq(5) .badge').each(function() {
+          categories.push($(this).text().trim().toLowerCase());
+        });
+
+        const matchSearch = !search ||
+          name.includes(search) ||
+          phone.includes(search) ||
+          email.includes(search);
+
+        const matchType = !type || rowType === type;
+
+        const matchCategory = !category || categories.includes(category);
+
+        return matchSearch && matchType && matchCategory;
       });
 
 
-      // Trigger table redraw on search input or filter change
+      // Triggers
       $('#productSearch, #typeFilter, #categoryFilter').on('keyup change', function() {
         table.draw();
       });
 
-      // Reset button
+      // Reset
       $('#resetFilters').on('click', function() {
         $('#productSearch').val('');
         $('#typeFilter').val('');
-        $('#categoryFilter').val(null).trigger('change'); // Reset Select2
+        $('#categoryFilter').val(null).trigger('change');
         table.draw();
       });
+
     });
   </script>
+
 
   <!-- View Supplier -->
   <script>

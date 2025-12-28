@@ -131,8 +131,18 @@ if (!isset($_SESSION['user_id'])) {
 <?php
 $conn = connectDB();
 
-// Fetch all products
-$sql = "SELECT * FROM product_with_details ORDER BY id ASC";
+
+// Fetch all products with category & supplier names
+$sql = "
+SELECT 
+    p.id, p.name, p.sku, p.status, p.price AS selling_price, p.quantity_in_stock, p.image,
+    c.name AS category_name,
+    s.name AS supplier_name
+FROM product p
+LEFT JOIN category c ON p.category_id = c.id
+LEFT JOIN supplier s ON p.supplier_id = s.id
+ORDER BY p.id ASC
+";
 $result = $conn->query($sql);
 ?>
 
@@ -240,38 +250,41 @@ $result = $conn->query($sql);
           <table id="productsTable" class="table table-bordered table-striped table-hover align-middle">
             <thead class="table-primary">
               <tr>
-                <th>ID</th>
+                <th>Image</th>
                 <th>Name</th>
+                <th>SKU</th>
+                <th>Status</th>
                 <th>Category</th>
                 <th>Supplier</th>
-                <th>Price</th>
+                <th>Selling Price</th>
                 <th>Stock</th>
-                <th>Created</th>
-                <th>Updated</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               <?php while ($row = $result->fetch_assoc()): ?>
                 <tr>
-                  <td><?= $row['id'] ?></td>
+                  <td>
+                    <img src="<?= !empty($row['image']) ? htmlspecialchars($row['image']) : 'https://community.softr.io/uploads/db9110/original/2X/7/74e6e7e382d0ff5d7773ca9a87e6f6f8817a68a6.jpeg' ?>"
+                      alt="<?= htmlspecialchars($row['name']) ?>"
+                      class="img-thumbnail"
+                      style="max-width:50px; max-height:50px;">
+                  </td>
                   <td><?= htmlspecialchars($row['name']) ?></td>
-                  <td><?= $row['category_name'] ?: "—" ?></td>
-                  <td><?= $row['supplier_name'] ?: "—" ?></td>
-                  <td><?= number_format($row['price'], 2) ?></td>
+                  <td><?= htmlspecialchars($row['sku']) ?: "—" ?></td>
+                  <td><?= ucfirst($row['status']) ?></td>
+                  <td><?= htmlspecialchars($row['category_name']) ?: "—" ?></td>
+                  <td><?= htmlspecialchars($row['supplier_name']) ?: "—" ?></td>
+                  <td><?= number_format($row['selling_price'], 2) ?></td>
                   <td><?= $row['quantity_in_stock'] ?></td>
-                  <td><?= !empty($row['created_at']) ? date('d M Y h:i A', strtotime($row['created_at'])) : '' ?></td>
-                  <td><?= !empty($row['updated_at']) ? date('d M Y h:i A', strtotime($row['updated_at'])) : '' ?></td>
                   <td>
                     <div class="d-flex gap-1">
-                      <!-- Edit button -->
                       <?php if (can('edit_product')): ?>
                         <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-warning btn-sm flex-fill">
                           <i class="bi bi-pencil-square"></i> Edit
                         </a>
                       <?php endif; ?>
 
-                      <!-- Delete button -->
                       <?php if (can('delete_product')): ?>
                         <a href="delete.php?id=<?= $row['id'] ?>" class="btn btn-danger btn-sm flex-fill" onclick="return confirm('Delete this product?');">
                           <i class="bi bi-trash"></i> Delete

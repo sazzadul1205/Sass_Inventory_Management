@@ -24,13 +24,12 @@ if (isset($_GET['action'])) {
   /* ---- Fetch Products ---- */
   if ($_GET['action'] === 'fetch_products') {
     $supplierId = (int)($_GET['supplier_id'] ?? 0);
-
     $stmt = $conn->prepare("
-      SELECT id, name, cost_price AS purchase_price, vat
-      FROM product
-      WHERE supplier_id = ? AND status = 'active'
-      ORDER BY name ASC
-    ");
+            SELECT id, name, cost_price AS purchase_price, vat, quantity_in_stock
+            FROM product
+            WHERE supplier_id = ? AND status = 'active'
+            ORDER BY name ASC
+        ");
     $stmt->bind_param('i', $supplierId);
     $stmt->execute();
     $products = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -44,6 +43,7 @@ if (isset($_GET['action'])) {
     $data = json_decode(file_get_contents('php://input'), true);
     $supplierId = (int)($data['supplier_id'] ?? 0);
     $items = $data['items'] ?? [];
+    $discountPercent = floatval($data['discount_percent'] ?? 0);
 
     if (!$supplierId || empty($items)) {
       echo json_encode(['success' => false, 'error' => 'Invalid data']);
@@ -54,7 +54,7 @@ if (isset($_GET['action'])) {
     $today = date('Ymd');
     $receiptNumber = $today . $purchasedBy . substr(md5(uniqid()), 0, 6);
 
-    // Calculate total
+    // Calculate totals
     $totalAmount = 0;
     foreach ($items as $i) {
       $qty = (int)$i['quantity'];
@@ -64,53 +64,82 @@ if (isset($_GET['action'])) {
       $totalAmount += $subtotal + ($subtotal * $vatPercent / 100);
     }
 
-    $conn->begin_transaction();
+    $discountValue = $totalAmount * ($discountPercent / 100);
+    $finalAmount = $totalAmount - $discountValue;
 
+    $conn->begin_transaction();
     try {
-      /* ---- Insert Receipt ---- */
+      // Insert receipt with discount value
       $stmtReceipt = $conn->prepare("
-        INSERT INTO receipt
-        (receipt_number, type, total_amount, created_by, created_at, updated_at)
-        VALUES (?, 'purchase', ?, ?, NOW(), NOW())
-      ");
-      $stmtReceipt->bind_param("sdi", $receiptNumber, $totalAmount, $purchasedBy);
+                INSERT INTO receipt
+                (receipt_number, type, total_amount, discount_value, created_by, created_at, updated_at)
+                VALUES (?, 'purchase', ?, ?, ?, NOW(), NOW())
+            ");
+      $stmtReceipt->bind_param("sdii", $receiptNumber, $totalAmount, $discountValue, $purchasedBy);
       $stmtReceipt->execute();
       $receiptId = $stmtReceipt->insert_id;
       $stmtReceipt->close();
 
-      /* ---- Insert Purchases ---- */
+      // Insert purchase items with unique lot
+      // Insert purchase items with unique lot
       $stmtPurchase = $conn->prepare("
-        INSERT INTO purchase
-        (receipt_id, product_id, supplier_id, quantity, purchase_price, purchase_date, purchased_by, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-      ");
+    INSERT INTO purchase
+    (receipt_id, product_id, supplier_id, quantity, product_left, purchase_price, lot, purchase_date, purchased_by, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+");
 
       foreach ($items as $item) {
+        $purchaseDate = $data['purchase_date'] ?? date('Y-m-d');
         $productId = (int)$item['product_id'];
         $quantity  = (int)$item['quantity'];
         $price     = (float)$item['purchase_price'];
-        $date      = date('Y-m-d');
+        $productLeft = $quantity;
 
-        $stmtPurchase->bind_param(
-          "iiiidsi",
-          $receiptId,
-          $productId,
-          $supplierId,
-          $quantity,
-          $price,
-          $date,
-          $purchasedBy
-        );
-        $stmtPurchase->execute();
+        $inserted = false;
+        $tries = 0;
 
-        // Update stock
+        while (!$inserted && $tries < 5) { // retry max 5 times
+          $lot = strtoupper(substr(md5(uniqid($productId, true)), 0, 10));
+
+          $stmtPurchase->bind_param(
+            "iiiidsiss",
+            $receiptId,
+            $productId,
+            $supplierId,
+            $quantity,
+            $productLeft,
+            $price,
+            $lot,
+            $purchaseDate,
+            $purchasedBy
+          );
+
+          try {
+            $stmtPurchase->execute();
+            $inserted = true; // success
+          } catch (mysqli_sql_exception $e) {
+            if (strpos($e->getMessage(), 'Duplicate') !== false) {
+              $tries++;
+              // try again with a new lot
+            } else {
+              throw $e; // other errors
+            }
+          }
+        }
+
+        if (!$inserted) {
+          throw new Exception("Failed to insert purchase for product ID $productId after multiple attempts.");
+        }
+
+        // Update product stock
         $conn->query("
-          UPDATE product
-          SET quantity_in_stock = quantity_in_stock + $quantity,
-              updated_at = NOW()
-          WHERE id = $productId
-        ");
+        UPDATE product
+        SET quantity_in_stock = quantity_in_stock + $quantity,
+            updated_at = NOW()
+        WHERE id = $productId
+    ");
       }
+
 
       $stmtPurchase->close();
       $conn->commit();
@@ -299,7 +328,13 @@ $suppliers = $conn->query("
       const container = document.getElementById('purchaseItemsContainer');
       const rowId = generateId();
       const rowNumber = rowCounter++;
-      const options = productData.map(p => `<option value="${p.id}" data-price="${p.purchase_price}" data-vat="${p.vat}">${p.name}</option>`).join('');
+      const options = productData.map(p =>
+        `<option value="${p.id}" 
+           data-price="${p.purchase_price}" 
+           data-vat="${p.vat}" 
+           data-stock="${p.quantity_in_stock}">
+     ${p.name}
+  </option>`).join('');
       const rowHtml = `
     <div class="purchase-item-row" id="${rowId}">
         <div class="row-number">${rowNumber}</div>
@@ -376,10 +411,13 @@ $suppliers = $conn->query("
     }
 
 
-
     function submitPurchase() {
       const supplierId = document.getElementById('supplier_id').value;
+      const purchaseDate = document.getElementById('purchase_date').value;
+      const discountPercent = parseFloat(document.getElementById('discount_percent').value) || 0;
+
       if (!supplierId) return alert('Select a supplier.');
+      if (!purchaseDate) return alert('Select a purchase date.');
 
       const rows = document.querySelectorAll('.purchase-item-row');
       const items = [];
@@ -388,12 +426,18 @@ $suppliers = $conn->query("
         const productSelect = row.querySelector('.product-select');
         if (!productSelect.value) return;
 
+        const qty = parseInt(row.querySelector('.quantity-input').value) || 0;
+        const price = parseFloat(row.querySelector('.price-input').value) || 0;
+        const vat = parseFloat(productSelect.selectedOptions[0]?.dataset.vat) || 0;
+        const stock = parseInt(productSelect.selectedOptions[0]?.dataset.stock) || 0;
+
         items.push({
           product_id: productSelect.value,
-          quantity: row.querySelector('.quantity-input').value,
-          purchase_price: row.querySelector('.price-input').value,
-          vat_percent: productSelect.selectedOptions[0].dataset.vat
+          quantity: qty,
+          purchase_price: price,
+          vat_percent: vat
         });
+
       });
 
       if (!items.length) return alert('Add at least one product.');
@@ -405,7 +449,9 @@ $suppliers = $conn->query("
           },
           body: JSON.stringify({
             supplier_id: supplierId,
-            items
+            purchase_date: purchaseDate,
+            discount_percent: discountPercent,
+            items: items
           })
         })
         .then(res => res.json())
@@ -417,6 +463,7 @@ $suppliers = $conn->query("
           }
         });
     }
+
 
 
     function updateSummary() {

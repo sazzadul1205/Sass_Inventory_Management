@@ -401,18 +401,18 @@ if (isset($_POST['submit'])) {
 
                 <!-- Description & Image -->
                 <div class="row mb-4">
-                  <div class="col-md-12 mb-3">
+                  <div class="col-md-6 mb-3">
                     <label class="form-label">Product Description</label>
                     <textarea name="description" class="form-control" rows="4" placeholder="Write a simple description of the product"></textarea>
                   </div>
 
-                  <div class="col-md-6 mb-3">
+                  <div class="col-md-3 mb-3">
                     <label class="form-label">Product Image</label>
                     <input type="file" name="image" id="imageInput" class="form-control" accept="image/*">
                     <small class="text-muted">Upload an image (JPG or PNG, max 2MB)</small>
                   </div>
 
-                  <div class="col-md-6 mb-3 d-flex align-items-center justify-content-center">
+                  <div class="col-md-3 mb-3 d-flex align-items-center justify-content-center">
                     <!-- Image preview -->
                     <img id="imagePreview" src="https://via.placeholder.com/150x150?text=Preview"
                       alt="Image Preview" class="img-fluid rounded shadow-sm" style="max-height: 150px;">

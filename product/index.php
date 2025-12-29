@@ -202,10 +202,9 @@ $result = $conn->query($sql);
               <?php
               // Only categories that have products
               $catResult = $conn->query("
-              SELECT c.name 
+              SELECT DISTINCT c.name
               FROM category c
-              JOIN product_with_details p ON p.category_name = c.name
-              GROUP BY c.name
+              JOIN product p ON p.category_id = c.id
               ORDER BY c.name ASC
               ");
               while ($cat = $catResult->fetch_assoc()) {
@@ -223,10 +222,9 @@ $result = $conn->query($sql);
               <?php
               // Only suppliers that have products
               $supResult = $conn->query("
-              SELECT s.name 
+              SELECT DISTINCT s.name
               FROM supplier s
-              JOIN product_with_details p ON p.supplier_name = s.name
-              GROUP BY s.name
+              JOIN product p ON p.supplier_id = s.id
               ORDER BY s.name ASC
               ");
               while ($sup = $supResult->fetch_assoc()) {
@@ -235,6 +233,7 @@ $result = $conn->query($sql);
               ?>
             </select>
           </div>
+
 
           <!-- Reset Button -->
           <div class="d-flex flex-column align-items-start" style="min-width: 120px;">
@@ -282,16 +281,22 @@ $result = $conn->query($sql);
                   <td><?= $row['quantity_in_stock'] ?></td>
                   <td>
                     <div class="d-flex gap-1">
-                      <a href="view.php?id=<?= $row['id'] ?>" class="btn btn-info btn-sm flex-fill" title="View">
+                      <!-- View -->
+                      <button
+                        class="btn btn-info btn-sm flex-fill view-product-btn"
+                        data-id="<?= $row['id'] ?>"
+                        title="View">
                         <i class="bi bi-eye"></i>
-                      </a>
+                      </button>
 
+                      <!-- Edit -->
                       <?php if (can('edit_product')): ?>
                         <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-warning btn-sm flex-fill" title="Edit">
                           <i class="bi bi-pencil-square"></i>
                         </a>
                       <?php endif; ?>
 
+                      <!-- Delete -->
                       <?php if (can('delete_product')): ?>
                         <a href="delete.php?id=<?= $row['id'] ?>" class="btn btn-danger btn-sm flex-fill" title="Delete" onclick="return confirm('Delete this product?');">
                           <i class="bi bi-trash"></i>
@@ -306,6 +311,109 @@ $result = $conn->query($sql);
         </div>
       </div>
     </main>
+
+    <!-- Modal -->
+    <div class="modal fade" id="viewProductModal" tabindex="-1">
+      <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title">
+              <i class="bi bi-box-seam me-1"></i> Product Details
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+
+          <div class="modal-body">
+            <div id="productModalLoader" class="text-center py-5">
+              <div class="spinner-border text-primary"></div>
+            </div>
+
+            <div id="productModalContent" class="d-none">
+              <div class="row g-3">
+                <div class="col-md-4 text-center">
+                  <img id="pm_image" class="img-fluid rounded border" />
+                </div>
+
+                <div class="col-md-8">
+                  <table class="table table-sm table-bordered">
+                    <tbody>
+                      <tr>
+                        <th>Name</th>
+                        <td id="pm_name"></td>
+                      </tr>
+                      <tr>
+                        <th>SKU</th>
+                        <td id="pm_sku"></td>
+                      </tr>
+                      <tr>
+                        <th>Status</th>
+                        <td id="pm_status"></td>
+                      </tr>
+                      <tr>
+                        <th>Category</th>
+                        <td id="pm_category"></td>
+                      </tr>
+                      <tr>
+                        <th>Subcategory</th>
+                        <td id="pm_subcategory"></td>
+                      </tr>
+                      <tr>
+                        <th>Supplier</th>
+                        <td id="pm_supplier"></td>
+                      </tr>
+                      <tr>
+                        <th>Cost Price</th>
+                        <td id="pm_cost"></td>
+                      </tr>
+                      <tr>
+                        <th>Selling Price</th>
+                        <td id="pm_selling"></td>
+                      </tr>
+                      <tr>
+                        <th>VAT</th>
+                        <td id="pm_vat"></td>
+                      </tr>
+                      <tr>
+                        <th>Final Price</th>
+                        <td id="pm_price"></td>
+                      </tr>
+                      <tr>
+                        <th>Stock</th>
+                        <td id="pm_stock"></td>
+                      </tr>
+                      <tr>
+                        <th>Low Stock Limit</th>
+                        <td id="pm_low_stock"></td>
+                      </tr>
+                      <tr>
+                        <th>Created</th>
+                        <td id="pm_created"></td>
+                      </tr>
+                      <tr>
+                        <th>Updated</th>
+                        <td id="pm_updated"></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="col-12">
+                  <h6>Description</h6>
+                  <p id="pm_description" class="border rounded p-2 bg-light"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
 
     <!-- Footer -->
     <?php include_once '../Inc/Footer.php'; ?>
@@ -326,9 +434,18 @@ $result = $conn->query($sql);
 
   <!-- Custom JS -->
   <script>
+    /* 
+   GLOBAL DATA TABLE INSTANCE
+   - Needed so filters & reset can access it
+   */
+    let table;
+
     $(document).ready(function() {
-      // Initialize DataTable
-      var table = $('#productsTable').DataTable({
+
+      /* 
+         DATA TABLE INITIALIZATION
+          */
+      table = $('#productsTable').DataTable({
         paging: true,
         pageLength: 10,
         lengthChange: true,
@@ -338,99 +455,134 @@ $result = $conn->query($sql);
         autoWidth: false,
         dom: '<"top-pagination d-flex justify-content-between mb-2"lp>rt<"bottom-pagination"ip>',
         language: {
-          search: "" // Remove default search
+          search: "" // remove default search box
         }
       });
 
-      // Remove success/fail messages after 3s
+      /* 
+         AUTO-HIDE SUCCESS / FAIL MESSAGES
+          */
       setTimeout(() => {
         const msg = document.getElementById('successMsg') || document.getElementById('failMsg');
         if (msg) msg.remove();
       }, 3000);
+
+      /* 
+         SELECT2 INITIALIZATION (FILTERS)
+          */
+      $('#categoryFilter, #supplierFilter').select2({
+        placeholder: "Select",
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('body')
+      });
+
+      /* 
+         TEXT SEARCH (PRODUCT NAME, SKU, ETC.)
+          */
+      $('#productSearch').on('keyup', function() {
+        table.search(this.value).draw();
+      });
+
+      /* 
+         CATEGORY FILTER
+         Column index 4 = Category
+          */
+      $('#categoryFilter').on('change', function() {
+        const val = $(this).val();
+        table.column(4).search(val || '').draw();
+      });
+
+      /* 
+         SUPPLIER FILTER
+         Column index 5 = Supplier
+          */
+      $('#supplierFilter').on('change', function() {
+        const val = $(this).val();
+        table.column(5).search(val || '').draw();
+      });
+
+      /* 
+         RESET FILTERS + SEARCH (WITH SPIN)
+          */
+      $('#resetFilters').on('click', function() {
+
+        const icon = $(this).find('.reset-icon');
+        icon.addClass('spinning');
+
+        // Clear inputs
+        $('#productSearch').val('');
+        $('#categoryFilter').val('').trigger('change');
+        $('#supplierFilter').val('').trigger('change');
+
+        // Reset DataTable
+        table.search('').columns().search('').draw();
+
+        // Stop animation
+        setTimeout(() => {
+          icon.removeClass('spinning');
+        }, 800);
+      });
+
     });
   </script>
 
-  <!-- Filter JS -->
+  <!-- Modal JS -->
   <script>
-    // Reset all filters and search with animation
-    $('#resetFilters').on('click', function() {
-      var icon = $(this).find('.reset-icon');
+    $(document).ready(function() {
 
-      // Add spin class
-      icon.addClass('spinning');
+      // Handle View Product button click
+      $(document).on('click', '.view-product-btn', function() {
 
-      // Clear DataTable search
-      $('#productSearch').val('');
-      table.search('').draw();
+        const productId = $(this).data('id');
 
-      // Reset Select2 filters
-      $('#categoryFilter').val('').trigger('change');
-      $('#supplierFilter').val('').trigger('change');
+        // Show modal loader
+        $('#viewProductModal').modal('show');
+        $('#productModalLoader').show();
+        $('#productModalContent').addClass('d-none');
 
-      // Remove spin after 800ms
-      setTimeout(function() {
-        icon.removeClass('spinning');
-      }, 800);
-    });
+        // Fetch product data via AJAX
+        $.getJSON('<?= $Project_URL ?>product/get_product.php', {
+            id: productId
+          })
+          .done(function(d) {
+            // Fallbacks for missing data
+            const imageSrc = d.image ?
+              '<?= $Project_URL ?>/assets/products/' + d.image :
+              'https://community.softr.io/uploads/db9110/original/2X/7/74e6e7e382d0ff5d7773ca9a87e6f6f8817a68a6.jpeg';
 
-    // Initialize Select2 for category and supplier filters
-    $('#categoryFilter, #supplierFilter').select2({
-      placeholder: "Select",
-      allowClear: true,
-      width: '100%',
-      dropdownParent: $('body'),
-      // Custom matcher to always show "All" option
-      matcher: function(params, data) {
-        // Always show empty option (value="")
-        if (data.id === "") {
-          return data;
-        }
+            $('#pm_image').attr('src', imageSrc);
+            $('#pm_name').text(d.name || '—');
+            $('#pm_sku').text(d.sku || '—');
+            $('#pm_status').text(d.status || '—');
+            $('#pm_category').text(d.category_name || '—');
+            $('#pm_subcategory').text(d.subcategory_name || '—');
+            $('#pm_supplier').text(d.supplier_name || '—');
+            $('#pm_cost').text(d.cost_price != null ? d.cost_price : '0');
+            $('#pm_selling').text(d.selling_price != null ? d.selling_price : '0');
+            $('#pm_vat').text(d.vat != null ? d.vat + '%' : '0%');
+            $('#pm_price').text(d.price != null ? d.price : '0');
+            $('#pm_stock').text(d.quantity_in_stock != null ? d.quantity_in_stock : '0');
+            $('#pm_low_stock').text(d.low_stock_limit != null ? d.low_stock_limit : '0');
+            $('#pm_description').text(d.description && d.description !== '0' ? d.description : '—');
+            $('#pm_created').text(d.created_at || '—');
+            $('#pm_updated').text(d.updated_at || '—');
 
-        // Default matching
-        if ($.trim(params.term) === '') {
-          return data;
-        }
+            // Hide loader and show content
+            $('#productModalLoader').hide();
+            $('#productModalContent').removeClass('d-none');
+          })
+          .fail(function(jqXHR, textStatus, errorThrown) {
+            console.error('Failed to fetch product:', textStatus, errorThrown);
+            alert('Failed to load product details. Please try again.');
+            $('#viewProductModal').modal('hide');
+          });
 
-        if (typeof data.text === 'undefined') {
-          return null;
-        }
+      });
 
-        if (data.text.toLowerCase().indexOf(params.term.toLowerCase()) > -1) {
-          return data;
-        }
-
-        // Return null if no match
-        return null;
-      }
-    });
-
-    // Filter table by category
-    $('#categoryFilter').on('change', function() {
-      var selectedCategory = $(this).val();
-      if (!selectedCategory) {
-        // Reset filter when "All Categories" is selected
-        table.column(2).search('').draw();
-      } else {
-        table.column(2).search(selectedCategory).draw(); // column 2 = Category
-      }
-    });
-
-    // Filter table by supplier
-    $('#supplierFilter').on('change', function() {
-      var selectedSupplier = $(this).val();
-      if (!selectedSupplier) {
-        // Reset filter when "All Suppliers" is selected
-        table.column(3).search('').draw();
-      } else {
-        table.column(3).search(selectedSupplier).draw(); // column 3 = Supplier
-      }
-    });
-
-    // Search products by name
-    $('#productSearch').on('keyup', function() {
-      table.search(this.value).draw();
     });
   </script>
+
 
 </body>
 

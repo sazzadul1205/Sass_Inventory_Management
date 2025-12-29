@@ -257,134 +257,218 @@ if (isset($_POST['submit'])) {
 
               <form method="post" enctype="multipart/form-data">
 
-                <!-- Product Name, SKU & Status -->
+                <!-- PRODUCT BASIC INFO -->
                 <div class="row mb-4">
+
+                  <!-- Product Name -->
                   <div class="col-md-4 mb-3">
                     <label class="form-label">Product Name *</label>
-                    <input type="text" name="name" class="form-control" placeholder="Type the product name" maxlength="255" required
-                      value="<?= $product ? htmlspecialchars($product['name']) : '' ?>">
+                    <input
+                      type="text"
+                      name="name"
+                      class="form-control"
+                      required
+                      value="<?= htmlspecialchars($product['name']) ?>">
                   </div>
 
+                  <!-- SKU -->
                   <div class="col-md-4 mb-3">
                     <label class="form-label">Product Code (SKU) *</label>
-                    <input type="text" name="sku" class="form-control" placeholder="Unique code for this product" maxlength="50" required
-                      value="<?= $product ? htmlspecialchars($product['sku']) : '' ?>">
+                    <input
+                      type="text"
+                      name="sku"
+                      class="form-control"
+                      required
+                      value="<?= htmlspecialchars($product['sku']) ?>">
                   </div>
 
+                  <!-- Status -->
                   <div class="col-md-4 mb-3">
                     <label class="form-label">Availability</label>
                     <select name="status" class="form-select">
-                      <option value="active" <?= ($product && $product['status'] === 'active') ? 'selected' : '' ?>>Available</option>
-                      <option value="inactive" <?= ($product && $product['status'] === 'inactive') ? 'selected' : '' ?>>Not Available</option>
+                      <option value="active" <?= $product['status'] === 'active' ? 'selected' : '' ?>>Available</option>
+                      <option value="inactive" <?= $product['status'] === 'inactive' ? 'selected' : '' ?>>Not Available</option>
                     </select>
                   </div>
+
                 </div>
 
-                <!-- Category, Subcategory & Supplier -->
+
+                <!-- CATEGORY / SUBCATEGORY / SUPPLIER -->
                 <div class="row mb-4">
+
+                  <!-- Category -->
                   <div class="col-md-4 mb-3">
                     <label class="form-label">Category</label>
                     <select name="category_id" id="categorySelect" class="form-select">
                       <option value="">Choose a category</option>
-                      <?php
-                      $categories->data_seek(0);
-                      while ($cat = $categories->fetch_assoc()): ?>
-                        <option value="<?= $cat['id'] ?>" <?= ($product && $product['category_id'] == $cat['id']) ? 'selected' : '' ?>>
+                      <?php while ($cat = $categories->fetch_assoc()): ?>
+                        <option
+                          value="<?= $cat['id'] ?>"
+                          <?= $product['category_id'] == $cat['id'] ? 'selected' : '' ?>>
                           <?= htmlspecialchars($cat['name']) ?>
                         </option>
                       <?php endwhile; ?>
                     </select>
                   </div>
 
+                  <!-- Subcategory (loaded via AJAX on edit load) -->
                   <div class="col-md-4 mb-3">
                     <label class="form-label">Subcategory</label>
-                    <select name="subcategory_id" id="subCategorySelect" class="form-select" <?= empty($product['subcategory_id']) ? 'disabled' : '' ?>>
+                    <select
+                      name="subcategory_id"
+                      id="subCategorySelect"
+                      class="form-select"
+                      disabled>
                       <option value="">Select a category first</option>
-                      <?php if ($product && !empty($product['subcategory_id'])): ?>
-                        <option value="<?= $product['subcategory_id'] ?>" selected>Current Subcategory</option>
-                      <?php endif; ?>
                     </select>
                   </div>
 
+                  <!-- Supplier (filtered by category) -->
                   <div class="col-md-4 mb-3">
                     <label class="form-label">Supplier</label>
-                    <select name="supplier_id" id="supplierSelect" class="form-select">
+                    <select name="supplier_id" id="supplierSelect" class="form-select" disabled>
                       <option value="">Choose a supplier</option>
-                      <?php
-                      $suppliers->data_seek(0);
-                      while ($sup = $suppliers->fetch_assoc()): ?>
-                        <option value="<?= $sup['id'] ?>" <?= ($product && $product['supplier_id'] == $sup['id']) ? 'selected' : '' ?>>
-                          <?= htmlspecialchars($sup['name']) ?>
-                        </option>
-                      <?php endwhile; ?>
                     </select>
                   </div>
+
                 </div>
 
-                <!-- Pricing -->
+
+                <!-- PRICING (REFERENCE-MATCHED) -->
                 <div class="row mb-4">
+
+                  <!-- Cost Price -->
                   <div class="col-md-4 mb-3">
-                    <label class="form-label">Cost Price (Purchase Price) *</label>
-                    <input type="number" name="minimum_price" class="form-control" placeholder="Enter purchase price" min="0.01" step="0.01"
-                      value="<?= $product ? $product['cost_price'] : '' ?>" required>
+                    <label class="form-label">Cost Price *</label>
+
+                    <!-- Visible formatted input -->
+                    <input
+                      type="text"
+                      class="form-control currency-input"
+                      data-target="minimum_price"
+                      value="<?= number_format($product['cost_price'], 2) ?>"
+                      required>
+
+                    <!-- Hidden numeric value -->
+                    <input
+                      type="hidden"
+                      name="minimum_price"
+                      id="minimum_price"
+                      value="<?= number_format($product['cost_price'], 2, '.', '') ?>">
                   </div>
 
+                  <!-- Selling Price -->
                   <div class="col-md-4 mb-3">
                     <label class="form-label">Selling Price (MRP) *</label>
-                    <input type="number" name="mrp" class="form-control" placeholder="Enter selling price" min="0.01" step="0.01"
-                      value="<?= $product ? $product['selling_price'] : '' ?>" required>
+
+                    <input
+                      type="text"
+                      class="form-control currency-input"
+                      data-target="mrp"
+                      value="<?= number_format($product['selling_price'], 2) ?>"
+                      required>
+
+                    <input
+                      type="hidden"
+                      name="mrp"
+                      id="mrp"
+                      value="<?= number_format($product['selling_price'], 2, '.', '') ?>">
                   </div>
 
+                  <!-- VAT -->
                   <div class="col-md-4 mb-3">
-                    <label class="form-label">VAT (%) *</label>
-                    <input type="number" name="vat" class="form-control" placeholder="Enter VAT percentage" min="0" max="100" step="0.01"
-                      value="<?= $product ? $product['vat'] : 0 ?>" required>
+                    <label class="form-label">VAT (%)</label>
+                    <input
+                      type="number"
+                      name="vat"
+                      class="form-control"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      value="<?= $product['vat'] ?>"
+                      required>
                   </div>
+
                 </div>
 
-                <!-- Stock -->
+
+                <!-- STOCK (READ-ONLY) -->
                 <div class="row mb-4">
+
+                  <!-- Current Stock -->
                   <div class="col-md-6 mb-3">
                     <label class="form-label">Current Stock</label>
-                    <input type="text" class="form-control" value="<?= $product ? intval($product['quantity_in_stock']) : 0 ?>" disabled>
+                    <input
+                      type="text"
+                      class="form-control"
+                      value="<?= (int)$product['quantity_in_stock'] ?>"
+                      disabled>
                   </div>
 
+                  <!-- Low Stock Alert -->
                   <div class="col-md-6 mb-3">
                     <label class="form-label">Low Stock Alert</label>
-                    <input type="number" name="stock_limit" class="form-control" placeholder="Minimum stock to alert" min="0"
-                      value="<?= $product ? intval($product['low_stock_limit']) : '' ?>">
+                    <input
+                      type="number"
+                      name="stock_limit"
+                      class="form-control"
+                      min="0"
+                      value="<?= $product['low_stock_limit'] ?>">
                   </div>
+
                 </div>
 
-                <!-- Description & Image -->
+
+                <!-- DESCRIPTION & IMAGE -->
                 <div class="row mb-4">
+
+                  <!-- Description -->
                   <div class="col-md-6 mb-3">
-                    <label class="form-label">Product Description</label>
-                    <textarea name="description" class="form-control" rows="4" placeholder="Write a simple description"><?= $product ? htmlspecialchars($product['description']) : '' ?></textarea>
+                    <label class="form-label">Description</label>
+                    <textarea
+                      name="description"
+                      class="form-control"
+                      rows="4"><?= htmlspecialchars($product['description']) ?></textarea>
                   </div>
 
+                  <!-- Image Upload -->
                   <div class="col-md-3 mb-3">
                     <label class="form-label">Product Image</label>
-                    <input type="file" name="image" id="imageInput" class="form-control" accept="image/*">
+                    <input
+                      type="file"
+                      name="image"
+                      id="imageInput"
+                      class="form-control"
+                      accept="image/*">
                   </div>
 
+                  <!-- Image Preview -->
                   <div class="col-md-3 mb-3 d-flex align-items-center justify-content-center">
-                    <img id="imagePreview" src="<?= $product && !empty($product['image']) ? $Project_URL . 'assets/products/' . $product['image'] : 'https://via.placeholder.com/150x150?text=Preview' ?>"
-                      alt="Image Preview" class="img-fluid rounded shadow-sm" style="max-height: 150px;">
+                    <img
+                      id="imagePreview"
+                      src="<?= !empty($product['image'])
+                              ? $Project_URL . 'assets/products/' . $product['image']
+                              : 'https://via.placeholder.com/150x150?text=Preview' ?>"
+                      class="img-fluid rounded shadow-sm"
+                      style="max-height:150px;">
                   </div>
+
                 </div>
 
-                <!-- Submit -->
+
+                <!-- ACTION BUTTONS -->
                 <div class="mt-4 d-flex gap-2">
-                  <button type="submit" name="submit" class="btn btn-primary px-4 py-2">
-                    <i class="bi bi-check2-circle"></i> Save Product
+                  <button type="submit" name="submit" class="btn btn-primary">
+                    <i class="bi bi-check2-circle"></i> Update Product
                   </button>
-                  <a href="index.php" class="btn btn-secondary px-4 py-2">
+                  <a href="index.php" class="btn btn-secondary">
                     <i class="bi bi-x-circle"></i> Cancel
                   </a>
                 </div>
 
               </form>
+
 
             </div>
           </div>
@@ -408,14 +492,28 @@ if (isset($_POST['submit'])) {
   <!-- Select2 Initialization -->
   <script>
     $(document).ready(function() {
-      // Initialize Select2 for Category and Supplier
-      $('#categorySelect, #supplierSelect').select2({
+
+      /* 
+         SELECT2 INITIALIZATION
+         - Same setup as Add Product
+       */
+      $('#categorySelect, #subCategorySelect, #supplierSelect').select2({
         placeholder: "Select",
         allowClear: true,
-        width: '100%',
+        width: '100%'
       });
 
-      // Auto-hide error message
+      /* 
+         PRELOADED VALUES (FROM PHP)
+         - Used only on Edit page
+       */
+      const categoryId = "<?= $product['category_id'] ?>";
+      const subCategoryId = "<?= $product['subcategory_id'] ?>";
+      const supplierId = "<?= $product['supplier_id'] ?>";
+
+      /* 
+         AUTO-HIDE ERROR MESSAGE
+       */
       setTimeout(() => {
         const box = document.getElementById("errorBox");
         if (box) {
@@ -423,8 +521,203 @@ if (isset($_POST['submit'])) {
           setTimeout(() => box.remove(), 500);
         }
       }, 3000);
+
+      /* 
+         LOAD SUBCATEGORIES (AJAX)
+         - Supports Edit preload
+       */
+      function loadSubcategories(categoryId, selectedId = null) {
+        const $sub = $('#subCategorySelect');
+
+        // Reset dropdown
+        $sub.empty();
+
+        // No category selected
+        if (!categoryId) {
+          $sub
+            .prop('disabled', true)
+            .append('<option>Select a category first</option>')
+            .trigger('change');
+          return;
+        }
+
+        $.ajax({
+          url: 'fetch_subcategories.php',
+          type: 'GET',
+          data: {
+            parent_id: categoryId
+          },
+          dataType: 'json',
+
+          success: function(data) {
+
+            // No subcategories found
+            if (!Array.isArray(data) || data.length === 0) {
+              $sub
+                .prop('disabled', true)
+                .append('<option>No subcategories available</option>')
+                .trigger('change');
+              return;
+            }
+
+            // Populate subcategories
+            $sub.append('<option></option>');
+            data.forEach(sub => {
+              const selected = selectedId == sub.id ? 'selected' : '';
+              $sub.append(
+                `<option value="${sub.id}" ${selected}>${sub.name}</option>`
+              );
+            });
+
+            $sub.prop('disabled', false).trigger('change');
+          },
+
+          error: function() {
+            $sub
+              .prop('disabled', true)
+              .append('<option>Error loading subcategories</option>')
+              .trigger('change');
+          }
+        });
+      }
+
+      /* 
+         LOAD SUPPLIERS BY CATEGORY (AJAX)
+         - Same logic as Add Product
+         - Supports Edit preload
+       */
+      function loadSuppliers(categoryId, selectedId = null) {
+        const $sup = $('#supplierSelect');
+
+        // Reset dropdown
+        $sup.empty();
+
+        if (!categoryId) {
+          $sup
+            .prop('disabled', true)
+            .append('<option>Choose a category first</option>')
+            .trigger('change');
+          return;
+        }
+
+        $.ajax({
+          url: 'get_suppliers_by_category.php',
+          type: 'GET',
+          data: {
+            category_id: categoryId
+          },
+          dataType: 'json',
+
+          success: function(data) {
+
+            // No suppliers found
+            if (!Array.isArray(data) || data.length === 0) {
+              $sup
+                .prop('disabled', true)
+                .append('<option>No suppliers available</option>')
+                .trigger('change');
+              return;
+            }
+
+            // Populate suppliers
+            $sup.append('<option></option>');
+            data.forEach(sup => {
+              const selected = selectedId == sup.id ? 'selected' : '';
+              $sup.append(
+                `<option value="${sup.id}" ${selected}>${sup.name}</option>`
+              );
+            });
+
+            $sup.prop('disabled', false).trigger('change');
+          },
+
+          error: function() {
+            $sup
+              .prop('disabled', true)
+              .append('<option>Error loading suppliers</option>')
+              .trigger('change');
+          }
+        });
+      }
+
+      /* 
+         INITIAL LOAD (EDIT MODE ONLY)
+         - Preloads subcategory & supplier
+       */
+      if (categoryId) {
+        loadSubcategories(categoryId, subCategoryId);
+        loadSuppliers(categoryId, supplierId);
+      }
+
+      /* 
+         CATEGORY CHANGE HANDLER
+         - Reloads dependent dropdowns
+       */
+      $('#categorySelect').on('change', function() {
+        const selectedCategory = $(this).val();
+        loadSubcategories(selectedCategory);
+        loadSuppliers(selectedCategory);
+      });
+
+      /* 
+         IMAGE PREVIEW (EDIT SAFE)
+         - Replaces preview only if new image selected
+       */
+      const imageInput = document.getElementById('imageInput');
+      const imagePreview = document.getElementById('imagePreview');
+
+      imageInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = e => imagePreview.src = e.target.result;
+        reader.readAsDataURL(file);
+      });
+
     });
   </script>
+
+  <!-- 
+     CURRENCY FORMATTER (MATCHES ADD PAGE)
+ -->
+  <script>
+    $(function() {
+
+      function formatWithCommas(number) {
+        return number.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      }
+
+      $('.currency-input')
+
+        // Clear default on focus
+        .on('focus', function() {
+          if (this.value === '0.00') this.value = '';
+        })
+
+        // Allow only numbers & dot
+        .on('input', function() {
+          this.value = this.value.replace(/[^0-9.]/g, '');
+        })
+
+        // Format & sync hidden input
+        .on('blur', function() {
+          let raw = this.value.replace(/,/g, '');
+          if (raw === '' || isNaN(raw)) raw = '0';
+
+          const number = parseFloat(raw);
+          this.value = formatWithCommas(number);
+
+          const target = $(this).data('target');
+          $('#' + target).val(number.toFixed(2));
+        });
+
+    });
+  </script>
+
 </body>
 
 </html>

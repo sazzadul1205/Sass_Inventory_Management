@@ -161,12 +161,15 @@ if (isset($_POST['submit'])) {
   } else {
     $allData = [];
 
+    // Get global purchase date
+    $globalPurchaseDate = !empty($_POST['global_purchase_date']) ? $_POST['global_purchase_date'] : date('Y-m-d');
+
     // Loop through all selected products
     foreach ($productIds as $i => $prodId) {
       $prodId = intval($prodId);
       $qty = intval($quantities[$i]);
       $price = floatval(str_replace(',', '', $purchasePrice[$i]));
-      $purchaseDate = !empty($purchaseDates[$i]) ? $purchaseDates[$i] : date('Y-m-d');
+      $purchaseDate = $globalPurchaseDate;
 
       // Skip invalid rows (quantity or price <= 0)
       if ($qty <= 0 || $price <= 0) continue;
@@ -304,16 +307,41 @@ if (isset($_POST['submit'])) {
                   <i class="bi bi-info-circle"></i> Once a purchase is created, it cannot be edited.
                 </div>
 
+                <!-- Supplier Selection -->
+                <div class="row mb-4">
+                  <div class="col-md-6">
+                    <label class="form-label">Supplier</label>
+                    <select id="supplierSelect" class="form-select select-supplier" required>
+                      <option value="">-- Select Supplier --</option>
+                      <?php
+                      // Fetch suppliers for dropdown
+                      $suppliers = $conn->query("SELECT id, name FROM supplier ORDER BY name ASC");
+                      while ($supplier = $suppliers->fetch_assoc()):
+                      ?>
+                        <option value="<?= $supplier['id'] ?>">
+                          <?= htmlspecialchars($supplier['name']) ?>
+                        </option>
+                      <?php endwhile; ?>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Purchase Date</label>
+                    <input type="date" id="globalPurchaseDate" class="form-control" value="<?= date('Y-m-d') ?>" required>
+                  </div>
+
+                  <!-- Hidden global purchase date -->
+                  <input type="hidden" id="global_purchase_date" name="global_purchase_date" value="<?= date('Y-m-d') ?>">
+                </div>
+
                 <!-- Product Row -->
                 <div class="row pb-2 product-row">
-
                   <!-- Product -->
-                  <div class="col-md-4">
+                  <div class="col-md-5">
                     <label class="form-label">Product Name</label>
                     <select name="product_id[]" class="form-select select-product" required>
                       <option value="">-- Select Product --</option>
                       <?php
-                      $products->data_seek(0); // reset pointer
+                      $products->data_seek(0);
                       while ($prod = $products->fetch_assoc()):
                       ?>
                         <option value="<?= $prod['id'] ?>"
@@ -334,19 +362,13 @@ if (isset($_POST['submit'])) {
                   </div>
 
                   <!-- Purchase Price -->
-                  <div class="col-md-2">
+                  <div class="col-md-3">
                     <label class="form-label">Purchase Price</label>
                     <input type="text" name="purchase_price[]" class="form-control purchase-price" required>
                   </div>
 
-                  <!-- Purchase Date -->
-                  <div class="col-md-3">
-                    <label class="form-label">Purchase Date</label>
-                    <input type="date" name="purchase_date[]" class="form-control" value="<?= date('Y-m-d') ?>" required>
-                  </div>
-
                   <!-- Buttons -->
-                  <div class="col-md-1 d-flex align-items-end btn-box">
+                  <div class="col-md-2 d-flex align-items-end btn-box">
                     <button type="button" class="btn btn-success btn-add-product me-1">
                       <i class="bi bi-plus-circle"></i>
                     </button>
@@ -360,14 +382,6 @@ if (isset($_POST['submit'])) {
 
                   <!-- Hidden Total Amount -->
                   <input type="hidden" id="total_amount" name="total_amount" value="0">
-
-                  <!-- Product Info -->
-                  <div class="col-12 mt-2 product-info text-muted small">
-                    Default Estimated Price: <span class="info-price">-</span> |
-                    Current Available Stock: <span class="info-stock">-</span> |
-                    Supplier Name: <span class="info-supplier">-</span> |
-                    <span class="comparison-text text-muted">Difference per unit: - (-%)</span>
-                  </div>
                 </div>
 
                 <!-- Total Amount & Save & Cancel -->
@@ -410,6 +424,27 @@ if (isset($_POST['submit'])) {
     $(document).ready(function() {
       const $form = $('#purchaseForm');
 
+      // Initialize supplier select2
+      $('#supplierSelect').select2({
+        placeholder: "-- Select Supplier --",
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('body')
+      });
+
+      // Event: Supplier change
+      $('#supplierSelect').on('change', function() {
+        const supplierId = $(this).val();
+        loadProductsForSupplier(supplierId);
+      });
+
+      // Event: Global purchase date change
+      $('#globalPurchaseDate').on('change', function() {
+        const dateValue = $(this).val();
+        $('#global_purchase_date').val(dateValue);
+        $('input[name="purchase_date[]"]').val(dateValue);
+      });
+
       // Format number with commas
       function formatNumberWithCommas(x) {
         if (!x && x !== 0) return '';
@@ -425,36 +460,70 @@ if (isset($_POST['submit'])) {
         }).format(num);
       }
 
-      // Update product info display (default price, stock, supplier, difference)
-      function updateProductInfo($row) {
-        const quantity = parseInt($row.find('input[name="quantity[]"]').val()) || 1;
-        const unitPrice = parseFloat($row.find('.purchase-price').data('raw')) || 0;
-        const $option = $row.find('.select-product option:selected');
-        const defaultUnitPrice = parseFloat($option.data('price')) || 0;
+      // Load products based on selected supplier
+      function loadProductsForSupplier(supplierId) {
+        const $productSelects = $('.select-product');
 
-        const $info = $row.find('.product-info');
-        $info.find('.info-price').text(formatCurrency(defaultUnitPrice));
-        $info.find('.info-stock').text($option.data('stock') ?? '-');
-        $info.find('.info-supplier').text($option.data('supplier') ?? '-');
+        // Reset all product selects
+        $productSelects.each(function() {
+          $(this).val('').trigger('change');
+          $(this).html('<option value="">-- Select Product --</option>');
+        });
 
-        if (defaultUnitPrice === 0 || unitPrice === 0) {
-          $info.find('.comparison-text')
-            .text('Difference per unit: - (-%)')
-            .removeClass('text-success text-danger text-secondary')
-            .addClass('text-muted');
+        if (!supplierId) {
+          // If no supplier selected, load all products
+          $.ajax({
+            url: 'get_products.php',
+            method: 'GET',
+            dataType: 'json',
+            success: function(products) {
+              populateProductDropdown($productSelects.first(), products);
+            }
+          });
           return;
         }
 
-        const diffPerUnit = unitPrice - defaultUnitPrice;
-        const diffPercent = ((diffPerUnit / defaultUnitPrice) * 100).toFixed(2);
-        let textColor = 'text-secondary';
-        if (diffPerUnit < 0) textColor = 'text-success';
-        if (diffPerUnit > 0) textColor = 'text-danger';
-        const sign = diffPerUnit >= 0 ? '+' : '';
-        $info.find('.comparison-text')
-          .text(`Difference per unit: ${sign}${diffPerUnit.toFixed(2)} (${sign}${diffPercent}%)`)
-          .removeClass('text-success text-danger text-secondary text-muted')
-          .addClass(textColor);
+        // Load products for specific supplier
+        $.ajax({
+          url: 'get_products.php',
+          method: 'GET',
+          data: {
+            supplier_id: supplierId
+          },
+          dataType: 'json',
+          success: function(products) {
+            populateProductDropdown($productSelects.first(), products);
+          }
+        });
+      }
+
+      // Populate product dropdown with data
+      function populateProductDropdown($select, products) {
+        let options = '<option value="">-- Select Product --</option>';
+
+        products.forEach(function(product) {
+          options += `<option value="${product.id}" 
+                    data-price="${product.price}" 
+                    data-stock="${product.quantity_in_stock}" 
+                    data-supplier="${product.supplier_name || ''}" 
+                    data-supplier-id="${product.supplier_id || 0}">
+                  ${product.name}
+                </option>`;
+        });
+
+        $select.html(options);
+
+        // Update all other product selects
+        $('.select-product').not($select).each(function() {
+          const $otherSelect = $(this);
+          const currentVal = $otherSelect.val();
+          $otherSelect.html(options);
+
+          // If current value exists in new options, keep it selected
+          if (currentVal && $otherSelect.find(`option[value="${currentVal}"]`).length) {
+            $otherSelect.val(currentVal).trigger('change');
+          }
+        });
       }
 
       // Handle row update
@@ -471,8 +540,6 @@ if (isset($_POST['submit'])) {
           const displayVal = (unitPrice * quantity).toFixed(2);
           $row.find('.purchase-price').val(formatNumberWithCommas(displayVal));
         }
-
-        updateProductInfo($row);
         updateTotalAmount();
       }
 
@@ -564,54 +631,33 @@ if (isset($_POST['submit'])) {
       });
 
       // Add new row
-      // Add new row manually (no cloning previous)
       $form.on('click', '.btn-add-product', function() {
         const $newRow = $(`
-        <div class="row pb-2 product-row">
-          <div class="col-md-4">
-            <label class="form-label">Product</label>
-            <select name="product_id[]" class="form-select select-product" required>
-              <option value="">-- Select Product --</option>
-              <?php
-              $products->data_seek(0);
-              while ($prod = $products->fetch_assoc()):
-              ?>
-                  <option value="<?= $prod['id'] ?>"
-                    data-price="<?= $prod['price'] ?>"
-                    data-stock="<?= $prod['quantity_in_stock'] ?>"
-                    data-supplier="<?= htmlspecialchars($prod['supplier_name']) ?>">
-                    <?= htmlspecialchars($prod['name']) ?>
-                  </option>
-                <?php endwhile; ?>
-              </select>
-            </div>
-            <div class="col-md-2">
-              <label class="form-label">Quantity</label>
-              <input type="number" name="quantity[]" class="form-control" min="1" value="1" required>
-            </div>
-            <div class="col-md-2">
-              <label class="form-label">Purchase Price</label>
-              <input type="text" name="purchase_price[]" class="form-control purchase-price" required>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Purchase Date</label>
-              <input type="date" name="purchase_date[]" class="form-control" value="<?= date('Y-m-d') ?>" required>
-            </div>
-            <div class="col-md-1 d-flex align-items-end btn-box">
-              <button type="button" class="btn btn-success btn-add-product me-1">
-                <i class="bi bi-plus-circle"></i>
-              </button>
-              <button type="button" class="btn btn-danger btn-remove-product">
-                <i class="bi bi-trash"></i>
-              </button>
-            </div>
-            <div class="col-12 mt-2 product-info text-muted small">
-              Default Estimated Price: <span class="info-price">-</span> |
-              Current Available Stock: <span class="info-stock">-</span> |
-              Supplier Name: <span class="info-supplier">-</span> |
-              <span class="comparison-text text-muted">Difference per unit: - (-%)</span>
-            </div>
-          </div>`);
+<div class="row pb-2 product-row">
+  <div class="col-md-4">
+    <label class="form-label">Product</label>
+    <select name="product_id[]" class="form-select select-product" required>
+      <option value="">-- Select Product --</option>
+    </select>
+  </div>
+  <div class="col-md-2">
+    <label class="form-label">Quantity</label>
+    <input type="number" name="quantity[]" class="form-control" min="1" value="1" required>
+  </div>
+  <div class="col-md-2">
+    <label class="form-label">Purchase Price</label>
+    <input type="text" name="purchase_price[]" class="form-control purchase-price" required>
+  </div>
+  <div class="col-md-1 d-flex align-items-end btn-box">
+    <button type="button" class="btn btn-success btn-add-product me-1">
+      <i class="bi bi-plus-circle"></i>
+    </button>
+    <button type="button" class="btn btn-danger btn-remove-product">
+      <i class="bi bi-trash"></i>
+    </button>
+  </div>
+  <input type="hidden" name="supplier_id[]" class="supplier-id-hidden" value="">
+</div>`);
 
         $('.product-row').last().after($newRow);
         initSelect2($newRow.find('.select-product'));
@@ -630,14 +676,6 @@ if (isset($_POST['submit'])) {
           $row.find('input[name="quantity[]"]').val(1);
           $row.find('input[name="purchase_price[]"]').val('').data('raw', 0);
           $row.find('input[name="purchase_date[]"]').val('<?= date('Y-m-d') ?>');
-          const $info = $row.find('.product-info');
-          $info.find('.info-price').text('-');
-          $info.find('.info-stock').text('-');
-          $info.find('.info-supplier').text('-');
-          $info.find('.comparison-text')
-            .text('Difference per unit: - (-%)')
-            .removeClass('text-success text-danger text-secondary')
-            .addClass('text-muted');
         }
         updateTotalAmount();
       });

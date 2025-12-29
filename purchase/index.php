@@ -113,8 +113,10 @@ $result = $conn->query($sql);
                     <th>Product</th>
                     <th>Supplier</th>
                     <th>Purchased By</th>
+                    <th>Lot Number</th>
                     <th>Quantity</th>
                     <th>Purchase Price</th>
+                    <th>Stock Left</th>
                     <th>Purchase Date</th>
                     <th>View Recept</th>
                   </tr>
@@ -127,8 +129,10 @@ $result = $conn->query($sql);
                       <td><?= htmlspecialchars($row['product_name'] ?? 'Unknown') ?></td>
                       <td><?= htmlspecialchars($row['supplier_name'] ?? 'Unknown') ?></td>
                       <td><?= htmlspecialchars($row['purchased_by_name'] ?? '-') ?></td>
+                      <td><?= htmlspecialchars($row['lot'] ?? '-') ?></td>
                       <td><?= htmlspecialchars($row['quantity'] ?? '-') ?></td>
                       <td><?= htmlspecialchars(number_format($row['purchase_price'], 2) ?? '-') ?></td>
+                      <td><?= htmlspecialchars($row['product_left'] ?? '-') ?></td>
                       <td><?= !empty($row['purchase_date']) ? date('d M Y', strtotime($row['purchase_date'])) : '-' ?></td>
                       <td>
                         <?php if (can('view_receipt')): ?>

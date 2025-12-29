@@ -105,9 +105,9 @@ $receipt = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 if (!$receipt) die("Purchase receipt not found.");
 
-// --- Get Purchase Items ---
+// --- Get Purchase Items and Supplier Info ---
 $stmt = $conn->prepare("
-    SELECT p.*, pr.name AS product_name, s.name AS supplier_name
+    SELECT p.*, pr.name AS product_name, pr.cost_price AS unit_price, s.name AS supplier_name, p.lot
     FROM purchase p
     LEFT JOIN product pr ON p.product_id = pr.id
     LEFT JOIN supplier s ON p.supplier_id = s.id
@@ -120,14 +120,22 @@ $stmt->close();
 
 // --- Calculate totals ---
 $totalQty = 0;
-$totalAmount = 0;
+$subTotal = 0;
 
 foreach ($purchaseItems as $item) {
   $totalQty += $item['quantity'];
-  $totalAmount += $item['purchase_price'];
+  $itemTotal = $item['unit_price'] * $item['quantity'];
+  $subTotal += $itemTotal;
 }
 
+// --- Get discount value & final total from receipt ---
+$discountValue = floatval($receipt['discount_value'] ?? 0);
+$finalTotal = $subTotal - $discountValue;
+
+// --- Get supplier info from first purchase item ---
+$supplierName = $purchaseItems[0]['supplier_name'] ?? '';
 ?>
+
 
 <!-- Body -->
 
@@ -159,28 +167,22 @@ foreach ($purchaseItems as $item) {
 
       <!-- ========================= A4 View ========================= -->
       <div id="a4View" class="card p-4">
-
-        <!-- Top Header Row -->
-        <div class="row mb-4 align-items-center">
+        <!-- Header & Supplier Info -->
+        <div class="row mb-4">
           <div class="col-md-6">
             <h2 class="fw-bold mb-1"><?= strtoupper($Project_Name ?? 'Sass Inventory') ?></h2>
             <p class="mb-1">Your Trusted Inventory Solution</p>
             <p class="mb-1">Address: 123, Main Street, City</p>
             <p class="mb-1">Phone: +880123456789 | Email: info@sassinventory.com</p>
+            <p class="mb-1"><strong>Supplier:</strong> <?= htmlspecialchars($supplierName) ?></p>
           </div>
           <div class="col-md-6 text-md-end">
             <h3 class="fw-bold mb-1">Purchase Receipt</h3>
             <p class="mb-0">(Purchaser Copy)</p>
+            <p><strong>Receipt #:</strong> <?= htmlspecialchars($receipt['receipt_number']) ?></p>
+            <p><strong>Date:</strong> <?= date('Y-m-d H:i', strtotime($receipt['created_at'])) ?></p>
+            <p><strong>Purchased By:</strong> <?= htmlspecialchars($receipt['purchaser_name']) ?></p>
           </div>
-        </div>
-
-        <hr>
-
-        <!-- Receipt Info -->
-        <div class="row mb-3">
-          <div class="col-md-6"><strong>Receipt #:</strong> <?= htmlspecialchars($receipt['receipt_number']) ?></div>
-          <div class="col-md-6"><strong>Date:</strong> <?= date('Y-m-d H:i', strtotime($receipt['created_at'])) ?></div>
-          <div class="col-md-6"><strong>Purchased By:</strong> <?= htmlspecialchars($receipt['purchaser_name']) ?></div>
         </div>
 
         <!-- Purchase Table -->
@@ -188,7 +190,7 @@ foreach ($purchaseItems as $item) {
           <thead class="table-dark">
             <tr>
               <th>Product</th>
-              <th>Supplier</th>
+              <th>Lot</th>
               <th>Qty</th>
               <th>Unit Price</th>
               <th>Total</th>
@@ -196,23 +198,29 @@ foreach ($purchaseItems as $item) {
           </thead>
           <tbody>
             <?php foreach ($purchaseItems as $item):
-              $unitPrice = $item['purchase_price'] / $item['quantity'];
+              $itemTotal = $item['unit_price'] * $item['quantity'];
             ?>
               <tr>
                 <td><?= htmlspecialchars($item['product_name']) ?></td>
-                <td><?= htmlspecialchars($item['supplier_name']) ?></td>
+                <td><?= htmlspecialchars($item['lot']) ?></td>
                 <td><?= $item['quantity'] ?></td>
-                <td><?= number_format($unitPrice, 2) ?></td>
-                <td><?= number_format($item['purchase_price'], 2) ?></td>
+                <td><?= number_format($item['unit_price'], 2) ?></td>
+                <td><?= number_format($itemTotal, 2) ?></td>
               </tr>
             <?php endforeach; ?>
           </tbody>
           <tfoot class="table-light">
             <tr>
-              <th colspan="2">Total</th>
-              <th><?= $totalQty ?></th>
-              <th></th>
-              <th><?= number_format($totalAmount, 2) ?></th>
+              <th colspan="4">Subtotal</th>
+              <th><?= number_format($subTotal, 2) ?></th>
+            </tr>
+            <tr>
+              <th colspan="4">Discount</th>
+              <th><?= number_format($discountValue, 2) ?></th>
+            </tr>
+            <tr>
+              <th colspan="4">Final Total</th>
+              <th><?= number_format($finalTotal, 2) ?></th>
             </tr>
           </tfoot>
         </table>
@@ -231,68 +239,68 @@ foreach ($purchaseItems as $item) {
         </div>
       </div>
 
+
       <!-- ========================= POS View ========================= -->
       <div id="posView" class="card p-3">
-
-        <!-- Top Header -->
         <div class="text-center mb-3">
           <h5 class="fw-bold mb-1"><?= strtoupper($Project_Name ?? 'Sass Inventory') ?></h5>
           <p class="mb-0">Your Trusted Inventory Solution</p>
-          <p class="mb-0">Address: 123, Main Street, City</p>
-          <p class="mb-0">Phone: +880123456789 | Email: info@sassinventory.com</p>
+          <p class="mb-0">Supplier: <?= htmlspecialchars($supplierName) ?></p>
           <h6 class="fw-bold mt-2">Purchase Receipt (Purchaser Copy)</h6>
+          <p>#<?= htmlspecialchars($receipt['receipt_number']) ?></p>
+          <p>Date: <?= date('Y-m-d H:i', strtotime($receipt['created_at'])) ?></p>
+          <p>By: <?= htmlspecialchars($receipt['purchaser_name']) ?></p>
         </div>
 
-        <!-- Receipt Info -->
-        <p><strong>#<?= htmlspecialchars($receipt['receipt_number']) ?></strong></p>
-        <p>Date: <?= date('Y-m-d H:i', strtotime($receipt['created_at'])) ?></p>
-        <p>By: <?= htmlspecialchars($receipt['purchaser_name']) ?></p>
-
-        <!-- Purchase Table -->
         <table class="table table-sm table-borderless mt-2">
           <thead>
             <tr>
               <th>Item</th>
+              <th>Lot</th>
               <th>Qty</th>
-              <th>Unit</th>
               <th>Total</th>
             </tr>
           </thead>
           <tbody>
             <?php foreach ($purchaseItems as $item):
-              $unitPrice = $item['purchase_price'] / $item['quantity'];
+              $itemTotal = $item['unit_price'] * $item['quantity'];
             ?>
               <tr>
                 <td><?= htmlspecialchars($item['product_name']) ?></td>
+                <td><?= htmlspecialchars($item['lot']) ?></td>
                 <td><?= $item['quantity'] ?></td>
-                <td><?= number_format($unitPrice, 2) ?></td>
-                <td><?= number_format($item['purchase_price'], 2) ?></td>
+                <td><?= number_format($itemTotal, 2) ?></td>
               </tr>
             <?php endforeach; ?>
           </tbody>
           <tfoot>
             <tr>
-              <th>Total</th>
-              <th><?= $totalQty ?></th>
-              <th></th>
-              <th><?= number_format($totalAmount, 2) ?></th>
+              <th colspan="3">Subtotal</th>
+              <th><?= number_format($subTotal, 2) ?></th>
+            </tr>
+            <tr>
+              <th colspan="3">Discount</th>
+              <th><?= number_format($discountValue, 2) ?></th>
+            </tr>
+            <tr>
+              <th colspan="3">Final Total</th>
+              <th><?= number_format($finalTotal, 2) ?></th>
             </tr>
           </tfoot>
         </table>
 
-        <!-- Signature Block -->
         <div class="signature d-flex justify-content-between text-center">
           <div>__________<br>Purchaser</div>
           <div>__________<br>Supplier</div>
           <div>__________<br>Guarantor</div>
         </div>
 
-        <!-- Print & Download Buttons -->
         <div class="mt-3 d-flex justify-content-center gap-2">
           <button class="btn btn-primary btn-sm" onclick="window.print()">Print</button>
           <button class="btn btn-success btn-sm" onclick="downloadPDF('posView')">Download</button>
         </div>
       </div>
+
 
     </main>
 

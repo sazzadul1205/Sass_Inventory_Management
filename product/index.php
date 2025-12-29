@@ -265,7 +265,10 @@ $result = $conn->query($sql);
               <?php while ($row = $result->fetch_assoc()): ?>
                 <tr>
                   <td>
-                    <img src="<?= !empty($row['image']) ? htmlspecialchars($row['image']) : 'https://community.softr.io/uploads/db9110/original/2X/7/74e6e7e382d0ff5d7773ca9a87e6f6f8817a68a6.jpeg' ?>"
+                    <img
+                      src="<?= !empty($row['image'])
+                              ? htmlspecialchars($Project_URL . 'assets/products/' . $row['image'])
+                              : 'https://community.softr.io/uploads/db9110/original/2X/7/74e6e7e382d0ff5d7773ca9a87e6f6f8817a68a6.jpeg' ?>"
                       alt="<?= htmlspecialchars($row['name']) ?>"
                       class="img-thumbnail"
                       style="max-width:50px; max-height:50px;">
@@ -279,15 +282,19 @@ $result = $conn->query($sql);
                   <td><?= $row['quantity_in_stock'] ?></td>
                   <td>
                     <div class="d-flex gap-1">
+                      <a href="view.php?id=<?= $row['id'] ?>" class="btn btn-info btn-sm flex-fill" title="View">
+                        <i class="bi bi-eye"></i>
+                      </a>
+
                       <?php if (can('edit_product')): ?>
-                        <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-warning btn-sm flex-fill">
-                          <i class="bi bi-pencil-square"></i> Edit
+                        <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-warning btn-sm flex-fill" title="Edit">
+                          <i class="bi bi-pencil-square"></i>
                         </a>
                       <?php endif; ?>
 
                       <?php if (can('delete_product')): ?>
-                        <a href="delete.php?id=<?= $row['id'] ?>" class="btn btn-danger btn-sm flex-fill" onclick="return confirm('Delete this product?');">
-                          <i class="bi bi-trash"></i> Delete
+                        <a href="delete.php?id=<?= $row['id'] ?>" class="btn btn-danger btn-sm flex-fill" title="Delete" onclick="return confirm('Delete this product?');">
+                          <i class="bi bi-trash"></i>
                         </a>
                       <?php endif; ?>
                     </div>

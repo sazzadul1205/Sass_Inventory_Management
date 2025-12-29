@@ -134,7 +134,6 @@ $categories = $conn->query("
 $suppliers  = $conn->query("SELECT id, name FROM supplier ORDER BY name ASC");
 
 // Handle form submission
-// Handle form submission
 if (isset($_POST['submit'])) {
   $name        = trim($_POST['name']);
   $sku         = trim($_POST['sku']);
@@ -155,21 +154,28 @@ if (isset($_POST['submit'])) {
   $imageFileName = null;
   if (!empty($_FILES['image']['name'])) {
     $fileTmpPath = $_FILES['image']['tmp_name'];
-    $fileName    = $_FILES['image']['name'];
-    $fileExt     = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+    $fileName = $_FILES['image']['name'];
+    $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
     $allowedExts = ['jpg', 'jpeg', 'png'];
 
     if (in_array($fileExt, $allowedExts)) {
       $imageFileName = uniqid('prod_', true) . '.' . $fileExt;
-      $destPath = __DIR__ . '/../assets/products/' . $imageFileName;
+      $destDir = __DIR__ . '/../assets/products/';
 
-      if (!move_uploaded_file($fileTmpPath, $destPath)) {
-        $formError = "Failed to upload image.";
+      if (!is_dir($destDir)) {
+        mkdir($destDir, 0755, true);
+      }
+
+      $destPath = $destDir . $imageFileName;
+
+      if (!@move_uploaded_file($fileTmpPath, $destPath)) {
+        $formError = "Failed to upload image. Make sure 'assets/products/' exists and is writable.";
       }
     } else {
       $formError = "Invalid image format. Only JPG, JPEG, PNG allowed.";
     }
   }
+
 
   // Validate product name
   if (empty($name)) {
@@ -245,6 +251,7 @@ if (isset($_POST['submit'])) {
         </div>
       <?php endif; ?>
 
+
       <!-- App Content Body -->
       <div class="app-content-body mt-3">
         <div class="container-fluid">
@@ -297,7 +304,7 @@ if (isset($_POST['submit'])) {
 
                   <div class="col-md-4 mb-3">
                     <label class="form-label">Subcategory</label>
-                    <select name="subcategory_id" id="subCategorySelect" class="form-select" disabled>
+                    <select name="subcategory_id" id="subCategorySelect" class="form-select">
                       <option value="">Select a category first</option>
                     </select>
                   </div>
@@ -318,34 +325,46 @@ if (isset($_POST['submit'])) {
                   <!-- Cost Price -->
                   <div class="col-md-4 mb-3">
                     <label class="form-label">Cost Price (Purchase Price) *</label>
+
+                    <!-- Visible formatted input -->
                     <input
-                      type="number"
-                      name="minimum_price"
-                      class="form-control"
-                      placeholder="Enter how much you buy this product for"
-                      min="0.01"
-                      step="0.01"
-                      required
-                      oninput="this.value = Math.max(this.value, 0.01)"
-                      title="Must be a positive number">
-                    <small class="text-muted">Enter the price you purchase this product for. Must be greater than 0.</small>
+                      type="text"
+                      class="form-control currency-input"
+                      data-target="minimum_price"
+                      value="0.00"
+                      placeholder="0.00"
+                      required>
+
+                    <!-- Hidden numeric value -->
+                    <input type="hidden" name="minimum_price" id="minimum_price" value="0">
+
+                    <small class="text-muted">
+                      Enter the price you purchase this product for. Must be greater than 0.
+                    </small>
                   </div>
+
 
                   <!-- Selling Price -->
                   <div class="col-md-4 mb-3">
                     <label class="form-label">Selling Price (MRP) *</label>
+
+                    <!-- Visible formatted input -->
                     <input
-                      type="number"
-                      name="mrp"
-                      class="form-control"
-                      placeholder="Enter the selling price"
-                      min="0.01"
-                      step="0.01"
-                      required
-                      oninput="this.value = Math.max(this.value, 0.01)"
-                      title="Must be a positive number">
-                    <small class="text-muted">The price you sell this product for. Must be higher than the Cost Price.</small>
+                      type="text"
+                      class="form-control currency-input"
+                      data-target="mrp"
+                      value="0.00"
+                      placeholder="0.00"
+                      required>
+
+                    <!-- Hidden numeric value -->
+                    <input type="hidden" name="mrp" id="mrp" value="0">
+
+                    <small class="text-muted">
+                      The price you sell this product for. Must be higher than the Cost Price.
+                    </small>
                   </div>
+
 
                   <!-- VAT -->
                   <div class="col-md-4 mb-3">
@@ -427,14 +446,21 @@ if (isset($_POST['submit'])) {
 
   <script>
     $(document).ready(function() {
-      // Initialize Select2 for Category, Subcategory, and Supplier
+
+      /* -----------------------------
+         Select2 Initialization
+      ------------------------------ */
       $('#categorySelect, #subCategorySelect, #supplierSelect').select2({
         placeholder: "Select",
         allowClear: true,
-        width: '100%',
+        width: '100%'
       });
 
-      // Auto-hide error message
+      $('#subCategorySelect').prop('disabled', true);
+
+      /* -----------------------------
+         Auto-hide Error Message
+      ------------------------------ */
       setTimeout(() => {
         const box = document.getElementById("errorBox");
         if (box) {
@@ -443,113 +469,203 @@ if (isset($_POST['submit'])) {
         }
       }, 3000);
 
-      // Category → Subcategory logic
-      function loadSubcategories(categoryId, selectedSubId = null) {
-        const $subSelect = $('#subCategorySelect');
-        $subSelect.empty().prop('disabled', true);
+      /* -----------------------------
+         Load Subcategories
+      ------------------------------ */
+      function loadSubcategories(categoryId) {
+        const $sub = $('#subCategorySelect');
+
+        // Reset
+        $sub.empty();
 
         if (!categoryId) {
-          $subSelect.append('<option value="">Select Category First</option>');
+          $sub
+            .prop('disabled', true)
+            .select2({
+              placeholder: 'Select a category first'
+            })
+            .trigger('change.select2');
           return;
         }
 
         $.ajax({
           url: 'fetch_subcategories.php',
-          method: 'GET',
+          type: 'GET',
           data: {
             parent_id: categoryId
           },
           dataType: 'json',
-          success: function(data) {
-            $subSelect.empty();
 
+          success: function(data) {
+
+            // 🔴 NO SUBCATEGORIES
             if (!Array.isArray(data) || data.length === 0) {
-              $subSelect.append('<option value="">No Subcategories Available</option>');
-              $subSelect.prop('disabled', true);
+              $sub
+                .prop('disabled', true)
+                .select2({
+                  placeholder: 'No subcategories available'
+                })
+                .trigger('change.select2');
               return;
             }
 
-            $subSelect.append('<option value="">-- Select Subcategory --</option>');
-            data.forEach(function(sub) {
-              const selected = selectedSubId == sub.id ? 'selected' : '';
-              $subSelect.append(`<option value="${sub.id}" ${selected}>${sub.name}</option>`);
+            // ✅ SUBCATEGORIES EXIST
+            $sub.append('<option></option>'); // needed for placeholder
+            data.forEach(sub => {
+              $sub.append(`<option value="${sub.id}">${sub.name}</option>`);
             });
 
-            $subSelect.prop('disabled', false).trigger('change');
+            $sub
+              .prop('disabled', false)
+              .select2({
+                placeholder: '-- Select Subcategory --'
+              })
+              .trigger('change.select2');
           },
+
           error: function() {
-            $subSelect.empty().append('<option value="">Error loading subcategories</option>');
-            $subSelect.prop('disabled', true);
+            $sub
+              .prop('disabled', true)
+              .select2({
+                placeholder: 'Error loading subcategories'
+              })
+              .trigger('change.select2');
           }
         });
       }
 
-      // Initial load of subcategory if product already has one
-      const initialCategoryId = $('#categorySelect').val();
-      const initialSubId = "<?= $product['subcategory_id'] ?? '' ?>";
-      if (initialCategoryId) {
-        loadSubcategories(initialCategoryId, initialSubId);
-      }
+      /* -----------------------------
+         Load Suppliers by Category
+      ------------------------------ */
+      function loadSuppliers(categoryId) {
+        const $sup = $('#supplierSelect');
 
-      $('#categorySelect').on('change', function() {
-        const categoryId = $(this).val();
-        loadSubcategories(categoryId);
+        // Reset
+        $sup.empty();
 
-        // Also reload suppliers by category
-        const $supplierSelect = $('#supplierSelect');
-        $supplierSelect.empty();
-
+        // No category selected
         if (!categoryId) {
-          $supplierSelect.append(new Option("Choose a supplier", ""));
-          $supplierSelect.prop('disabled', true).trigger('change');
+          $sup
+            .prop('disabled', true)
+            .select2({
+              placeholder: 'Choose a category first'
+            })
+            .trigger('change.select2');
           return;
         }
 
         $.ajax({
           url: 'get_suppliers_by_category.php',
-          method: 'GET',
+          type: 'GET',
           data: {
             category_id: categoryId
           },
           dataType: 'json',
+
           success: function(data) {
-            $supplierSelect.prop('disabled', false);
+
+            // 🔴 NO SUPPLIERS
             if (!Array.isArray(data) || data.length === 0) {
-              $supplierSelect.append(new Option("No suppliers available", ""));
-            } else {
-              $supplierSelect.append(new Option("-- Select Supplier --", ""));
-              data.forEach(function(supplier) {
-                const selected = supplier.id == "<?= $product['supplier_id'] ?? '' ?>" ? 'selected' : '';
-                $supplierSelect.append(`<option value="${supplier.id}" ${selected}>${supplier.name}</option>`);
-              });
+              $sup
+                .prop('disabled', true)
+                .select2({
+                  placeholder: 'No suppliers available for this category'
+                })
+                .trigger('change.select2');
+              return;
             }
-            $supplierSelect.trigger('change');
+
+            // ✅ SUPPLIERS EXIST
+            $sup.append('<option></option>'); // needed for placeholder
+            data.forEach(sup => {
+              $sup.append(`<option value="${sup.id}">${sup.name}</option>`);
+            });
+
+            $sup
+              .prop('disabled', false)
+              .select2({
+                placeholder: '-- Select Supplier --'
+              })
+              .trigger('change.select2');
           },
+
           error: function() {
-            $supplierSelect.empty().append(new Option("Error loading suppliers", ""));
-            $supplierSelect.prop('disabled', true).trigger('change');
+            $sup
+              .prop('disabled', true)
+              .select2({
+                placeholder: 'Error loading suppliers'
+              })
+              .trigger('change.select2');
           }
         });
+      }
+
+      /* -----------------------------
+         Category Change Handler
+      ------------------------------ */
+      $('#categorySelect').on('change', function() {
+        const categoryId = $(this).val();
+        loadSubcategories(categoryId);
+        loadSuppliers(categoryId);
       });
 
-      // Image preview
+      /* -----------------------------
+         Image Preview (Add Page)
+      ------------------------------ */
       const imageInput = document.getElementById('imageInput');
       const imagePreview = document.getElementById('imagePreview');
-      const currentImage = "<?= $product && !empty($product['image']) ? $Project_URL . 'assets/products/' . $product['image'] : 'https://via.placeholder.com/150x150?text=Preview' ?>";
-      imagePreview.src = currentImage;
+
+      imagePreview.src = 'https://via.placeholder.com/150x150?text=Preview';
 
       imageInput.addEventListener('change', function() {
         const file = this.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            imagePreview.src = e.target.result;
-          }
-          reader.readAsDataURL(file);
-        } else {
-          imagePreview.src = currentImage;
-        }
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = e => imagePreview.src = e.target.result;
+        reader.readAsDataURL(file);
       });
+
+    });
+  </script>
+
+  <script>
+    $(function() {
+
+      function formatWithCommas(number) {
+        return number.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      }
+
+      $('.currency-input')
+        .on('focus', function() {
+          if (this.value === '0.00') this.value = '';
+        })
+
+        .on('input', function() {
+          // Allow typing without commas breaking cursor
+          this.value = this.value.replace(/[^0-9.]/g, '');
+        })
+
+        .on('blur', function() {
+          let raw = this.value.replace(/,/g, '');
+
+          if (raw === '' || isNaN(raw)) {
+            raw = '0';
+          }
+
+          const number = parseFloat(raw);
+
+          // Force .00 formatting
+          this.value = formatWithCommas(number);
+
+          // Update hidden numeric field
+          const target = $(this).data('target');
+          $('#' + target).val(number.toFixed(2));
+        });
+
     });
   </script>
 

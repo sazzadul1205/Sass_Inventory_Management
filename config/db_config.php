@@ -32,5 +32,19 @@ function can($permission, $userPermissions = null)
   return in_array($permission, $userPermissions);
 }
 
+/**
+ * Redirect to database error page
+ */
+function redirectDBError()
+{
+  global $Project_URL;
+
+  // Prevent redirect loop
+  if (!headers_sent()) {
+    header("Location: " . $Project_URL . "errors/db_not_connected.php");
+  }
+  exit;
+}
+
 // $Project_URL = "http://localhost/PWAD-68-1293312/Sass_Inventory/";
 $Project_URL = "http://localhost/Sass_Inventory_Management/";

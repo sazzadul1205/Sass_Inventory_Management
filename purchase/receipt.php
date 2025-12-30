@@ -107,7 +107,11 @@ if (!$receipt) die("Purchase receipt not found.");
 
 // --- Get Purchase Items and Supplier Info ---
 $stmt = $conn->prepare("
-    SELECT p.*, pr.name AS product_name, pr.cost_price AS unit_price, s.name AS supplier_name, p.lot
+    SELECT p.*, 
+           pr.name AS product_name, 
+           p.purchase_price AS unit_price,  -- Changed from pr.cost_price to p.purchase_price
+           s.name AS supplier_name, 
+           p.lot
     FROM purchase p
     LEFT JOIN product pr ON p.product_id = pr.id
     LEFT JOIN supplier s ON p.supplier_id = s.id
@@ -215,7 +219,14 @@ $supplierName = $purchaseItems[0]['supplier_name'] ?? '';
               <th><?= number_format($subTotal, 2) ?></th>
             </tr>
             <tr>
-              <th colspan="4">Discount</th>
+              <th colspan="4">Discount
+                (<?php
+                  if ($subTotal > 0):
+                    echo number_format(($discountValue / $subTotal) * 100, 2) . '%';
+                  else:
+                    echo '0%';
+                  endif;
+                  ?>)</th>
               <th><?= number_format($discountValue, 2) ?></th>
             </tr>
             <tr>
@@ -279,7 +290,14 @@ $supplierName = $purchaseItems[0]['supplier_name'] ?? '';
               <th><?= number_format($subTotal, 2) ?></th>
             </tr>
             <tr>
-              <th colspan="3">Discount</th>
+              <th colspan="3">Discount
+                (<?php
+                  if ($subTotal > 0):
+                    echo number_format(($discountValue / $subTotal) * 100, 2) . '%';
+                  else:
+                    echo '0%';
+                  endif;
+                  ?>)</th>
               <th><?= number_format($discountValue, 2) ?></th>
             </tr>
             <tr>

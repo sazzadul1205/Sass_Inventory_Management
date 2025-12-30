@@ -1,12 +1,8 @@
 <?php
-// Include the conflict-free auth guard
+// Include auth guard and permissions
 include_once __DIR__ . '/../config/auth_guard.php';
-
-// Require the user to have 'view_roles' permission
-// Unauthorized users will be redirected to the project root index.php
 requirePermission('add_purchase', '../index.php');
 
-// Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../auth/login.php");
   exit;
@@ -15,13 +11,71 @@ if (!isset($_SESSION['user_id'])) {
 $conn = connectDB();
 $purchasedBy = (int)$_SESSION['user_id'];
 
-/* =========================
-   AJAX HANDLERS
-========================= */
+/* ---- Function to generate unique lot ---- */
+function generateUniqueLot($conn, $productName, $productId, $purchaseDate)
+{
+  $maxAttempts = 10;
+  $attempt = 0;
+
+  do {
+    $attempt++;
+
+    // Include product ID and microtime for better uniqueness
+    $microtime = explode(' ', microtime());
+    $micro = substr($microtime[0], 2, 6); // Get microseconds
+
+    // Format: YYYYMMDDHHMMSS + microsecond + productId(3) + random(3)
+    $datePart = date('YmdHis', strtotime($purchaseDate));
+    $lot = strtoupper(
+      $datePart .
+        $micro .
+        str_pad(substr($productId, -3), 3, '0', STR_PAD_LEFT) .
+        str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT)
+    );
+
+    // Truncate to reasonable length if needed
+    $lot = substr($lot, 0, 20);
+
+    // Check if lot already exists
+    $stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM purchase WHERE lot = ?");
+    $stmt->bind_param("s", $lot);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_object();
+    $exists = ($result->cnt > 0);
+    $stmt->close();
+
+    // If we've tried too many times, use a different approach
+    if ($attempt >= $maxAttempts && $exists) {
+      // Fallback: Use UUID-like approach
+      $lot = strtoupper(
+        'LOT' .
+          date('Ymd') .
+          $productId .
+          bin2hex(random_bytes(3))
+      );
+
+      // Check fallback lot also
+      $stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM purchase WHERE lot = ?");
+      $stmt->bind_param("s", $lot);
+      $stmt->execute();
+      $result = $stmt->get_result()->fetch_object();
+      $exists = ($result->cnt > 0);
+      $stmt->close();
+
+      if (!$exists) {
+        return $lot;
+      }
+    }
+  } while ($exists && $attempt < $maxAttempts);
+
+  return $lot;
+}
+
+/* ---- AJAX HANDLERS ---- */
 if (isset($_GET['action'])) {
   header('Content-Type: application/json');
 
-  /* ---- Fetch Products ---- */
+  /* Fetch Products */
   if ($_GET['action'] === 'fetch_products') {
     $supplierId = (int)($_GET['supplier_id'] ?? 0);
     $stmt = $conn->prepare("
@@ -33,28 +87,38 @@ if (isset($_GET['action'])) {
     $stmt->bind_param('i', $supplierId);
     $stmt->execute();
     $products = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
 
     echo json_encode(['success' => true, 'products' => $products]);
     exit;
   }
 
-  /* ---- Submit Purchase ---- */
+  /* Submit Purchase - COMPLETE UPDATED VERSION */
   if ($_GET['action'] === 'submit_purchase') {
     $data = json_decode(file_get_contents('php://input'), true);
     $supplierId = (int)($data['supplier_id'] ?? 0);
     $items = $data['items'] ?? [];
     $discountPercent = floatval($data['discount_percent'] ?? 0);
+    $purchaseDate = $data['purchase_date'] ?? date('Y-m-d');
 
     if (!$supplierId || empty($items)) {
-      echo json_encode(['success' => false, 'error' => 'Invalid data']);
+      echo json_encode(['success' => false, 'error' => 'Invalid data - supplier or items missing']);
       exit;
+    }
+
+    // Validate all items have required data
+    foreach ($items as $i) {
+      if (empty($i['product_id']) || empty($i['quantity']) || empty($i['purchase_price'])) {
+        echo json_encode(['success' => false, 'error' => 'Invalid item data']);
+        exit;
+      }
     }
 
     // Generate receipt number
     $today = date('Ymd');
     $receiptNumber = $today . $purchasedBy . substr(md5(uniqid()), 0, 6);
 
-    // Calculate totals
+    // Calculate total including VAT
     $totalAmount = 0;
     foreach ($items as $i) {
       $qty = (int)$i['quantity'];
@@ -69,98 +133,135 @@ if (isset($_GET['action'])) {
 
     $conn->begin_transaction();
     try {
-      // Insert receipt with discount value
+      // Insert receipt
       $stmtReceipt = $conn->prepare("
                 INSERT INTO receipt
                 (receipt_number, type, total_amount, discount_value, created_by, created_at, updated_at)
                 VALUES (?, 'purchase', ?, ?, ?, NOW(), NOW())
             ");
       $stmtReceipt->bind_param("sdii", $receiptNumber, $totalAmount, $discountValue, $purchasedBy);
-      $stmtReceipt->execute();
+      if (!$stmtReceipt->execute()) {
+        throw new Exception("Failed to create receipt: " . $conn->error);
+      }
       $receiptId = $stmtReceipt->insert_id;
       $stmtReceipt->close();
 
-      // Insert purchase items with unique lot
-      // Insert purchase items with unique lot
+      // Prepare purchase insert statement
       $stmtPurchase = $conn->prepare("
-    INSERT INTO purchase
-    (receipt_id, product_id, supplier_id, quantity, product_left, purchase_price, lot, purchase_date, purchased_by, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-");
+                INSERT INTO purchase
+                (receipt_id, product_id, supplier_id, quantity, product_left, purchase_price, lot, purchase_date, purchased_by, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            ");
 
+      // Prepare product update statement
+      $stmtUpdateProduct = $conn->prepare("
+                UPDATE product
+                SET quantity_in_stock = quantity_in_stock + ?,
+                    updated_at = NOW()
+                WHERE id = ?
+            ");
+
+      $itemIndex = 0;
       foreach ($items as $item) {
-        $purchaseDate = $data['purchase_date'] ?? date('Y-m-d');
+        $itemIndex++;
         $productId = (int)$item['product_id'];
-        $quantity  = (int)$item['quantity'];
-        $price     = (float)$item['purchase_price'];
-        $productLeft = $quantity;
+        $quantity = (int)$item['quantity'];
+        $price = (float)$item['purchase_price'];
 
-        $inserted = false;
-        $tries = 0;
+        // Current stock
+        $currentStock = $quantity;
 
-        while (!$inserted && $tries < 5) { // retry max 5 times
-          $lot = strtoupper(substr(md5(uniqid($productId, true)), 0, 10));
+        // Get product name for lot generation
+        $stmtProduct = $conn->prepare("SELECT name FROM product WHERE id = ?");
+        $stmtProduct->bind_param("i", $productId);
+        $stmtProduct->execute();
+        $productResult = $stmtProduct->get_result();
+        if ($productResult->num_rows === 0) {
+          throw new Exception("Product ID $productId not found");
+        }
+        $productName = $productResult->fetch_object()->name ?? '';
+        $stmtProduct->close();
 
-          $stmtPurchase->bind_param(
-            "iiiidsiss",
-            $receiptId,
-            $productId,
-            $supplierId,
-            $quantity,
-            $productLeft,
-            $price,
-            $lot,
-            $purchaseDate,
-            $purchasedBy
-          );
+        // Generate unique lot with improved function
+        $lot = generateUniqueLot($conn, $productName, $productId, $purchaseDate);
 
-          try {
-            $stmtPurchase->execute();
-            $inserted = true; // success
-          } catch (mysqli_sql_exception $e) {
-            if (strpos($e->getMessage(), 'Duplicate') !== false) {
-              $tries++;
-              // try again with a new lot
-            } else {
-              throw $e; // other errors
+        // Insert purchase record
+        $stmtPurchase->bind_param(
+          "iiiidsiss",
+          $receiptId,
+          $productId,
+          $supplierId,
+          $quantity,
+          $currentStock,
+          $price,
+          $lot,
+          $purchaseDate,
+          $purchasedBy
+        );
+
+        if (!$stmtPurchase->execute()) {
+          // Check if it's a duplicate lot error
+          if (strpos($conn->error, 'unique_lot') !== false || strpos($conn->error, 'Duplicate entry') !== false) {
+            // Try one more time with a different lot
+            $lot = 'LOT-' . uniqid() . '-' . $productId . '-' . time();
+            $stmtPurchase->bind_param(
+              "iiiidsiss",
+              $receiptId,
+              $productId,
+              $supplierId,
+              $quantity,
+              $currentStock,
+              $price,
+              $lot,
+              $purchaseDate,
+              $purchasedBy
+            );
+
+            if (!$stmtPurchase->execute()) {
+              throw new Exception("Failed to insert purchase for product ID $productId: " . $conn->error);
             }
+          } else {
+            throw new Exception("Failed to insert purchase for product ID $productId: " . $conn->error);
           }
         }
 
-        if (!$inserted) {
-          throw new Exception("Failed to insert purchase for product ID $productId after multiple attempts.");
-        }
-
         // Update product stock
-        $conn->query("
-        UPDATE product
-        SET quantity_in_stock = quantity_in_stock + $quantity,
-            updated_at = NOW()
-        WHERE id = $productId
-    ");
+        $stmtUpdateProduct->bind_param("ii", $quantity, $productId);
+        if (!$stmtUpdateProduct->execute()) {
+          throw new Exception("Failed to update stock for product ID $productId: " . $conn->error);
+        }
       }
 
-
       $stmtPurchase->close();
+      $stmtUpdateProduct->close();
+
+      // Commit transaction
       $conn->commit();
 
       echo json_encode([
         'success' => true,
-        'receipt_id' => $receiptId
+        'receipt_id' => $receiptId,
+        'message' => 'Purchase completed successfully'
       ]);
       exit;
     } catch (Exception $e) {
+      // Rollback transaction on error
       $conn->rollback();
-      echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+
+      // Log error for debugging
+      error_log("Purchase Error: " . $e->getMessage());
+
+      echo json_encode([
+        'success' => false,
+        'error' => 'Failed to process purchase: ' . $e->getMessage()
+      ]);
       exit;
     }
   }
 }
 
 /* ---- Suppliers ---- */
-$suppliers = $conn->query("
-  SELECT id, name FROM supplier ORDER BY name ASC
-")->fetch_all(MYSQLI_ASSOC);
+$suppliers = $conn->query("SELECT id, name FROM supplier ORDER BY name ASC")->fetch_all(MYSQLI_ASSOC);
 ?>
 
 <!DOCTYPE html>

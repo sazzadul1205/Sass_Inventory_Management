@@ -134,15 +134,38 @@ $result = $conn->query($sql);
                       <td><?= htmlspecialchars(number_format($row['purchase_price'], 2) ?? '-') ?></td>
                       <td><?= htmlspecialchars($row['product_left'] ?? '-') ?></td>
                       <td><?= !empty($row['purchase_date']) ? date('d M Y', strtotime($row['purchase_date'])) : '-' ?></td>
-                      <td>
-                        <?php if (can('view_receipt')): ?>
-                          <?php if (!empty($row['receipt_id'])): ?>
-                            <a href="receipt.php?id=<?= $row['receipt_id'] ?>" class="btn btn-sm btn-primary w-100">
-                              <i class="bi bi-receipt"></i> Receipt
-                            </a>
-                          <?php endif; ?>
+                      <td class="d-flex flex-column gap-1">
+
+                        <!-- Receipt Button -->
+                        <?php if (can('view_receipt') && !empty($row['receipt_id'])): ?>
+                          <!-- Receipt button: shown only if permission + receipt exists -->
+                          <a href="receipt.php?id=<?= (int)$row['receipt_id'] ?>"
+                            class="btn btn-sm btn-primary">
+                            <i class="bi bi-receipt"></i> Receipt
+                          </a>
                         <?php endif; ?>
+
+                        <!-- Return Button -->
+                        <?php if (can('product_return')): ?>
+
+                          <?php if ((int)$row['product_left'] > 0): ?>
+                            <!-- Return button: enabled only if product_left > 0 -->
+                            <a href="purchase_return.php?lot=<?= (int)$row['lot'] ?>"
+                              class="btn btn-sm btn-warning">
+                              <i class="bi bi-arrow-return-left"></i> Return
+                            </a>
+                          <?php else: ?>
+                            <!-- Return button: disabled if no quantity left -->
+                            <button class="btn btn-sm btn-secondary" disabled
+                              title="No quantity left to return">
+                              <i class="bi bi-arrow-return-left"></i> Return
+                            </button>
+                          <?php endif; ?>
+
+                        <?php endif; ?>
+
                       </td>
+
                     </tr>
                   <?php endwhile; ?>
                 </tbody>

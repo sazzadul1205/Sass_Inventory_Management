@@ -181,6 +181,12 @@ $sidebarMenu = [
     'permission' => 'view_purchases_menu',
     'submenu' => [
       [
+        'title' => 'Add Purchase',
+        'url' => 'purchase/add.php',
+        'icon' => 'bi bi-plus-circle',
+        'permission' => 'add_purchase'
+      ],
+      [
         'title' => 'All Purchases',
         'url' => 'purchase/index.php',
         'icon' => 'bi bi-list-ul',
@@ -211,12 +217,20 @@ $sidebarMenu = [
         'hidden' => true,
         'permission' => 'view_purchase_receipt'
       ],
+
       [
-        'title' => 'Add Purchase',
-        'url' => 'purchase/add.php',
-        'icon' => 'bi bi-plus-circle',
-        'permission' => 'add_purchase'
+        'title' => 'Purchase Returns',
+        'url' => 'purchase/purchase_return.php',
+        'icon' => 'bi bi-arrow-counterclockwise',
+        'hidden' => true,
+        'permission' => 'product_return'
       ],
+      [
+        'title' => 'Return Purchase List',
+        'url'   => 'purchase/return-list.php',
+        'icon'  => 'bi bi-list-check',
+        'permission' => 'add_purchase'
+      ]
     ]
   ],
 

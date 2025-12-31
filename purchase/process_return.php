@@ -305,7 +305,7 @@ try {
   ];
 
   error_log("Redirecting to success page with return_id: $return_id");
-  header("Location: return_success.php?return_id=$return_id");
+  header("Location: return-list.php");
   exit;
 } catch (Exception $e) {
   // Rollback transaction on error
@@ -321,7 +321,7 @@ try {
   // Store error in session and redirect back
   $_SESSION['error_message'] = "❌ Error processing return: " . $e->getMessage();
 
-  $redirectUrl = "purchase_return.php";
+  $redirectUrl = "return-list.php";
   if (!empty($lot_number)) {
     $redirectUrl .= "?lot=" . urlencode($lot_number);
   }

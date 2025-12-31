@@ -53,21 +53,114 @@ if (!isset($_SESSION['user_id'])) {
       background-color: #bb2d3b !important;
       border-color: #b02a37 !important;
     }
+
+    .badge {
+      font-size: 0.75em;
+      padding: 0.3em 0.6em;
+    }
+
+    .table-sm th,
+    .table-sm td {
+      padding: 0.5rem;
+    }
+
+    .receipt-type {
+      font-size: 0.8em;
+      padding: 0.2em 0.5em;
+    }
+
+    .type-purchase {
+      background-color: #0dcaf0 !important;
+      color: #000 !important;
+    }
+
+    .type-sale {
+      background-color: #198754 !important;
+      color: #fff !important;
+    }
+
+    .amount-cell {
+      font-weight: 600;
+    }
+
+    .btn-group-sm .btn {
+      padding: 0.25rem 0.5rem;
+    }
+
+    .stock-badge {
+      font-size: 0.7em;
+    }
+
+    .stock-good {
+      background-color: #d1e7dd !important;
+      color: #0f5132 !important;
+    }
+
+    .stock-medium {
+      background-color: #fff3cd !important;
+      color: #664d03 !important;
+    }
+
+    .stock-low {
+      background-color: #f8d7da !important;
+      color: #842029 !important;
+    }
   </style>
 </head>
 
 <?php
 $conn = connectDB();
-
 $userId = $_SESSION['user_id'];
 
-// Count products correctly based on type
-$sqlPurchase = "SELECT * FROM purchase_receipts_view WHERE created_by = ? ORDER BY id DESC";
-$stmt = $conn->prepare($sqlPurchase);
+// Fetch my purchase receipts with enhanced information
+$sql = "
+    SELECT 
+        r.*,
+        u.username AS created_by_name,
+        COUNT(p.id) AS num_products,
+        SUM(p.quantity) AS total_quantity,
+        SUM(p.product_left) AS total_stock_left,
+        s.name AS supplier_name
+    FROM receipt r
+    LEFT JOIN user u ON r.created_by = u.id
+    LEFT JOIN purchase p ON r.id = p.receipt_id
+    LEFT JOIN (
+        SELECT DISTINCT receipt_id, supplier_id 
+        FROM purchase
+    ) p2 ON r.id = p2.receipt_id
+    LEFT JOIN supplier s ON p2.supplier_id = s.id
+    WHERE r.type = 'purchase' AND r.created_by = ?
+    GROUP BY r.id
+    ORDER BY r.id DESC
+";
+
+$stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $userId);
 $stmt->execute();
 $result = $stmt->get_result();
 
+// Get my total statistics
+$statsSql = "
+    SELECT 
+        COUNT(*) as total_receipts,
+        SUM(r.total_amount) as total_amount,
+        SUM(r.discount_value) as total_discount,
+        SUM(p.quantity) as total_quantity,
+        SUM(p.product_left) as total_stock_left
+    FROM receipt r
+    LEFT JOIN purchase p ON r.id = p.receipt_id
+    WHERE r.type = 'purchase' AND r.created_by = ?
+";
+$statsStmt = $conn->prepare($statsSql);
+$statsStmt->bind_param("i", $userId);
+$statsStmt->execute();
+$statsResult = $statsStmt->get_result()->fetch_assoc();
+$statsStmt->close();
+
+// Calculate stock percentage
+$totalQuantity = $statsResult['total_quantity'] ?? 0;
+$totalStockLeft = $statsResult['total_stock_left'] ?? 0;
+$stockPercentage = $totalQuantity > 0 ? ($totalStockLeft / $totalQuantity) * 100 : 0;
 ?>
 
 <!-- Body -->
@@ -86,11 +179,11 @@ $result = $stmt->get_result();
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
           <!-- Page Title -->
-          <h3 class="mb-0 " style="font-weight: 800;">All Receipts</h3>
+          <h3 class="mb-0" style="font-weight: 800;">My Purchase Receipts</h3>
 
-          <!-- Add User Button -->
+          <!-- Add Purchase Button -->
           <?php if (can('add_purchase')): ?>
-            <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style=" font-size: medium; ">
+            <a href="add.php" class="btn btn-sm btn-primary px-3 py-2" style="font-size: medium;">
               <i class="bi bi-plus me-1"></i> Add New Purchase
             </a>
           <?php endif; ?>
@@ -109,46 +202,137 @@ $result = $stmt->get_result();
 
       <!-- Table -->
       <div class="app-content-body mt-3">
-        <div class="table-responsive container-fluid">
+        <div class="container-fluid">
           <?php if ($result->num_rows > 0): ?>
-            <div class="table-responsive">
-              <table id="receiptTable" class="table table-bordered table-striped table-hover align-middle">
-                <thead class="table-primary">
-                  <tr>
-                    <th>ID</th>
-                    <th>Receipt #</th>
-                    <th>Type</th>
-                    <th># of Products</th>
-                    <th>Total Amount</th>
-                    <th>Created At</th>
-                    <th>View Receipt</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php while ($row = $result->fetch_assoc()): ?>
-                    <tr>
-                      <td><?= $row['id'] ?></td>
-                      <td><?= htmlspecialchars($row['receipt_number']) ?></td>
-                      <td><?= htmlspecialchars($row['type']) ?></td>
-                      <td><?= $row['num_products'] ?></td>
-                      <td><?= number_format($row['total_amount'], 2) ?></td>
-                      <td><?= date('d M Y h:i A', strtotime($row['created_at'])) ?></td>
-                      <td>
-                        <?php if (can('view_receipt')): ?>
-                          <a href="receipt.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-primary w-100">
-                            <i class="bi bi-receipt"></i> View
-                          </a>
-                        <?php endif; ?>
-                      </td>
-                    </tr>
-                  <?php endwhile; ?>
-                </tbody>
-              </table>
+            <div class="card">
+              <div class="card-header">
+                <h5 class="card-title mb-0">My Purchase Receipts</h5>
+                <div class="text-muted small mt-1">
+                  My Total: <?= $statsResult['total_receipts'] ?? 0 ?> receipts |
+                  Amount: $<?= number_format($statsResult['total_amount'] ?? 0, 2) ?> |
+                  Quantity: <?= $totalQuantity ?> units |
+                  Stock Left: <?= $totalStockLeft ?> (<?= number_format($stockPercentage, 1) ?>%)
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table id="myReceiptsTable" class="table table-bordered table-striped table-hover align-middle table-sm">
+                    <thead class="table-primary">
+                      <tr>
+                        <th>ID</th>
+                        <th>Receipt #</th>
+                        <th>Type</th>
+                        <th>Supplier</th>
+                        <th>Items</th>
+                        <th>Qty</th>
+                        <th>Stock Left</th>
+                        <th>Total Amount</th>
+                        <th>Discount</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <?php while ($row = $result->fetch_assoc()):
+                        $totalAmount = (float)$row['total_amount'];
+                        $discountValue = (float)$row['discount_value'];
+                        $finalAmount = $totalAmount - $discountValue;
+                        $stockPercentage = $row['total_quantity'] > 0 ? ($row['total_stock_left'] / $row['total_quantity']) * 100 : 0;
+
+                        // Determine stock badge class
+                        if ($stockPercentage >= 50) {
+                          $stockClass = 'stock-good';
+                          $stockText = 'Good';
+                        } elseif ($stockPercentage >= 25) {
+                          $stockClass = 'stock-medium';
+                          $stockText = 'Medium';
+                        } elseif ($stockPercentage > 0) {
+                          $stockClass = 'stock-low';
+                          $stockText = 'Low';
+                        } else {
+                          $stockClass = 'bg-secondary';
+                          $stockText = 'Empty';
+                        }
+                      ?>
+                        <tr>
+                          <td><?= $row['id'] ?></td>
+                          <td>
+                            <span class="fw-bold"><?= htmlspecialchars($row['receipt_number']) ?></span>
+                          </td>
+                          <td>
+                            <span class="badge receipt-type type-purchase">
+                              PURCHASE
+                            </span>
+                          </td>
+                          <td>
+                            <span class="text-muted"><?= htmlspecialchars($row['supplier_name'] ?? 'Multiple') ?></span>
+                          </td>
+                          <td>
+                            <span class="badge bg-info"><?= $row['num_products'] ?> items</span>
+                          </td>
+                          <td>
+                            <span class="fw-bold"><?= $row['total_quantity'] ?></span>
+                          </td>
+                          <td>
+                            <span class="badge stock-badge <?= $stockClass ?>">
+                              <?= $row['total_stock_left'] ?> (<?= number_format($stockPercentage, 0) ?>%)
+                              <small class="ms-1"><?= $stockText ?></small>
+                            </span>
+                          </td>
+                          <td class="amount-cell">
+                            <div class="fw-bold">$<?= number_format($finalAmount, 2) ?></div>
+                            <small class="text-muted">Gross: $<?= number_format($totalAmount, 2) ?></small>
+                          </td>
+                          <td>
+                            <?php if ($discountValue > 0): ?>
+                              <span class="text-danger">-$<?= number_format($discountValue, 2) ?></span>
+                            <?php else: ?>
+                              <span class="text-muted">$0.00</span>
+                            <?php endif; ?>
+                          </td>
+                          <td>
+                            <div class="small"><?= date('d M Y', strtotime($row['created_at'])) ?></div>
+                            <small class="text-muted"><?= date('h:i A', strtotime($row['created_at'])) ?></small>
+                          </td>
+                          <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                              <?php if (can('view_receipt')): ?>
+                                <a href="receipt.php?id=<?= $row['id'] ?>"
+                                  class="btn btn-primary"
+                                  title="View Receipt">
+                                  <i class="bi bi-receipt"></i>
+                                </a>
+                              <?php endif; ?>
+                            </div>
+                          </td>
+                        </tr>
+                      <?php endwhile; ?>
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colspan="11" class="text-end">
+                          <strong>My Total:</strong> <?= $result->num_rows ?> receipts |
+                          <strong>Amount:</strong> $<?= number_format($statsResult['total_amount'] ?? 0, 2) ?> |
+                          <strong>Discount:</strong> $<?= number_format($statsResult['total_discount'] ?? 0, 2) ?> |
+                          <strong>Quantity:</strong> <?= $totalQuantity ?> units |
+                          <strong>Stock Left:</strong> <?= $totalStockLeft ?> (<?= number_format($stockPercentage, 1) ?>%)
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
             </div>
           <?php else: ?>
             <div class="text-center text-muted py-5">
-              <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-              <h5>No purchases found</h5>
+              <i class="bi bi-receipt-cutoff fs-1 d-block mb-2"></i>
+              <h5>No purchase receipts found</h5>
+              <p class="mb-3">You haven't created any purchase receipts yet</p>
+              <?php if (can('add_purchase')): ?>
+                <a href="add.php" class="btn btn-primary">
+                  <i class="bi bi-plus me-1"></i> Create Your First Purchase
+                </a>
+              <?php endif; ?>
             </div>
           <?php endif; ?>
         </div>
@@ -172,21 +356,51 @@ $result = $stmt->get_result();
   <!-- Custom JS -->
   <script>
     $(document).ready(function() {
-      $('#receiptTable').DataTable({
+      $('#myReceiptsTable').DataTable({
         paging: true,
-        pageLength: 10,
+        pageLength: 15,
         lengthChange: true,
+        lengthMenu: [10, 15, 25, 50],
         ordering: true,
-        order: [],
+        order: [
+          [0, 'desc']
+        ], // Sort by ID descending
         info: true,
-        autoWidth: false
+        autoWidth: false,
+        responsive: true,
+        language: {
+          search: "Search my receipts:",
+          lengthMenu: "Show _MENU_ entries",
+          info: "Showing _START_ to _END_ of _TOTAL_ receipts",
+          infoEmpty: "No receipts to show",
+          infoFiltered: "(filtered from _MAX_ total receipts)",
+          zeroRecords: "No matching receipts found"
+        },
+        columnDefs: [{
+            responsivePriority: 1,
+            targets: 1
+          }, // Receipt #
+          {
+            responsivePriority: 2,
+            targets: 7
+          }, // Total Amount
+          {
+            responsivePriority: 3,
+            targets: 9
+          }, // Date
+          {
+            responsivePriority: 4,
+            targets: 10
+          } // Actions
+        ]
       });
-    });
 
-    setTimeout(() => {
-      const msg = document.getElementById('successMsg') || document.getElementById('failMsg');
-      if (msg) msg.remove();
-    }, 3000);
+      // Auto-hide messages after 3 seconds
+      setTimeout(() => {
+        const msg = document.getElementById('successMsg') || document.getElementById('failMsg');
+        if (msg) msg.remove();
+      }, 3000);
+    });
   </script>
 </body>
 

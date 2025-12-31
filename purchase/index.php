@@ -150,7 +150,7 @@ $result = $conn->query($sql);
 
                           <?php if ((int)$row['product_left'] > 0): ?>
                             <!-- Return button: enabled only if product_left > 0 -->
-                            <a href="purchase_return.php?lot=<?= (int)$row['lot'] ?>"
+                            <a href="purchase_return.php?lot=<?= htmlspecialchars($row['lot']) ?>"
                               class="btn btn-sm btn-warning">
                               <i class="bi bi-arrow-return-left"></i> Return
                             </a>

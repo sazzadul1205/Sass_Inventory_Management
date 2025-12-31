@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 27, 2025 at 06:38 PM
+-- Generation Time: Dec 31, 2025 at 05:08 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -233,6 +233,7 @@ INSERT INTO `permission` (`id`, `permission_name`) VALUES
 (7, 'edit_role'),
 (17, 'edit_supplier'),
 (5, 'edit_user'),
+(52, 'product_return'),
 (44, 'update_permissions'),
 (51, 'view_all_my_receipts'),
 (24, 'view_all_purchases'),
@@ -276,10 +277,19 @@ INSERT INTO `permission` (`id`, `permission_name`) VALUES
 CREATE TABLE `product` (
   `id` int(11) NOT NULL,
   `name` varchar(100) NOT NULL,
+  `sku` varchar(50) NOT NULL,
+  `status` enum('active','inactive') NOT NULL DEFAULT 'active',
   `category_id` int(11) DEFAULT NULL COMMENT 'Nullable — ON DELETE SET NULL',
+  `subcategory_id` int(11) DEFAULT NULL,
   `supplier_id` int(11) DEFAULT NULL COMMENT 'Nullable — ON DELETE SET NULL',
+  `cost_price` decimal(10,2) NOT NULL,
+  `selling_price` decimal(10,2) NOT NULL,
+  `vat` decimal(5,2) NOT NULL DEFAULT 0.00,
   `price` decimal(10,2) NOT NULL,
   `quantity_in_stock` int(11) DEFAULT 0,
+  `low_stock_limit` int(11) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Auto-update on record change'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Stores all product info. Admin/staff can add/update.';
@@ -288,32 +298,34 @@ CREATE TABLE `product` (
 -- Dumping data for table `product`
 --
 
-INSERT INTO `product` (`id`, `name`, `category_id`, `supplier_id`, `price`, `quantity_in_stock`, `created_at`, `updated_at`) VALUES
-(1, 'iPhone 15', 1, 1, 999.99, 100, '2025-12-05 04:03:58', '2025-12-05 12:03:34'),
-(2, 'Samsung Galaxy S23', 1, 3, 899.99, 0, '2025-12-05 04:03:58', '2025-12-05 08:21:40'),
-(3, 'MacBook Air M2', 2, 4, 1299.99, 0, '2025-12-05 04:03:58', '2025-12-05 08:32:24'),
-(4, 'Wireless Mouse', 2, 5, 25.50, 0, '2025-12-05 04:03:58', '2025-12-05 08:21:40'),
-(5, 'Office Chair', 4, 6, 149.99, 0, '2025-12-05 04:03:58', '2025-12-05 16:13:17'),
-(6, 'Notebook Pack (5pcs)', 3, 7, 12.99, 0, '2025-12-05 04:03:58', '2025-12-05 08:21:40'),
-(7, 'Running Shoes', 6, 8, 79.99, 0, '2025-12-05 04:03:58', '2025-12-05 08:32:24'),
-(8, 'LEGO Star Wars Set', 7, 1, 59.99, 1000, '2025-12-05 04:03:58', '2025-12-05 12:03:34'),
-(9, 'Men\'s Leather Jacket', 5, 3, 199.99, 0, '2025-12-05 04:03:58', '2025-12-05 14:29:00'),
-(10, 'Bluetooth Headphones', 2, 4, 89.99, 0, '2025-12-05 04:03:58', '2025-12-05 08:21:40'),
-(11, 'Refurbished iPhone 13', 1, 1, 599.99, 0, '2025-12-05 04:04:06', '2025-12-05 14:01:09'),
-(12, 'Used Samsung Galaxy S21', 1, 3, 499.99, 120, '2025-12-05 04:04:06', '2025-12-08 05:05:43'),
-(13, 'Refurbished MacBook Pro 2019', 2, 4, 999.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
-(14, 'Second-hand HP Printer', 2, 5, 79.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
-(15, 'Pre-owned Office Desk', 4, 6, 89.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
-(16, 'Used Notebook (Single)', 3, 7, 2.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
-(17, 'Refurbished Running Shoes', 6, 8, 49.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
-(18, 'Second-hand LEGO City Set', 7, 1, 39.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
-(19, 'Used Men\'s Jeans', 5, 3, 29.99, 1000, '2025-12-05 04:04:06', '2025-12-08 05:05:43'),
-(20, 'Pre-owned Bluetooth Speaker', 2, 4, 34.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
-(21, 'Refurbished iPad Air', 2, 5, 399.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
-(22, 'Used Wireless Keyboard', 2, 6, 15.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
-(23, 'Pre-owned Office Lamp', 4, 7, 19.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
-(24, 'Second-hand Kids Puzzle Set', 7, 8, 9.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
-(25, 'Used Men\'s Hoodie', 5, 1, 24.99, 0, '2025-12-05 04:04:06', '2025-12-05 08:21:40');
+INSERT INTO `product` (`id`, `name`, `sku`, `status`, `category_id`, `subcategory_id`, `supplier_id`, `cost_price`, `selling_price`, `vat`, `price`, `quantity_in_stock`, `low_stock_limit`, `description`, `image`, `created_at`, `updated_at`) VALUES
+(1, 'iPhone 15', 'I-122123', 'active', 1, 26, 1, 2000.00, 2500.00, 2.00, 2500.00, 980, 1000, '0', 'prod_695276f8892259.08049871.png', '2025-12-05 04:03:58', '2025-12-31 12:21:03'),
+(2, 'Samsung Galaxy S23', 'SG-17845q23re', 'active', 1, 26, 1, 2000.00, 2200.00, 3.00, 2200.00, 0, 200, '0', 'prod_695277f2cb2db4.44559257.png', '2025-12-05 04:03:58', '2025-12-30 14:16:59'),
+(3, 'MacBook Air M2', '', 'active', 2, NULL, 4, 0.00, 0.00, 0.00, 1299.99, 0, NULL, NULL, NULL, '2025-12-05 04:03:58', '2025-12-30 14:00:21'),
+(4, 'Wireless Mouse', '', 'active', 2, NULL, 5, 0.00, 0.00, 0.00, 25.50, 0, NULL, NULL, NULL, '2025-12-05 04:03:58', '2025-12-05 08:21:40'),
+(5, 'Office Chair', '', 'active', 4, NULL, 6, 0.00, 0.00, 0.00, 149.99, 0, NULL, NULL, NULL, '2025-12-05 04:03:58', '2025-12-31 09:11:33'),
+(6, 'Notebook Pack (5pcs)', '', 'active', 3, NULL, 7, 0.00, 0.00, 0.00, 12.99, 0, NULL, NULL, NULL, '2025-12-05 04:03:58', '2025-12-30 13:54:40'),
+(7, 'Running Shoes', '', 'active', 6, NULL, 8, 0.00, 0.00, 0.00, 79.99, 0, NULL, NULL, NULL, '2025-12-05 04:03:58', '2025-12-05 08:32:24'),
+(8, 'LEGO Star Wars Set', 'MYT112112', 'active', 7, NULL, 5, 100.00, 120.00, 4.00, 120.00, 0, 1000, '0', 'prod_6952b78d9da8c0.33422755.png', '2025-12-05 04:03:58', '2025-12-29 12:17:01'),
+(9, 'Men\'s Leather Jacket', '', 'active', 5, NULL, 3, 0.00, 0.00, 0.00, 199.99, 0, NULL, NULL, NULL, '2025-12-05 04:03:58', '2025-12-30 17:09:06'),
+(10, 'Bluetooth Headphones', '', 'active', 2, NULL, 4, 0.00, 0.00, 0.00, 89.99, 0, NULL, NULL, NULL, '2025-12-05 04:03:58', '2025-12-05 08:21:40'),
+(11, 'Refurbished iPhone 13', 'saefew ewrg we', 'active', 1, 26, 1, 120.00, 131.00, 5.00, 131.00, 990, 1200, '0', 'prod_6952b7f14e5063.48198996.png', '2025-12-05 04:04:06', '2025-12-31 12:21:03'),
+(12, 'Used Samsung Galaxy S21', '', 'active', 1, NULL, 3, 0.00, 0.00, 0.00, 499.99, 0, NULL, NULL, NULL, '2025-12-05 04:04:06', '2025-12-29 17:44:32'),
+(13, 'Refurbished MacBook Pro 2019', '', 'active', 2, NULL, 4, 0.00, 0.00, 0.00, 999.99, 0, NULL, NULL, NULL, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
+(14, 'Second-hand HP Printer', '', 'active', 2, NULL, 5, 0.00, 0.00, 0.00, 79.99, 0, NULL, NULL, NULL, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
+(15, 'Pre-owned Office Desk', '', 'active', 4, NULL, 6, 0.00, 0.00, 0.00, 89.99, 0, NULL, NULL, NULL, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
+(16, 'Used Notebook (Single)', '', 'active', 3, NULL, 7, 0.00, 0.00, 0.00, 2.99, 0, NULL, NULL, NULL, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
+(17, 'Refurbished Running Shoes', '', 'active', 6, NULL, 8, 0.00, 0.00, 0.00, 49.99, 0, NULL, NULL, NULL, '2025-12-05 04:04:06', '2025-12-30 14:02:45'),
+(18, 'Second-hand LEGO City Set', '', 'active', 7, NULL, 1, 0.00, 0.00, 0.00, 39.99, 1000, NULL, NULL, NULL, '2025-12-05 04:04:06', '2025-12-31 09:27:56'),
+(19, 'Used Men\'s Jeans', '', 'active', 5, NULL, 3, 0.00, 0.00, 0.00, 29.99, 0, NULL, NULL, NULL, '2025-12-05 04:04:06', '2025-12-30 17:09:06'),
+(20, 'Pre-owned Bluetooth Speaker', '', 'active', 2, NULL, 4, 0.00, 0.00, 0.00, 34.99, 0, NULL, NULL, NULL, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
+(21, 'Refurbished iPad Air', '', 'active', 2, NULL, 5, 0.00, 0.00, 0.00, 399.99, 0, NULL, NULL, NULL, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
+(22, 'Used Wireless Keyboard', '', 'active', 2, NULL, 6, 0.00, 0.00, 0.00, 15.99, 0, NULL, NULL, NULL, '2025-12-05 04:04:06', '2025-12-30 12:16:35'),
+(23, 'Pre-owned Office Lamp', '', 'active', 4, NULL, 7, 0.00, 0.00, 0.00, 19.99, 0, NULL, NULL, NULL, '2025-12-05 04:04:06', '2025-12-30 13:54:40'),
+(24, 'Second-hand Kids Puzzle Set', '', 'active', 7, NULL, 8, 0.00, 0.00, 0.00, 9.99, 0, NULL, NULL, NULL, '2025-12-05 04:04:06', '2025-12-30 14:02:45'),
+(25, 'Used Men\'s Hoodie', '', 'active', 5, NULL, 1, 0.00, 0.00, 0.00, 24.99, 0, NULL, NULL, NULL, '2025-12-05 04:04:06', '2025-12-05 08:21:40'),
+(27, 'iPhone 15', 'IP15-001', 'active', 1, NULL, 1, 700.00, 999.99, 12.00, 999.99, 0, 10, 'The latest iPhone 15 with advanced features.', 'iphone15.png', '2025-12-05 04:03:58', '2025-12-05 12:03:34'),
+(28, 'Oil Paint Combo', 'OP-12221-76', 'active', 20, NULL, 4, 100.00, 130.00, 12.00, 130.00, 0, 100, 'gvjbjsrhs ekrug jehtsjh ertsjsrt jrtjtr', 'prod_695274fe00b8b3.05964467.png', '2025-12-29 07:33:02', '2025-12-30 14:00:21');
 
 -- --------------------------------------------------------
 
@@ -363,7 +375,9 @@ CREATE TABLE `purchase` (
   `id` int(11) NOT NULL,
   `product_id` int(11) NOT NULL,
   `supplier_id` int(11) DEFAULT NULL COMMENT 'Optional',
+  `lot` varchar(50) NOT NULL,
   `quantity` int(11) NOT NULL,
+  `product_left` int(11) NOT NULL,
   `purchase_price` decimal(10,2) DEFAULT NULL,
   `purchase_date` date DEFAULT curdate(),
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -376,14 +390,11 @@ CREATE TABLE `purchase` (
 -- Dumping data for table `purchase`
 --
 
-INSERT INTO `purchase` (`id`, `product_id`, `supplier_id`, `quantity`, `purchase_price`, `purchase_date`, `created_at`, `updated_at`, `receipt_id`, `purchased_by`) VALUES
-(1, 1, 1, 100, 110000.00, '2025-12-05', '2025-12-05 12:03:34', '2025-12-05 12:03:34', 1, 1),
-(2, 8, 1, 1000, 50000.00, '2025-12-05', '2025-12-05 12:03:34', '2025-12-05 12:03:34', 1, 1),
-(3, 9, 3, 100, 20000.00, '2025-12-05', '2025-12-05 12:03:34', '2025-12-05 12:03:34', 1, 1),
-(4, 11, 1, 40, 20000.00, '2025-12-05', '2025-12-05 12:03:34', '2025-12-05 12:03:34', 1, 1),
-(5, 5, 6, 1000, 200000.00, '2025-12-05', '2025-12-05 12:20:04', '2025-12-05 12:20:04', 2, 1),
-(6, 12, 3, 120, 50000.00, '2025-12-08', '2025-12-08 05:05:43', '2025-12-08 05:05:43', 6, 1),
-(7, 19, 3, 1000, 30000.00, '2025-12-08', '2025-12-08 05:05:43', '2025-12-08 05:05:43', 6, 1);
+INSERT INTO `purchase` (`id`, `product_id`, `supplier_id`, `lot`, `quantity`, `product_left`, `purchase_price`, `purchase_date`, `created_at`, `updated_at`, `receipt_id`, `purchased_by`) VALUES
+(80, 1, 1, '20251231000000971195', 1000, 900, 2000.00, '2025-12-31', '2025-12-31 09:27:23', '2025-12-31 09:28:40', 55, 1),
+(81, 11, 1, '20251231000000972009', 1000, 990, 100.00, '2025-12-31', '2025-12-31 09:27:23', '2025-12-31 09:27:23', 55, 1),
+(82, 1, 1, '20251231000000485952', 100, 80, 2000.00, '2025-12-31', '2025-12-31 09:27:56', '2025-12-31 09:27:56', 56, 1),
+(83, 18, 1, '20251231000000486525', 1000, 1000, 40.00, '2025-12-31', '2025-12-31 09:27:56', '2025-12-31 09:27:56', 56, 1);
 
 -- --------------------------------------------------------
 
@@ -398,7 +409,9 @@ CREATE TABLE `purchase_details` (
 ,`supplier_id` int(11)
 ,`supplier_name` varchar(100)
 ,`quantity` int(11)
+,`product_left` int(11)
 ,`purchase_price` decimal(10,2)
+,`lot` varchar(50)
 ,`purchase_date` date
 ,`receipt_id` int(11)
 ,`purchased_by` int(11)
@@ -425,6 +438,41 @@ CREATE TABLE `purchase_receipts_view` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `purchase_return`
+--
+
+CREATE TABLE `purchase_return` (
+  `id` int(11) NOT NULL,
+  `return_number` varchar(50) DEFAULT NULL,
+  `purchase_id` int(11) NOT NULL,
+  `product_id` int(11) NOT NULL,
+  `supplier_id` int(11) NOT NULL,
+  `lot_number` varchar(100) NOT NULL,
+  `receipt_id` int(11) DEFAULT NULL,
+  `receipt_number` varchar(50) DEFAULT NULL,
+  `return_quantity` int(11) NOT NULL,
+  `unit_price` decimal(15,2) NOT NULL,
+  `total_refund` decimal(15,2) NOT NULL,
+  `return_reason` varchar(50) NOT NULL,
+  `refund_method` varchar(50) DEFAULT 'cash',
+  `item_condition` varchar(50) DEFAULT 'new',
+  `return_date` date NOT NULL,
+  `notes` text DEFAULT NULL,
+  `returned_by` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `purchase_return`
+--
+
+INSERT INTO `purchase_return` (`id`, `return_number`, `purchase_id`, `product_id`, `supplier_id`, `lot_number`, `receipt_id`, `receipt_number`, `return_quantity`, `unit_price`, `total_refund`, `return_reason`, `refund_method`, `item_condition`, `return_date`, `notes`, `returned_by`, `created_at`, `updated_at`) VALUES
+(4, 'RET2025123117671733203566', 80, 1, 1, '20251231000000971195', 55, '202512311437ac8', 100, 2000.00, 200000.00, 'excess_stock', 'cash', 'opened', '2025-12-31', 'asdc fewfewg geqgegerg werg', 1, '2025-12-31 09:28:40', '2025-12-31 09:28:40');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `receipt`
 --
 
@@ -433,6 +481,7 @@ CREATE TABLE `receipt` (
   `receipt_number` varchar(50) NOT NULL,
   `type` enum('purchase','sale') NOT NULL,
   `total_amount` decimal(12,2) NOT NULL DEFAULT 0.00,
+  `discount_value` decimal(12,2) DEFAULT 0.00,
   `created_by` int(11) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
@@ -442,13 +491,10 @@ CREATE TABLE `receipt` (
 -- Dumping data for table `receipt`
 --
 
-INSERT INTO `receipt` (`id`, `receipt_number`, `type`, `total_amount`, `created_by`, `created_at`, `updated_at`) VALUES
-(1, '20251205152bc261d1cdd162025da23c', 'purchase', 200000.00, 1, '2025-12-05 12:03:34', '2025-12-05 12:21:47'),
-(2, '2025120518a1ab8bec5b3e3daf6fd184', 'purchase', 200000.00, 1, '2025-12-05 12:20:04', '2025-12-05 12:20:04'),
-(3, '2025120517be3a36c25ab9ca3974ce8a', 'sale', 40000.50, 1, '2025-12-05 14:01:09', '2025-12-05 14:01:09'),
-(4, '20251205199287b7ae04f7eb907990f9', 'sale', 20000.00, 1, '2025-12-05 14:29:00', '2025-12-05 14:29:00'),
-(5, '20251205105545f3d8fc6cc31f5ed509', 'sale', 500000.00, 1, '2025-12-05 16:13:17', '2025-12-05 16:13:17'),
-(6, '202512081d5f4380e18fe8fe1d38a33c', 'purchase', 80000.00, 1, '2025-12-08 05:05:43', '2025-12-08 05:05:43');
+INSERT INTO `receipt` (`id`, `receipt_number`, `type`, `total_amount`, `discount_value`, `created_by`, `created_at`, `updated_at`) VALUES
+(55, '202512311437ac8', 'purchase', 2145000.00, 643500.00, 1, '2025-12-31 09:27:23', '2025-12-31 09:27:23'),
+(56, '2025123112320b5', 'purchase', 244000.00, 14640.00, 1, '2025-12-31 09:27:56', '2025-12-31 09:27:56'),
+(57, 'SALE-20251231-001-905a1a', 'sale', 52375.50, 2095.00, 1, '2025-12-31 12:21:03', '2025-12-31 12:21:03');
 
 -- --------------------------------------------------------
 
@@ -536,6 +582,7 @@ INSERT INTO `role_permission` (`role_id`, `permission_id`) VALUES
 (1, 47),
 (1, 48),
 (1, 51),
+(1, 52),
 (2, 7),
 (2, 10),
 (2, 11),
@@ -584,24 +631,26 @@ CREATE TABLE `role_permission_matrix` (
 CREATE TABLE `sale` (
   `id` int(11) NOT NULL,
   `product_id` int(11) NOT NULL,
+  `lot` varchar(50) DEFAULT NULL,
   `quantity` int(11) NOT NULL,
   `sale_price` decimal(10,2) DEFAULT NULL,
+  `vat_percent` decimal(5,2) DEFAULT 0.00,
   `sale_date` date DEFAULT curdate(),
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Auto-update on record change',
   `receipt_id` int(11) DEFAULT NULL,
-  `sold_by` int(11) NOT NULL COMMENT 'FK to user.id'
+  `sold_by` int(11) NOT NULL COMMENT 'FK to user.id',
+  `buyer_name` varchar(100) DEFAULT NULL,
+  `buyer_phone` varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Records all product sales. Admin/staff can add/update.';
 
 --
 -- Dumping data for table `sale`
 --
 
-INSERT INTO `sale` (`id`, `product_id`, `quantity`, `sale_price`, `sale_date`, `created_at`, `updated_at`, `receipt_id`, `sold_by`) VALUES
-(1, 9, 50, 10000.50, '0000-00-00', '2025-12-05 14:01:09', '2025-12-05 14:01:09', 3, 1),
-(2, 11, 40, 30000.00, '0000-00-00', '2025-12-05 14:01:09', '2025-12-05 14:01:09', 3, 1),
-(3, 9, 50, 20000.00, '2025-12-05', '2025-12-05 14:29:00', '2025-12-05 14:29:00', 4, 1),
-(4, 5, 1000, 500000.00, '2025-12-05', '2025-12-05 16:13:17', '2025-12-05 16:13:17', 5, 1);
+INSERT INTO `sale` (`id`, `product_id`, `lot`, `quantity`, `sale_price`, `vat_percent`, `sale_date`, `created_at`, `updated_at`, `receipt_id`, `sold_by`, `buyer_name`, `buyer_phone`) VALUES
+(5, 1, '20251231000000485952', 20, 2500.00, 2.00, '2025-12-31', '2025-12-31 12:21:03', '2025-12-31 12:21:03', 57, 1, 'Sazzadul', '01917335945'),
+(6, 11, '20251231000000972009', 10, 131.00, 5.00, '2025-12-31', '2025-12-31 12:21:03', '2025-12-31 12:21:03', 57, 1, 'Sazzadul', '01917335945');
 
 -- --------------------------------------------------------
 
@@ -818,7 +867,7 @@ CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `product_with_details`  AS 
 --
 DROP TABLE IF EXISTS `purchase_details`;
 
-CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `purchase_details`  AS SELECT `p`.`id` AS `id`, `p`.`product_id` AS `product_id`, `pr`.`name` AS `product_name`, `p`.`supplier_id` AS `supplier_id`, `s`.`name` AS `supplier_name`, `p`.`quantity` AS `quantity`, `p`.`purchase_price` AS `purchase_price`, `p`.`purchase_date` AS `purchase_date`, `p`.`receipt_id` AS `receipt_id`, `p`.`purchased_by` AS `purchased_by`, `u`.`username` AS `purchased_by_name` FROM (((`purchase` `p` left join `product` `pr` on(`p`.`product_id` = `pr`.`id`)) left join `supplier` `s` on(`p`.`supplier_id` = `s`.`id`)) left join `user` `u` on(`p`.`purchased_by` = `u`.`id`)) ORDER BY `p`.`id` DESC ;
+CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `purchase_details`  AS SELECT `p`.`id` AS `id`, `p`.`product_id` AS `product_id`, `pr`.`name` AS `product_name`, `p`.`supplier_id` AS `supplier_id`, `s`.`name` AS `supplier_name`, `p`.`quantity` AS `quantity`, `p`.`product_left` AS `product_left`, `p`.`purchase_price` AS `purchase_price`, `p`.`lot` AS `lot`, `p`.`purchase_date` AS `purchase_date`, `p`.`receipt_id` AS `receipt_id`, `p`.`purchased_by` AS `purchased_by`, `u`.`username` AS `purchased_by_name` FROM (((`purchase` `p` left join `product` `pr` on(`p`.`product_id` = `pr`.`id`)) left join `supplier` `s` on(`p`.`supplier_id` = `s`.`id`)) left join `user` `u` on(`p`.`purchased_by` = `u`.`id`)) ORDER BY `p`.`id` DESC ;
 
 -- --------------------------------------------------------
 
@@ -932,10 +981,23 @@ ALTER TABLE `product_request`
 --
 ALTER TABLE `purchase`
   ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_product_lot` (`product_id`,`lot`),
+  ADD UNIQUE KEY `unique_lot` (`lot`),
   ADD KEY `purchase_index_2` (`product_id`),
   ADD KEY `purchase_index_3` (`supplier_id`),
   ADD KEY `fk_purchase_receipt` (`receipt_id`),
   ADD KEY `fk_purchase_user` (`purchased_by`);
+
+--
+-- Indexes for table `purchase_return`
+--
+ALTER TABLE `purchase_return`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `return_number` (`return_number`),
+  ADD KEY `fk_purchase_return_purchase` (`purchase_id`),
+  ADD KEY `fk_purchase_return_product` (`product_id`),
+  ADD KEY `fk_purchase_return_supplier` (`supplier_id`),
+  ADD KEY `fk_purchase_return_user` (`returned_by`);
 
 --
 -- Indexes for table `receipt`
@@ -1005,13 +1067,13 @@ ALTER TABLE `category`
 -- AUTO_INCREMENT for table `permission`
 --
 ALTER TABLE `permission`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
 
 --
 -- AUTO_INCREMENT for table `product`
 --
 ALTER TABLE `product`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT for table `product_request`
@@ -1023,13 +1085,19 @@ ALTER TABLE `product_request`
 -- AUTO_INCREMENT for table `purchase`
 --
 ALTER TABLE `purchase`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=84;
+
+--
+-- AUTO_INCREMENT for table `purchase_return`
+--
+ALTER TABLE `purchase_return`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `receipt`
 --
 ALTER TABLE `receipt`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=58;
 
 --
 -- AUTO_INCREMENT for table `role`
@@ -1041,7 +1109,7 @@ ALTER TABLE `role`
 -- AUTO_INCREMENT for table `sale`
 --
 ALTER TABLE `sale`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `supplier`
@@ -1087,6 +1155,15 @@ ALTER TABLE `purchase`
   ADD CONSTRAINT `fk_purchase_user` FOREIGN KEY (`purchased_by`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `purchase_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`),
   ADD CONSTRAINT `purchase_ibfk_2` FOREIGN KEY (`supplier_id`) REFERENCES `supplier` (`id`);
+
+--
+-- Constraints for table `purchase_return`
+--
+ALTER TABLE `purchase_return`
+  ADD CONSTRAINT `fk_purchase_return_product` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_purchase_return_purchase` FOREIGN KEY (`purchase_id`) REFERENCES `purchase` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_purchase_return_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `supplier` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_purchase_return_user` FOREIGN KEY (`returned_by`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `receipt`

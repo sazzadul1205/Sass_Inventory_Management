@@ -385,17 +385,18 @@ $suppliers = $conn->query("SELECT id, name FROM supplier ORDER BY name ASC")->fe
           <div class="card card-custom shadow-sm">
             <div class="card-body">
               <!-- Header -->
-              <h4 class="mb-4 fw-bold text-secondary border-bottom pb-2">
+              <h4 class=" fw-bold text-secondary border-bottom pb-2">
                 Add Purchase Information
               </h4>
 
               <!-- Purchase Form -->
               <div class="card-body">
                 <!-- Alert -->
-                <div class="alert alert-info mt-3">
+                <div class="alert alert-info">
                   <i class="bi bi-info-circle"></i> Once a purchase is created, it cannot be edited.
                 </div>
 
+                <!-- Supplier & Purchase Date -->
                 <div class="row mb-3">
                   <div class="col-md-6">
                     <label for="supplier_id" class="form-label"><i class="bi bi-truck me-1"></i>Select Supplier</label>
@@ -413,6 +414,7 @@ $suppliers = $conn->query("SELECT id, name FROM supplier ORDER BY name ASC")->fe
                   </div>
                 </div>
 
+                <!-- Purchase Items -->
                 <div id="purchaseItemsContainer" class="products-container"></div>
 
                 <div class="mt-3">

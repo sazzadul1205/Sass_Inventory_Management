@@ -94,7 +94,7 @@ $stmt = $conn->prepare("
     SELECT r.*, u.username AS seller_name
     FROM receipt r
     LEFT JOIN user u ON r.created_by = u.id
-    WHERE r.id = ? AND r.type = 'sale'
+    WHERE r.id = ?
 ");
 $stmt->bind_param("i", $receiptId);
 $stmt->execute();
@@ -102,27 +102,57 @@ $receipt = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 if (!$receipt) die("Sale receipt not found.");
 
-// --- Get Sale Items ---
+// --- Get Sale Items with all details ---
 $stmt = $conn->prepare("
-    SELECT s.*, pr.name AS product_name
+    SELECT 
+        s.*, 
+        pr.name AS product_name,
+        s.lot,
+        s.quantity,
+        s.sale_price,
+        s.vat_percent,
+        s.buyer_name,
+        s.buyer_phone,
+        s.sale_date
     FROM sale s
     LEFT JOIN product pr ON s.product_id = pr.id
     WHERE s.receipt_id = ?
+    ORDER BY s.id ASC
 ");
 $stmt->bind_param("i", $receiptId);
 $stmt->execute();
 $saleItems = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
-// --- Calculate totals ---
+// --- Calculate totals with VAT ---
 $totalQty = 0;
 $totalAmount = 0;
+$totalVat = 0;
+$subTotal = 0;
 
 foreach ($saleItems as $item) {
-  $totalQty += $item['quantity'];
-  $totalAmount += $item['sale_price'];
+  $qty = (int)$item['quantity'];
+  $unitPrice = (float)$item['sale_price'];
+  $vatPercent = (float)($item['vat_percent'] ?? 0);
+
+  $itemSubtotal = $qty * $unitPrice;
+  $itemVat = $itemSubtotal * ($vatPercent / 100);
+  $itemTotal = $itemSubtotal + $itemVat;
+
+  $totalQty += $qty;
+  $subTotal += $itemSubtotal;
+  $totalVat += $itemVat;
+  $totalAmount += $itemTotal;
 }
 
+// --- Get discount value & final total from receipt ---
+$discountValue = floatval($receipt['discount_value'] ?? 0);
+$finalTotal = $totalAmount - $discountValue;
+
+// --- Get buyer info from first sale item ---
+$buyerName = $saleItems[0]['buyer_name'] ?? '';
+$buyerPhone = $saleItems[0]['buyer_phone'] ?? '';
+$saleDate = $saleItems[0]['sale_date'] ?? $receipt['created_at'];
 ?>
 
 <!-- Body -->
@@ -142,7 +172,7 @@ foreach ($saleItems as $item) {
       <div class="app-content-header py-3 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
           <!-- Page Title -->
-          <h3 class="mb-0" style="font-weight: 800;">Recept</h3>
+          <h3 class="mb-0" style="font-weight: 800;">Sales Receipt</h3>
 
           <!-- View Selector Buttons -->
           <div class="d-flex gap-2">
@@ -154,68 +184,112 @@ foreach ($saleItems as $item) {
 
       <!-- ========================= A4 View ========================= -->
       <div id="a4View" class="card p-4">
-        <div class="row mb-4 align-items-center">
+        <!-- Header & Customer Info -->
+        <div class="row mb-4">
           <div class="col-md-6">
             <h2 class="fw-bold mb-1"><?= strtoupper($Project_Name ?? 'Sass Inventory') ?></h2>
             <p class="mb-1">Your Trusted Inventory Solution</p>
             <p class="mb-1">Address: 123, Main Street, City</p>
             <p class="mb-1">Phone: +880123456789 | Email: info@sassinventory.com</p>
+            <p class="mb-1"><strong>Customer:</strong> <?= htmlspecialchars($buyerName) ?></p>
+            <?php if (!empty($buyerPhone)): ?>
+              <p class="mb-1"><strong>Phone:</strong> <?= htmlspecialchars($buyerPhone) ?></p>
+            <?php endif; ?>
           </div>
           <div class="col-md-6 text-md-end">
-            <h3 class="fw-bold mb-1">Sale Receipt</h3>
-            <p class="mb-0">(Seller Copy)</p>
+            <h3 class="fw-bold mb-1">Sales Receipt</h3>
+            <p class="mb-0">(Customer Copy)</p>
+            <p><strong>Receipt #:</strong> <?= htmlspecialchars($receipt['receipt_number']) ?></p>
+            <p><strong>Date:</strong> <?= date('Y-m-d', strtotime($saleDate)) ?></p>
+            <p><strong>Time:</strong> <?= date('H:i', strtotime($receipt['created_at'])) ?></p>
+            <p><strong>Sold By:</strong> <?= htmlspecialchars($receipt['seller_name']) ?></p>
           </div>
         </div>
 
-        <hr>
-
-        <!-- Receipt Info -->
-        <div class="row mb-3">
-          <div class="col-md-6"><strong>Receipt #:</strong> <?= htmlspecialchars($receipt['receipt_number']) ?></div>
-          <div class="col-md-6"><strong>Date:</strong> <?= date('Y-m-d H:i', strtotime($receipt['created_at'])) ?></div>
-          <div class="col-md-6"><strong>Sold By:</strong> <?= htmlspecialchars($receipt['seller_name']) ?></div>
-        </div>
-
-        <!-- Purchase Table -->
+        <!-- Sale Table -->
         <table class="table table-bordered table-striped mt-3">
           <thead class="table-dark">
             <tr>
+              <th>#</th>
               <th>Product</th>
+              <th>Lot</th>
               <th>Qty</th>
               <th>Unit Price</th>
+              <th>VAT (%)</th>
               <th>Total</th>
             </tr>
           </thead>
           <tbody>
-            <?php foreach ($saleItems as $item):
-              $unitPrice = $item['sale_price'] / $item['quantity'];
+            <?php foreach ($saleItems as $index => $item):
+              $qty = (int)$item['quantity'];
+              $unitPrice = (float)$item['sale_price'];
+              $vatPercent = (float)($item['vat_percent'] ?? 0);
+              $itemSubtotal = $qty * $unitPrice;
+              $itemVat = $itemSubtotal * ($vatPercent / 100);
+              $itemTotal = $itemSubtotal + $itemVat;
             ?>
               <tr>
+                <td><?= $index + 1 ?></td>
                 <td><?= htmlspecialchars($item['product_name']) ?></td>
-                <td><?= $item['quantity'] ?></td>
+                <td><?= htmlspecialchars($item['lot']) ?></td>
+                <td><?= $qty ?></td>
                 <td><?= number_format($unitPrice, 2) ?></td>
-                <td><?= number_format($item['sale_price'], 2) ?></td>
+                <td><?= number_format($vatPercent, 2) ?></td>
+                <td><?= number_format($itemTotal, 2) ?></td>
               </tr>
             <?php endforeach; ?>
           </tbody>
           <tfoot class="table-light">
             <tr>
-              <th colspan="1">Total</th>
+              <th colspan="3">Subtotal</th>
               <th><?= $totalQty ?></th>
               <th></th>
+              <th></th>
+              <th><?= number_format($subTotal, 2) ?></th>
+            </tr>
+            <tr>
+              <th colspan="6">VAT Amount</th>
+              <th><?= number_format($totalVat, 2) ?></th>
+            </tr>
+            <tr>
+              <th colspan="6">Total Amount</th>
               <th><?= number_format($totalAmount, 2) ?></th>
+            </tr>
+            <tr>
+              <th colspan="6">Discount
+                (<?php
+                  if ($totalAmount > 0):
+                    echo number_format(($discountValue / $totalAmount) * 100, 2) . '%';
+                  else:
+                    echo '0%';
+                  endif;
+                  ?>)
+              </th>
+              <th><?= number_format($discountValue, 2) ?></th>
+            </tr>
+            <tr>
+              <th colspan="6">Final Total</th>
+              <th class="text-success"><?= number_format($finalTotal, 2) ?></th>
             </tr>
           </tfoot>
         </table>
 
-        <!-- Signature Block -->
-        <div class="signature">
-          <div>________________<br>Seller</div>
-          <div>________________<br>Customer</div>
-          <div>________________<br>Guarantor</div>
+        <!-- Terms & Conditions -->
+        <div class="mt-4">
+          <h6>Terms & Conditions:</h6>
+          <p class="mb-1">1. Goods once sold cannot be returned or exchanged.</p>
+          <p class="mb-1">2. This is a computer generated receipt.</p>
+          <p class="mb-1">3. All disputes are subject to jurisdiction of local courts.</p>
         </div>
 
-        <!-- Print and Download Buttons -->
+        <!-- Signature Block -->
+        <div class="signature mt-4">
+          <div>________________<br>Customer Signature</div>
+          <div>________________<br>Seller Signature</div>
+          <div>________________<br>Authorized Signature</div>
+        </div>
+
+        <!-- Print & Download Buttons -->
         <div class="mt-3 d-flex justify-content-center gap-2">
           <button class="btn btn-primary btn-sm" onclick="window.print()">Print</button>
           <button class="btn btn-success btn-sm" onclick="downloadPDF('a4View')">Download</button>
@@ -224,60 +298,83 @@ foreach ($saleItems as $item) {
 
       <!-- ========================= POS View ========================= -->
       <div id="posView" class="card p-3">
-        <!-- Top Header -->
         <div class="text-center mb-3">
           <h5 class="fw-bold mb-1"><?= strtoupper($Project_Name ?? 'Sass Inventory') ?></h5>
           <p class="mb-0">Your Trusted Inventory Solution</p>
-          <p class="mb-0">Address: 123, Main Street, City</p>
-          <p class="mb-0">Phone: +880123456789 | Email: info@sassinventory.com</p>
-          <h6 class="fw-bold mt-2">Sale Receipt (Sealer Copy)</h6>
+          <p class="mb-0">Customer: <?= htmlspecialchars($buyerName) ?></p>
+          <?php if (!empty($buyerPhone)): ?>
+            <p class="mb-0">Phone: <?= htmlspecialchars($buyerPhone) ?></p>
+          <?php endif; ?>
+          <h6 class="fw-bold mt-2">Sales Receipt (Customer Copy)</h6>
+          <p>#<?= htmlspecialchars($receipt['receipt_number']) ?></p>
+          <p>Date: <?= date('Y-m-d H:i', strtotime($receipt['created_at'])) ?></p>
+          <p>By: <?= htmlspecialchars($receipt['seller_name']) ?></p>
         </div>
 
-        <!-- Receipt Info -->
-        <p><strong>#<?= htmlspecialchars($receipt['receipt_number']) ?></strong></p>
-        <p>Date: <?= date('Y-m-d H:i', strtotime($receipt['created_at'])) ?></p>
-        <p>By: <?= htmlspecialchars($receipt['seller_name']) ?></p>
-
-        <!-- Purchase Table -->
         <table class="table table-sm table-borderless mt-2">
           <thead>
             <tr>
               <th>Item</th>
+              <th>Lot</th>
               <th>Qty</th>
-              <th>Unit</th>
               <th>Total</th>
             </tr>
           </thead>
           <tbody>
             <?php foreach ($saleItems as $item):
-              $unitPrice = $item['sale_price'] / $item['quantity'];
+              $qty = (int)$item['quantity'];
+              $unitPrice = (float)$item['sale_price'];
+              $vatPercent = (float)($item['vat_percent'] ?? 0);
+              $itemSubtotal = $qty * $unitPrice;
+              $itemVat = $itemSubtotal * ($vatPercent / 100);
+              $itemTotal = $itemSubtotal + $itemVat;
             ?>
               <tr>
                 <td><?= htmlspecialchars($item['product_name']) ?></td>
-                <td><?= $item['quantity'] ?></td>
-                <td><?= number_format($unitPrice, 2) ?></td>
-                <td><?= number_format($item['sale_price'], 2) ?></td>
+                <td><?= htmlspecialchars($item['lot']) ?></td>
+                <td><?= $qty ?></td>
+                <td><?= number_format($itemTotal, 2) ?></td>
               </tr>
             <?php endforeach; ?>
           </tbody>
           <tfoot>
             <tr>
-              <th>Total</th>
-              <th><?= $totalQty ?></th>
-              <th></th>
+              <th colspan="3">Subtotal</th>
+              <th><?= number_format($subTotal, 2) ?></th>
+            </tr>
+            <tr>
+              <th colspan="3">VAT</th>
+              <th><?= number_format($totalVat, 2) ?></th>
+            </tr>
+            <tr>
+              <th colspan="3">Total</th>
               <th><?= number_format($totalAmount, 2) ?></th>
+            </tr>
+            <tr>
+              <th colspan="3">Discount
+                (<?php
+                  if ($totalAmount > 0):
+                    echo number_format(($discountValue / $totalAmount) * 100, 2) . '%';
+                  else:
+                    echo '0%';
+                  endif;
+                  ?>)
+              </th>
+              <th><?= number_format($discountValue, 2) ?></th>
+            </tr>
+            <tr>
+              <th colspan="3">Final Total</th>
+              <th class="text-success"><?= number_format($finalTotal, 2) ?></th>
             </tr>
           </tfoot>
         </table>
 
-        <!-- Signature Block -->
-        <div class="signature d-flex justify-content-between text-center">
-          <div>__________<br>Seller</div>
-          <div>__________<br>Customer</div>
-          <div>__________<br>Guarantor</div>
+        <div class="text-center mt-3">
+          <p class="mb-1"><small>Thank you for your purchase!</small></p>
+          <p class="mb-1"><small>This is a computer generated receipt</small></p>
+          <p><small>Date: <?= date('Y-m-d H:i:s') ?></small></p>
         </div>
 
-        <!-- Print and Download Buttons -->
         <div class="mt-3 d-flex justify-content-center gap-2">
           <button class="btn btn-primary btn-sm" onclick="window.print()">Print</button>
           <button class="btn btn-success btn-sm" onclick="downloadPDF('posView')">Download</button>
@@ -290,7 +387,6 @@ foreach ($saleItems as $item) {
     <?php include_once '../Inc/Footer.php'; ?>
   </div>
 
-
   <!-- JS Dependencies -->
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
@@ -300,6 +396,7 @@ foreach ($saleItems as $item) {
   <!-- Custom JS -->
   <script>
     $(document).ready(function() {
+      // Toggle between A4 and POS views
       $('#btnA4').click(() => {
         $('#a4View').show();
         $('#posView').hide();
@@ -310,11 +407,14 @@ foreach ($saleItems as $item) {
       });
     });
 
+    // --- Download / Preview PDF ---
     function downloadPDF(viewId) {
       const {
         jsPDF
       } = window.jspdf;
       const element = document.getElementById(viewId);
+
+      // Temporarily show element if hidden
       const originalDisplay = element.style.display;
       element.style.display = 'block';
 
@@ -325,12 +425,18 @@ foreach ($saleItems as $item) {
         const pdf = new jsPDF('p', 'pt', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        window.open(pdf.output('bloburl'), '_blank');
+
+        // Open PDF in a new tab for preview/download
+        const pdfBlob = pdf.output('bloburl');
+        window.open(pdfBlob, '_blank');
+
+        // Restore original display
         element.style.display = originalDisplay;
       }).catch(err => {
-        console.error(err);
-        alert("Error generating PDF");
+        console.error("PDF generation error:", err);
+        alert("Error generating PDF. Check console.");
       });
     }
   </script>

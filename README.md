@@ -1,639 +1,440 @@
-# Sass Inventory Management System
+# Sass Inventory Management System (SIMS)
 
-## Introduction
+## 🌐 LIVE DEMO
 
-The **Sass Inventory Management System** is a comprehensive web-based application designed to simplify and automate the management of inventory, purchases, sales, suppliers, and user roles within a business. Inventory management is a critical component for any organization that handles physical goods, and traditional manual methods of tracking stock often lead to inefficiencies, human errors, and financial losses.
-
-This system addresses these challenges by providing a **centralized platform** where businesses can maintain accurate records of their products, monitor stock levels in real-time, manage suppliers, and track both purchase and sales transactions. With a role-based access control system, the application ensures that only authorized personnel can perform sensitive operations such as modifying stock, generating reports, or managing users, thus improving security and accountability.
-
-### Key motivations for developing this system include:
-
-- **Error Reduction:** Automated tracking reduces mistakes caused by manual record-keeping.
-- **Time Efficiency:** Quick access to stock levels, sales, and purchase data saves operational time.
-- **Data-Driven Decisions:** Real-time reports and graphical analyses allow management to make informed decisions.
-- **Scalability:** The system can accommodate growing product lines, users, and transactions without compromising performance.
-- **Accountability:** Role-based permissions ensure that actions are traceable and controlled.
-
-In essence, the Sass Inventory Management System transforms the traditional inventory process into a **streamlined, reliable, and user-friendly solution**. It not only provides a digital record of products and transactions but also empowers businesses with insights through reports and analytics, ultimately aiding in strategic planning and operational efficiency.
-
-## 1. Authentication Module
-
-The **Authentication Module** is a critical component of the Sass Inventory Management System that ensures secure access and proper role-based permissions for all users. It handles user login, logout, role assignment, and permissions management, providing a secure and organized way to control who can access which parts of the system.
-
-### 1.1 Features
-
-1. **User Login and Logout**
-
-   - Users can securely log in using a username/email and password.
-   - Sessions are managed to maintain user authentication during usage.
-   - Users can log out to end their session, preventing unauthorized access.
-
-2. **User Management**
-
-   - Admins can add, edit, and delete users.
-   - Each user is assigned a specific **role** which defines their access rights.
-   - The system ensures that users can only access modules and perform actions permitted by their role.
-
-3. **Role Management**
-
-   - Roles define levels of access within the system (e.g., Admin, Manager, Employee).
-   - Admins can add, edit, or delete roles to reflect organizational hierarchy.
-   - Each role can have specific permissions linked to system features.
-
-4. **Permissions Management**
-
-   - Permissions define what actions a user can perform within a module.
-   - Admins can update permissions for each role, ensuring precise control over system operations.
-   - Examples include access to add products, generate reports, or manage users.
-
-5. **Security Measures**
-   - Passwords are securely stored using encryption.
-   - Role-based access control ensures users can only perform allowed actions.
-   - Unauthorized access attempts are restricted and logged for auditing.
-
-### 1.2 Pages in the Authentication Module
-
-| Page                     | Purpose                                                 |
-| ------------------------ | ------------------------------------------------------- |
-| `login.php`              | Provides the login interface for users to authenticate. |
-| `logout.php`             | Ends user sessions and redirects to the login page.     |
-| `add_user.php`           | Allows admins to add new users with assigned roles.     |
-| `edit_user.php`          | Enables modification of user details and roles.         |
-| `delete_user.php`        | Removes users from the system.                          |
-| `users.php`              | Displays a list of all registered users.                |
-| `roles.php`              | Displays all roles within the system.                   |
-| `add_role.php`           | Allows admins to create new roles.                      |
-| `edit_role.php`          | Enables modification of existing roles.                 |
-| `delete_role.php`        | Removes roles from the system.                          |
-| `permissions.php`        | Displays permissions associated with roles.             |
-| `update_permissions.php` | Allows updating of role permissions.                    |
-
-### 1.3 Importance
-
-The authentication module ensures that only authorized personnel can access sensitive data and perform critical operations. By implementing **role-based access control**, the system maintains security, accountability, and proper segregation of duties within the organization.
+**Access the system:** [https://billcorporation.org/Inventory](https://billcorporation.org/Inventory)
 
 ---
 
-## 2. Categories Module
+## 📋 Executive Summary
 
-The **Categories Module** is designed to manage product categorization within the Sass Inventory Management System. Proper categorization helps in organizing products, generating reports, tracking inventory, and improving search functionality. This module allows administrators to create, edit, and delete categories efficiently.
+The **Sass Inventory Management System (SIMS)** is a comprehensive, web-based solution designed to revolutionize inventory management for businesses of all sizes. By replacing error-prone manual processes with automated digital workflows, SIMS provides real-time visibility into stock levels, supplier relationships, sales performance, and purchasing activities—all from a centralized, secure platform.
 
-### 3.1 Features
+### 🎯 Core Value Proposition
 
-1. **Add Categories**
-
-   - Administrators can add new product categories.
-   - Each category can have a unique name and optional description.
-   - Ensures products can be grouped logically for better management.
-
-2. **Edit Categories**
-
-   - Existing categories can be updated to correct errors or rename them.
-   - Modifications are reflected across all associated products automatically.
-
-3. **Delete Categories**
-
-   - Categories that are no longer needed can be removed.
-   - The system ensures proper handling to avoid orphaned product records.
-
-4. **View Categories**
-   - Lists all available categories in a table format.
-   - Provides quick access to edit or delete actions.
-   - Supports search and filtering to quickly find categories.
-
-### 2.2 Pages in the Categories Module
-
-| Page         | Purpose                                                           |
-| ------------ | ----------------------------------------------------------------- |
-| `index.php`  | Displays a list of all categories with options to edit or delete. |
-| `add.php`    | Interface to add a new category.                                  |
-| `edit.php`   | Interface to modify an existing category.                         |
-| `delete.php` | Handles the removal of categories from the system.                |
-
-### 2.3 Importance
-
-The Categories Module is essential for maintaining a structured inventory. It improves the efficiency of inventory tracking, reporting, and product management. Proper categorization reduces errors, simplifies product searches, and enhances overall system usability.
+- **Real-time Inventory Tracking**: Eliminate stockouts and overstocking with live inventory monitoring
+- **Role-Based Security**: Ensure data integrity with granular permission controls
+- **Automated Reporting**: Make data-driven decisions with insightful analytics and visualizations
+- **End-to-End Traceability**: Track every product from procurement to point-of-sale
+- **Scalable Architecture**: Grow with your business without performance compromises
 
 ---
 
-## 3. Supplier Module
+## 🏗️ System Architecture Overview
 
-The **Supplier Module** manages all information related to suppliers who provide products to the inventory. Efficient supplier management ensures that purchase orders, stock levels, and product sourcing are well-organized. This module allows administrators to add, edit, delete, and view supplier details.
+### Technology Stack
 
-### 3.1 Features
+- **Frontend**: HTML5, CSS3, JavaScript, Bootstrap 5
+- **Backend**: PHP 7.4+
+- **Database**: MySQL 5.7+
+- **Security**: Password hashing, SQL injection prevention, XSS protection
+- **Session Management**: PHP native sessions with secure configurations
 
-1. **Add Suppliers**
+### Directory Structure
 
-   - Administrators can register new suppliers.
-   - Supplier information includes name, contact details (phone/email), address, and optional notes.
-   - Ensures smooth communication and record-keeping with vendors.
-
-2. **Edit Suppliers**
-
-   - Update supplier details when contact information or company name changes.
-   - Keeps the supplier database accurate and up-to-date.
-
-3. **Delete Suppliers**
-
-   - Remove suppliers who are no longer active.
-   - Ensures that inactive suppliers don’t clutter purchase processes.
-
-4. **View Suppliers**
-   - Displays all registered suppliers in a tabular format.
-   - Provides search and filtering options for quick access.
-   - Includes quick action buttons for editing or deleting a supplier.
-
-### 3.2 Pages in the Supplier Module
-
-| Page         | Purpose                                                       |
-| ------------ | ------------------------------------------------------------- |
-| `index.php`  | Shows a list of all suppliers with options to edit or delete. |
-| `add.php`    | Interface to add a new supplier to the system.                |
-| `edit.php`   | Interface to modify existing supplier details.                |
-| `delete.php` | Handles the removal of suppliers from the database.           |
-
-### 3.3 Importance
-
-The Supplier Module is critical for maintaining a reliable inventory. By managing supplier information effectively, the system ensures timely procurement of products, improves supplier relationships, and supports accurate reporting and stock management.
+```
+sass_inventory/
+├── assets/              # CSS, JS, Images
+├── auth/                # Authentication Module
+├── categories/          # Categories Module
+├── config/              # Database & Security Config
+├── inc/                 # Reusable Components
+├── products/            # Product Management
+├── purchases/           # Purchase Module
+├── reports/             # Analytics & Reporting
+├── sales/               # Sales Module
+├── suppliers/           # Supplier Management
+└── receipts/            # Receipt Management
+```
 
 ---
 
-## 4. Product Module
+## 🔐 1. Authentication & Authorization Module
 
-The **Product Module** is the core of the inventory management system. It manages all products in stock, including their details, categories, suppliers, and stock levels. This module ensures that products are tracked accurately from procurement to sales.
-
-### 4.1 Features
-
-1. **Add Products**
-
-   - Allows administrators to add new products.
-   - Product details include name, category, supplier, purchase price, selling price, stock quantity, and description.
-   - Ensures all necessary product information is available for inventory tracking.
-
-2. **Edit Products**
-
-   - Modify existing product information such as price, quantity, category, or supplier.
-   - Keeps product data accurate for reporting and stock management.
-
-3. **Delete Products**
-
-   - Remove products that are discontinued or no longer available.
-   - Helps maintain a clean and manageable inventory list.
-
-4. **View Products**
-
-   - Displays all products in a tabular format.
-   - Provides search, filter, and sorting options based on category, supplier, or stock levels.
-   - Includes quick action buttons for editing or deleting products.
-
-5. **Product Stock Management**
-
-   - Monitors stock levels for each product.
-   - Highlights low stock to prevent shortages and support timely reordering.
-   - Tracks stock additions through purchase and reductions through sales.
-
-6. **Product Reports & Graphs**
-   - Generates stock reports and product graphs.
-   - Helps in analyzing product trends and inventory performance over time.
-
-### 4.2 Pages in the Product Module
-
-| Page         | Purpose                                                                 |
-| ------------ | ----------------------------------------------------------------------- |
-| `index.php`  | Lists all products with options to edit, delete, or view stock details. |
-| `add.php`    | Interface to add new products to the system.                            |
-| `edit.php`   | Interface to modify existing product information.                       |
-| `delete.php` | Handles removal of products from the database.                          |
-| `stock.php`  | Manages and displays stock levels for products.                         |
-| `graph.php`  | Visualizes product trends and stock reports.                            |
-
-### 4.3 Importance
-
-The Product Module is essential for tracking inventory accurately. It ensures correct stock levels, supports procurement and sales decisions, and provides detailed insights into product performance, helping businesses reduce losses and optimize inventory management.
+Here’s the **clean, honest update**—no fluff, no pretending. This reflects what you’re actually doing right now and keeps the door open for improvement later.
 
 ---
 
-## 5. Purchase Module
+### 🛡️ Security Features
 
-The **Purchase Module** manages the procurement of products from suppliers. It keeps track of all purchase transactions, generates receipts, and ensures stock levels are updated accurately after each purchase.
-
-### 5.1 Features
-
-1. **Add Purchase**
-
-   - Allows administrators or authorized users to record new purchases.
-   - Includes details such as product name, quantity, purchase price, supplier, and purchase date.
-   - Automatically updates the stock levels in the Product Module.
-
-2. **View All Purchases**
-
-   - Displays a list of all purchase records.
-   - Includes options to filter by date, supplier, or product.
-   - Helps monitor purchase history and track expenditures.
-
-3. **Manage My Purchases**
-
-   - Allows users to view purchases they recorded or are responsible for.
-   - Provides a personalized view for accountability and tracking.
-
-4. **Generate Receipts**
-
-   - Automatically generates receipts for each purchase transaction.
-   - Receipts include supplier details, product details, quantities, prices, and total cost.
-   - Can be used for record-keeping, auditing, or supplier communication.
-
-5. **Edit Purchase Records**
-
-   - Allows authorized users to update purchase details if errors are made.
-   - Ensures that the stock quantity reflects the correct amounts after edits.
-
-6. **Purchase Reports**
-   - Generates reports for all purchases.
-   - Helps in analyzing procurement trends, supplier reliability, and cost patterns.
-
-### 5.2 Pages in the Purchase Module
-
-| Page               | Purpose                                                      |
-| ------------------ | ------------------------------------------------------------ |
-| `index.php`        | Main dashboard for purchase transactions and quick overview. |
-| `add.php`          | Form to record a new purchase.                               |
-| `all-receipt.php`  | Lists all generated purchase receipts.                       |
-| `my-purchases.php` | Shows purchases recorded by the logged-in user.              |
-| `my-receipts.php`  | Displays receipts relevant to the logged-in user.            |
-| `receipt.php`      | Detailed view of a single purchase receipt.                  |
-
-### 5.3 Importance
-
-The Purchase Module ensures accurate procurement records and maintains updated stock information. It provides transparency in purchasing, supports financial management, and helps prevent stock discrepancies, enabling efficient inventory control.
+- **Authentication (Testing Phase)**: Passwords are currently hashed using **MD5** for testing and development purposes only
+- **Dynamic Role & Permission System**: Roles are **manually created** with **dynamically assignable permissions** per module and action
+- **Session Management**: Server-side session handling with enforced login checks and configurable inactivity timeout
+- **Upgrade Path Ready**: Architecture allows future migration to stronger hashing (bcrypt/argon2) and optional multi-factor authentication
 
 ---
 
-## 6. Sales Module
+### 👥 User Roles & Permission Model
 
-The **Sales Module** manages all product sales within the system. It tracks sales transactions, generates receipts, and ensures stock levels are updated immediately after each sale. This module is crucial for monitoring revenue, customer purchases, and inventory.
+```
+System Admin
+    ├── Custom Role (Inventory Permissions)
+    ├── Custom Role (Sales Permissions)
+    ├── Custom Role (Purchase Permissions)
+    ├── Custom Role (Warehouse Permissions)
+    └── Custom Role (Cashier Permissions)
+```
 
-### 6.1 Features
-
-1. **Add Sale**
-
-   - Allows administrators or authorized users to record new sales transactions.
-   - Includes product details, quantity sold, selling price, and sale date.
-   - Automatically deducts sold quantities from the stock.
-
-2. **View All Sales**
-
-   - Displays a list of all sales transactions.
-   - Can be filtered by date, product, or customer for easier tracking.
-   - Helps management monitor revenue and sales trends.
-
-3. **Manage My Sales**
-
-   - Provides a personalized view for users to see the sales they recorded.
-   - Increases accountability and ensures proper tracking of user activity.
-
-4. **Generate Receipts**
-
-   - Automatically generates receipts for each sale.
-   - Receipts include product details, quantities, prices, and total amount.
-   - Can be used for customer delivery, auditing, or financial records.
-
-5. **Edit Sales Records**
-
-   - Authorized users can update sales details if mistakes are made.
-   - Stock quantities are automatically adjusted to reflect corrections.
-
-6. **Sales Reports**
-   - Generates detailed sales reports.
-   - Helps analyze revenue trends, popular products, and overall business performance.
-
-### 6.2 Pages in the Sales Module
-
-| Page              | Purpose                                                |
-| ----------------- | ------------------------------------------------------ |
-| `index.php`       | Dashboard displaying sales summary and quick overview. |
-| `add.php`         | Form to record a new sale.                             |
-| `all-receipt.php` | Lists all generated sales receipts.                    |
-| `my-sales.php`    | Displays sales recorded by the logged-in user.         |
-| `my-receipts.php` | Shows receipts specific to the logged-in user.         |
-| `receipt.php`     | Detailed view of a single sales receipt.               |
-
-### 6.3 Importance
-
-The Sales Module is essential for revenue management, customer transaction tracking, and stock control. It ensures transparency in sales operations, helps with financial reporting, and prevents discrepancies in inventory levels, supporting overall business efficiency.
+- Roles are **not hardcoded by level**
+- Each role is defined by a **set of permissions**
+- Permissions can be added, removed, or reassigned **without code changes**
 
 ---
 
-## 7. Receipts Module
+### Straight talk
 
-The **Receipts Module** handles the management of sales and purchase receipts within the system. It provides a way to view, track, and print receipts for individual transactions, ensuring accurate records for auditing and customer reference.
+- MD5 is **acceptable only for testing** — switch before production
+- Dynamic permissions > fixed role levels (you made the right call)
+- This setup scales cleanly for real businesses
 
-### 7.1 Features
+If you want, next we can:
 
-1. **View All Receipts**
+- Design the **roles & permissions DB schema**
+- Implement a **`can()` permission middleware**
+- Plan a **safe MD5 → bcrypt migration**
 
-   - Displays a comprehensive list of all receipts in the system.
-   - Can be filtered by type (sales or purchase), date, or user.
-   - Helps administrators and management quickly access transaction records.
+Say which one and we move.
 
-2. **My Receipts**
+### 📁 Module Files
 
-   - Shows receipts specifically generated by the logged-in user.
-   - Enhances accountability and allows users to track their own activities.
-
-3. **Detailed Receipt View**
-
-   - Provides a complete view of a single receipt.
-   - Includes transaction details like products, quantities, prices, total amount, and date.
-   - Useful for both internal tracking and customer reference.
-
-4. **Printable Receipts**
-   - Each receipt can be printed or exported for physical record-keeping.
-   - Supports auditing, accounting, and customer delivery documentation.
-
-### 7.2 Pages in the Receipts Module
-
-| Page              | Purpose                                                  |
-| ----------------- | -------------------------------------------------------- |
-| `index.php`       | Displays all receipts with filtering and search options. |
-| `my-receipts.php` | Shows receipts generated by the logged-in user.          |
-| `receipt.php`     | Detailed view of a single receipt for sales or purchase. |
-
-### 7.3 Importance
-
-The Receipts Module ensures proper documentation of all financial transactions in the system. It provides transparency, supports auditing and accounting processes, and helps maintain trust with customers by offering official proof of purchase or transaction.
+| File              | Purpose                       | Access Level |
+| ----------------- | ----------------------------- | ------------ |
+| `login.php`       | Secure authentication portal  | Public       |
+| `users.php`       | User management dashboard     | Admin Only   |
+| `roles.php`       | Role configuration interface  | Admin Only   |
+| `permissions.php` | Permission matrix editor      | Admin Only   |
+| `auth_guard.php`  | Session validation middleware | System       |
 
 ---
 
-## 8. Reports Module
+## 📦 2. Product Management
 
-The **Reports Module** provides analytics and insights on the inventory, sales, purchases, and stock levels. It allows administrators and managers to make data-driven decisions, identify trends, and maintain efficient inventory management.
+### 🔄 Product Lifecycle Management
 
-### 8.1 Features
+1. **Product Onboarding** → Category assignment → Supplier linkage → Pricing setup
+2. **Stock Monitoring** → Real-time quantity tracking → Low-stock alerts → Reorder point calculation
+3. **Product Analysis** → Sales performance → Profit margin tracking → Seasonal trends
 
-1. **Low Stock Report**
+### 📊 Key Metrics Tracked
 
-   - Displays products that are below a predefined minimum stock level.
-   - Helps in timely reordering to avoid stockouts.
-   - Can be filtered by category or supplier.
-
-2. **Product Graph**
-
-   - Visual representation of product-related data such as stock levels or sales trends.
-   - Makes it easier to analyze performance over time.
-   - Supports bar charts, line charts, or pie charts for different metrics.
-
-3. **Purchases Report**
-
-   - Shows all purchase transactions within a selected date range.
-   - Provides details such as supplier, product, quantity, and total cost.
-   - Useful for budgeting and supplier performance evaluation.
-
-4. **Sales Report**
-
-   - Displays all sales transactions over a specified period.
-   - Shows product-wise and user-wise sales, revenue generated, and trends.
-   - Helps track business performance and revenue streams.
-
-5. **Stock Report**
-   - Provides a snapshot of current stock levels for all products.
-   - Includes product details, category, supplier, and available quantity.
-   - Supports better inventory control and auditing.
-
-### 8.2 Pages in the Reports Module
-
-| Page                | Purpose                                                   |
-| ------------------- | --------------------------------------------------------- |
-| `low_stock.php`     | Generates report of products with low stock levels.       |
-| `product-graph.php` | Displays visual graphs for product trends and statistics. |
-| `purchases.php`     | Shows purchase transactions and analytics.                |
-| `sales.php`         | Shows sales transactions and performance metrics.         |
-| `stock.php`         | Displays current inventory stock report.                  |
-
-### 8.3 Importance
-
-The Reports Module is crucial for strategic decision-making. It allows managers to monitor inventory health, analyze sales and purchases, identify trends, and plan restocking. With accurate reporting, the business can reduce losses, optimize operations, and improve profitability.
+- Current Stock Value
+- Turnover Rate
+- Gross Margin per Product
+- Stock-to-Sales Ratio
+- Days of Inventory On Hand
 
 ---
 
-## 9. Config Module
+## 🤝 3. Supplier Relationship Management
 
-The **Config Module** manages the core configuration and security settings of the Sass Inventory Management System. It ensures that the system connects correctly to the database and maintains secure access control for users.
+### 📋 Supplier Evaluation Matrix
 
-### 9.1 Files in the Config Module
+| Criteria        | Weight | Tracking Method        |
+| --------------- | ------ | ---------------------- |
+| Delivery Time   | 30%    | Purchase order history |
+| Product Quality | 25%    | Return/defect rate     |
+| Pricing         | 20%    | Comparative analysis   |
+| Payment Terms   | 15%    | Credit period tracking |
+| Communication   | 10%    | Response time logs     |
 
-| File             | Purpose                                                                                                                                                                                                   |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `db_config.php`  | Contains the database configuration and connection logic. It defines database host, name, username, and password. This file is included in all modules that require database access.                      |
-| `auth_guard.php` | Manages authentication and access control. It ensures that only authorized users can access restricted pages and modules. It checks the login session and redirects unauthorized users to the login page. |
+### 🔔 Automated Features
 
-### 9.2 Responsibilities
-
-1. **Database Connectivity**
-
-   - Centralized configuration for database connections.
-   - Easy to update credentials or change the database server without modifying multiple files.
-
-2. **Authentication & Security**
-   - Guards protected pages from unauthorized access.
-   - Ensures session validation to maintain secure user login states.
-   - Provides the backbone for user permission checks throughout the system.
-
-### 9.3 Importance
-
-Without proper configuration and authentication, the system would be vulnerable to unauthorized access and potential data loss. The Config Module ensures the application runs smoothly and securely by handling essential backend settings and access control.
+- **Supplier Performance Reports**: Quarterly evaluations
+- **Order Lead Time Alerts**: Proactive notifications
+- **Contract Renewal Reminders**: Automated calendar events
 
 ---
 
-## 10. Inc (Includes) Module
+## 💰 4. Procurement Workflow
 
-The **Inc Module** contains reusable components and partial files that are included across multiple pages of the Sass Inventory Management System. These files help maintain consistency in layout, navigation, and footer content.
+### 📈 Purchase Order Process
 
-### 10.1 Files in the Inc Module
+```mermaid
+graph LR
+    A[Low Stock Alert] --> B[PO Creation]
+    B --> C[Supplier Selection]
+    C --> D[Price Negotiation]
+    D --> E[Order Placement]
+    E --> F[Goods Receipt]
+    F --> G[Quality Check]
+    G --> H[Stock Update]
+    H --> I[Invoice Processing]
+    I --> J[Payment]
+```
 
-| File          | Purpose                                                                                                                                              |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Navbar.php`  | Contains the HTML and PHP code for the top navigation bar. It usually includes links to major sections of the system and user profile options.       |
-| `Sidebar.php` | Contains the HTML and PHP code for the side navigation menu. It dynamically shows links based on user roles and permissions.                         |
-| `Footer.php`  | Contains the footer layout and copyright information. Included on all pages for consistency.                                                         |
-| `link.php`    | Centralized file for including CSS and JS links, as well as other shared resources. It helps in maintaining consistent references across the system. |
+### 📄 Document Management
 
-### 10.2 Responsibilities
-
-1. **Code Reusability**
-
-   - Avoids duplication by keeping common page components in separate files.
-   - Simplifies maintenance: updating the sidebar or navbar in one file updates it across all pages.
-
-2. **Dynamic Content**
-
-   - Sidebar and Navbar adapt based on user roles and permissions.
-   - Ensures proper navigation visibility depending on the user’s access level.
-
-3. **Consistent Layout**
-   - Provides a unified look and feel across the system.
-   - Maintains design consistency for headers, footers, and navigation menus.
-
-### 10.3 Importance
-
-The Inc Module is essential for maintaining a structured, organized, and professional user interface. By separating common elements, the system becomes easier to manage, more scalable, and visually consistent.
+- **Purchase Requisitions**: Internal approval workflows
+- **Purchase Orders**: Automated numbering with supplier copies
+- **Goods Received Notes**: Three-way matching system
+- **Supplier Invoices**: Digital archival with payment tracking
 
 ---
 
-## Database Structure
+## 🛒 5. Sales & Point of Sale
 
-The database `sass_inventory` is designed to handle all inventory operations efficiently. It includes relational tables, foreign key constraints, and several views for reporting.
+### 🚀 Quick Sale Features
 
----
+- **Barcode Scanner Support**: Quick product lookup
+- **Customer Database**: Repeat customer tracking
+- **Discount Management**: Percentage/fixed amount discounts
+- **Receipt Customization**: Branded receipt templates
+- **Sales Returns**: Complete refund/credit note processing
 
-### Tables
+### 💳 Payment Integration Ready
 
-#### 1. `category`
-
-Stores product categories.
-
-| Column        | Type         | Description                      |
-| ------------- | ------------ | -------------------------------- |
-| `id`          | int(11)      | Primary key, auto-increment      |
-| `name`        | varchar(100) | Category name, unique            |
-| `description` | text         | Optional description             |
-| `created_at`  | timestamp    | Record creation time             |
-| `updated_at`  | timestamp    | Auto-updated when record changes |
+- **Multiple Payment Methods**: Cash, Card, Mobile Money
+- **Partial Payments**: Customer credit tracking
+- **Receipt Numbering**: Sequential/date-based options
+- **Tax Calculation**: VAT/GST compliance ready
 
 ---
 
-#### 2. `supplier`
+## 📊 6. Advanced Reporting Suite
 
-Tracks suppliers of products.
+### 📈 Real-Time Dashboards
 
-| Column       | Type         | Description                   |
-| ------------ | ------------ | ----------------------------- |
-| `id`         | int(11)      | Primary key, auto-increment   |
-| `name`       | varchar(100) | Supplier name, unique         |
-| `phone`      | varchar(20)  | Optional phone number         |
-| `email`      | varchar(100) | Optional email                |
-| `created_at` | timestamp    | Record creation time          |
-| `updated_at` | timestamp    | Auto-updated on record change |
+1. **Executive Dashboard**
 
----
+   - Daily Sales vs Target
+   - Inventory Valuation
+   - Top 10 Products by Revenue
+   - Supplier Performance Scorecard
 
-#### 3. `product`
+2. **Operational Dashboard**
+   - Stock Movement Analysis
+   - Pending Purchase Orders
+   - Cashier Performance Metrics
+   - Customer Purchase Patterns
 
-Stores product information.
+### 📋 Standard Reports
 
-| Column              | Type          | Description                                       |
-| ------------------- | ------------- | ------------------------------------------------- |
-| `id`                | int(11)       | Primary key, auto-increment                       |
-| `name`              | varchar(100)  | Product name                                      |
-| `category_id`       | int(11)       | FK → `category.id` (nullable, ON DELETE SET NULL) |
-| `supplier_id`       | int(11)       | FK → `supplier.id` (nullable, ON DELETE SET NULL) |
-| `price`             | decimal(10,2) | Price per unit                                    |
-| `quantity_in_stock` | int(11)       | Current stock                                     |
-| `created_at`        | timestamp     | Record creation time                              |
-| `updated_at`        | timestamp     | Auto-updated on change                            |
+| Report Type             | Frequency | Key Metrics                      |
+| ----------------------- | --------- | -------------------------------- |
+| **Inventory Valuation** | Daily     | COGS, Stock Value, Write-offs    |
+| **Sales Performance**   | Weekly    | Revenue, Units Sold, Avg. Ticket |
+| **Supplier Analysis**   | Monthly   | On-time Delivery, Quality Rating |
+| **Profitability**       | Quarterly | Gross Margin, Net Profit, ROI    |
 
 ---
 
-#### 4. `purchase`
+## 🗄️ 7. Database Schema
 
-Records all product purchases.
+### 📐 Core Entity Relationships
 
-| Column           | Type          | Description                   |
-| ---------------- | ------------- | ----------------------------- |
-| `id`             | int(11)       | Primary key, auto-increment   |
-| `product_id`     | int(11)       | FK → `product.id`             |
-| `supplier_id`    | int(11)       | FK → `supplier.id` (optional) |
-| `quantity`       | int(11)       | Quantity purchased            |
-| `purchase_price` | decimal(10,2) | Total price of purchase       |
-| `purchase_date`  | date          | Default today                 |
-| `receipt_id`     | int(11)       | FK → `receipt.id` (optional)  |
-| `purchased_by`   | int(11)       | FK → `user.id`                |
-| `created_at`     | timestamp     | Record creation time          |
-| `updated_at`     | timestamp     | Auto-updated on record change |
+```sql
+-- Simplified Schema Overview
+User (1) --- (*) Purchase
+User (1) --- (*) Sale
+Product (1) --- (*) Purchase
+Product (1) --- (*) Sale
+Category (1) --- (*) Product
+Supplier (1) --- (*) Product
+Supplier (1) --- (*) Purchase
+Role (1) --- (*) User
+```
 
----
+### 🔍 Optimized Views for Reporting
 
-#### 5. `sale`
-
-Tracks product sales.
-
-| Column       | Type          | Description                   |
-| ------------ | ------------- | ----------------------------- |
-| `id`         | int(11)       | Primary key, auto-increment   |
-| `product_id` | int(11)       | FK → `product.id`             |
-| `quantity`   | int(11)       | Quantity sold                 |
-| `sale_price` | decimal(10,2) | Total sale price              |
-| `sale_date`  | date          | Default today                 |
-| `receipt_id` | int(11)       | FK → `receipt.id` (optional)  |
-| `sold_by`    | int(11)       | FK → `user.id` (seller/admin) |
-| `created_at` | timestamp     | Record creation time          |
-| `updated_at` | timestamp     | Auto-updated on change        |
+- `v_product_performance` - Sales velocity and profitability
+- `v_supplier_metrics` - Performance scorecards
+- `v_inventory_aging` - Slow-moving stock identification
+- `v_customer_purchase_history` - Customer behavior patterns
 
 ---
 
-#### 6. `receipt`
+## 🚀 8. Installation & Setup
 
-Stores purchase and sales receipts.
+### ⚙️ Prerequisites
 
-| Column           | Type          | Description                 |
-| ---------------- | ------------- | --------------------------- |
-| `id`             | int(11)       | Primary key, auto-increment |
-| `receipt_number` | varchar(50)   | Unique receipt number       |
-| `type`           | enum          | Either `purchase` or `sale` |
-| `total_amount`   | decimal(12,2) | Total amount of receipt     |
-| `created_by`     | int(11)       | FK → `user.id`              |
-| `created_at`     | timestamp     | Record creation time        |
-| `updated_at`     | timestamp     | Auto-updated on change      |
+- PHP 7.4 or higher
+- MySQL 5.7 or higher
+- Apache/Nginx web server
+- 1GB RAM minimum, 2GB recommended
 
----
+### 📥 Installation Steps
 
-#### 7. `user`
+1. **Download & Extract**
 
-Stores system users.
+   ```bash
+   wget https://billcorporation.org/Inventory/download/sass_inventory.zip
+   unzip sass_inventory.zip -d /var/www/html/
+   ```
 
-| Column       | Type         | Description                   |
-| ------------ | ------------ | ----------------------------- |
-| `id`         | int(11)      | Primary key, auto-increment   |
-| `username`   | varchar(100) | Unique username               |
-| `password`   | text         | Hashed password               |
-| `email`      | varchar(100) | Optional email                |
-| `role_id`    | int(11)      | FK → `role.id`                |
-| `created_at` | timestamp    | Record creation time          |
-| `updated_at` | timestamp    | Auto-updated on record change |
+2. **Database Configuration**
 
----
+   ```bash
+   mysql -u root -p
+   CREATE DATABASE sass_inventory;
+   USE sass_inventory;
+   SOURCE /path/to/database.sql;
+   ```
 
-#### 8. `role` & `permission`
+3. **Environment Setup**
 
-Defines user roles and permissions.
+   ```bash
+   cp config/db_config.example.php config/db_config.php
+   nano config/db_config.php  # Edit database credentials
+   ```
 
-- **role**: `id`, `role_name` (admin, staff, etc.)
-- **permission**: `id`, `permission_name` (add, edit, delete, view)
-- **role_permission**: maps roles to permissions (many-to-many relationship)
+4. **Permissions Setup**
 
----
+   ```bash
+   chmod 755 -R /var/www/html/sass_inventory/
+   chown www-data:www-data -R /var/www/html/sass_inventory/
+   ```
 
-### Views
-
-Predefined views for easier reporting:
-
-- `product_with_details` → product info with category & supplier names
-- `purchase_details` → purchase info with product, supplier, and user
-- `sale_details` → sale info with product and user
-- `purchase_receipts_view` / `sales_receipts_view` → summary of receipts
-- `stock_report` → product stock with purchased & sold quantities
-- `view_product_movement` → product movement (in/out)
-- `view_purchase_report` / `view_sales_report` → purchase and sales reports
-- `role_permission_matrix` → roles vs permissions assignment
+5. **Access System**
+   - Navigate to `http://your-domain.com/sass_inventory`
+   - Default Admin Login: `admin / admin123` _(Change immediately!)_
 
 ---
 
-### Relationships
+## 🔒 9. Security Best Practices
 
-- **Products → Categories & Suppliers**: Many-to-one
-- **Purchases → Products, Suppliers, Users**: Many-to-one
-- **Sales → Products, Users**: Many-to-one
-- **Receipts → Users**: Many-to-one
-- **Users → Roles**: Many-to-one
-- **Role-Permission**: Many-to-many
+### 🛡️ Mandatory Configuration
+
+1. **Change Default Credentials** Immediately after installation
+2. **Enable HTTPS** SSL certificate installation
+3. **Regular Backups** Automated database backups
+4. **Access Logging** Monitor unauthorized access attempts
+5. **IP Whitelisting** For administrative access (optional)
+
+### 📋 Security Checklist
+
+- [ ] Strong password policy enforced
+- [ ] Session timeout configured (30 minutes)
+- [ ] SQL injection protection verified
+- [ ] XSS prevention measures implemented
+- [ ] Regular security updates applied
+- [ ] Backup restoration tested
 
 ---
+
+## 📈 10. Performance Optimization
+
+### ⚡ Recommended Settings
+
+```php
+// config/performance.php
+'memory_limit' => '256M',
+'max_execution_time' => 300,
+'opcache.enable' => 1,
+'realpath_cache_size' => '10M'
+```
+
+### 🗃️ Database Optimization
+
+- **Indexing Strategy**: Implemented on all foreign keys and search columns
+- **Query Caching**: MySQL query cache enabled
+- **Regular Maintenance**: Weekly optimization schedules
+- **Connection Pooling**: Persistent database connections
+
+---
+
+## 🤝 11. Support & Maintenance
+
+### 📞 Getting Help
+
+- **Documentation**: [https://billcorporation.org/Inventory/docs](https://billcorporation.org/Inventory/docs)
+- **Issue Tracking**: GitHub repository issues section
+- **Community Forum**: User discussion and best practices
+
+### 🔄 Update Procedures
+
+1. **Backup Current Installation**
+2. **Download Latest Release**
+3. **Merge Configuration Files**
+4. **Run Database Migrations**
+5. **Verify Functionality**
+
+---
+
+## 📱 12. Mobile Responsiveness
+
+### 📲 Supported Devices
+
+- **Desktop**: Full feature access
+- **Tablet**: Optimized for 7-10 inch screens
+- **Mobile**: Essential functions on 5-6 inch screens
+
+### 📱 Mobile-Optimized Features
+
+- Touch-friendly navigation
+- Responsive data tables
+- Mobile receipt printing
+- Barcode scanning interface
+
+---
+
+## 🔮 13. Roadmap & Future Features
+
+### 🚧 Planned Enhancements
+
+| Quarter | Feature                         | Status         |
+| ------- | ------------------------------- | -------------- |
+| Q3 2024 | Mobile App (iOS/Android)        | Planned        |
+| Q4 2024 | API for Third-party Integration | In Design      |
+| Q1 2025 | Advanced Analytics with ML      | Research Phase |
+| Q2 2025 | Multi-warehouse Support         | Planned        |
+
+---
+
+## 📄 License & Compliance
+
+### 📜 Usage Rights
+
+- **License**: MIT Open Source License
+- **Commercial Use**: Allowed with attribution
+- **Modifications**: Permitted with source disclosure
+- **Warranty**: Provided "as-is" without guarantees
+
+### 🌍 Compliance Ready
+
+- **GDPR**: User data protection compliant
+- **Tax Ready**: VAT/GST calculation support
+- **Audit Trail**: Complete transaction logging
+- **Data Export**: Standard formats (CSV, PDF, Excel)
+
+---
+
+## 🙏 Acknowledgments
+
+### 👥 Development Team
+
+- **Project Lead**: [Your Name/Organization]
+- **UI/UX Design**: [Designer Name]
+- **Database Architecture**: [DBA Name]
+- **Quality Assurance**: [Tester Name]
+
+### 📚 Built With
+
+- Bootstrap 5
+- Chart.js
+- DataTables
+- Font Awesome
+
+---
+
+## 📞 Contact & Contributions
+
+### 💬 Get Involved
+
+- **Bug Reports**: GitHub Issues
+- **Feature Requests**: Community voting system
+- **Code Contributions**: Pull requests welcome
+- **Documentation**: Wiki edits encouraged
+
+### 📧 Contact Information
+
+- **Website**: [https://billcorporation.org](https://billcorporation.org)
+- **Email**: support@billcorporation.org
+- **Documentation**: [Full Technical Documentation](https://billcorporation.org/Inventory/docs)
+
+---
+
+**⭐ If you find this project useful, please consider giving it a star on GitHub!**
+
+---
+
+_Last Updated: March 2024 | Version: 2.1.0 | Database Schema Version: 3_

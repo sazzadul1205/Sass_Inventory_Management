@@ -1,50 +1,64 @@
 <?php
 // db_config.php
 
-// Database configuration
+/* ===============================
+   BASIC PHP ERROR LOGGING
+================================ */
+ini_set('display_errors', 0); // NEVER show errors to users
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/logs/php_error.log');
+error_reporting(E_ALL);
+
+/* ===============================
+   DATABASE CONFIG
+================================ */
 $DB_HOST = "localhost";
 $DB_NAME = "sass_inventory";
 $DB_USER = "root";
 $DB_PASS = "";
 
-// Connect to MySQL database
+/* ===============================
+   PROJECT URL
+================================ */
+// $Project_URL = "http://localhost/Sass_Inventory_Management/";
+$Project_URL = "https://billcorporation.org/Inventory/";
+
+/* ===============================
+   DATABASE CONNECTION
+================================ */
 function connectDB()
 {
   global $DB_HOST, $DB_NAME, $DB_USER, $DB_PASS;
 
-  $conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
+  mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-  // Check connection
-  if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+  try {
+    $conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
+    $conn->set_charset('utf8mb4');
+    return $conn;
+  } catch (mysqli_sql_exception $e) {
+    error_log("DB CONNECTION ERROR: " . $e->getMessage());
+    redirectDBError();
   }
-
-  return $conn;
 }
 
-/**
- * Check if the current user has permission
- */
-function can($permission, $userPermissions = null)
+/* ===============================
+   PERMISSION CHECK
+================================ */
+function can($permission, $userPermissions = [])
 {
-  global $USER_PERMISSIONS;
-  $userPermissions = $userPermissions ?? $USER_PERMISSIONS;
-  return in_array($permission, $userPermissions);
+  return in_array($permission, $userPermissions, true);
 }
 
-/**
- * Redirect to database error page
- */
+/* ===============================
+   DB ERROR REDIRECT
+================================ */
 function redirectDBError()
 {
   global $Project_URL;
 
-  // Prevent redirect loop
   if (!headers_sent()) {
     header("Location: " . $Project_URL . "errors/db_not_connected.php");
   }
   exit;
 }
-
-// $Project_URL = "http://localhost/PWAD-68-1293312/Sass_Inventory/";
-$Project_URL = "http://localhost/Sass_Inventory_Management/";

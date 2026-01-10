@@ -381,8 +381,8 @@ function isActivePage($url)
 
   <!-- Sidebar Header -->
   <div class="sidebar-brand">
-    <a href="<?= $Project_URL; ?>index.php" class="brand-link">
-      <img src="<?= $Project_URL; ?>assets/Dashboard/Website_logo.png" alt="Logo">
+    <a href="<?= $Project_URL ?>index.php" class="brand-link">
+      <img src="<?= $Project_URL ?>assets/Dashboard/Website_logo.png" alt="Logo">
     </a>
   </div>
 
